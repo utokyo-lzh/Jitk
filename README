@@ -1,0 +1,14 @@
+Install Coq and OCaml.
+
+Download CompCert from http://compcert.inria.fr/ and unpack it here.
+Rename its directory to compcert (or create a symlink).
+
+In compcert, configure and make.
+
+Get back to the parent directory and make.  Ignore the warnings.
+
+Run ./test.native and you should see output 0 and 4294967295.
+
+The filter program is to accept all IP packets.  It's taken from
+the original BPF paper (Sect. 3.4), which can also be found at the
+end of BPF.v.  BPF.v currently implements an (incomplete) interpreter.
