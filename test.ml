@@ -1,5 +1,7 @@
 open Camlcoq
 open BPF
+open BPFjit
+open PrintRTL
 
 let byte_of n =
   Integers.Byte.repr (Camlcoq.Z.of_uint n);;
@@ -26,3 +28,5 @@ print_endline (Camlcoq.Z.to_string r1);;
 let p2 = List.map byte_of [0;0;0;0;0;0;0;0;0;0;0;0;8;0];;
 let r2 = BPF.interpret_main prog1 p2;;
 print_endline (Camlcoq.Z.to_string r2);;
+
+PrintRTL.print_program stdout (BPFjit.transl_program prog1);;

@@ -1,7 +1,7 @@
+Require Import compcert.common.Memdata.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
-Require Import compcert.common.Memdata.
 
 Inductive instruction : Type :=
   | Ild_w_abs : int -> instruction
@@ -36,11 +36,11 @@ Record state : Type := mkstate {
 
 Definition empty_state := mkstate Int.zero Int.zero (ZMap.init Int.zero) 0.
 
-Definition code := list instruction.
+Definition program := list instruction.
 
 Definition packet := list byte.
 
-Definition instruction_at (p: code) (st: state) :=
+Definition instruction_at (p: program) (st: state) :=
   list_nth_z p st.(pc).
 
 Definition packet_length (b: packet) : Z :=
@@ -67,7 +67,7 @@ Definition packet_decode_int (pos: int) (len: Z) (b: packet) : option int :=
   then Some (Int.repr (int_of_bytes (rev_if_le s)))
   else None.
 
-Fixpoint interpret (fuel: nat) (p: code) (b: packet) (st: state) : state * int :=
+Fixpoint interpret (fuel: nat) (p: program) (b: packet) (st: state) : state * int :=
   match fuel with
   | O => (st, Int.zero)
   | S fuel' => match instruction_at p st with
@@ -116,5 +116,5 @@ Fixpoint interpret (fuel: nat) (p: code) (b: packet) (st: state) : state * int :
     end
   end.
 
-Definition interpret_main (p: code) (b: packet) :=
+Definition interpret_main (p: program) (b: packet) :=
   snd (interpret (length p) p b empty_state).
