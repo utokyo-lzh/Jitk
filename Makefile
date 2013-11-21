@@ -15,4 +15,4 @@ codegen/extraction.vo: BPF.vo
 
 clean:
 	rm -rf _build *.vo *.glob *.native
-	cd extract && rm *.ml *.mlo *.glob
+	cd codegen && rm -f *.ml *.mlo *.glob

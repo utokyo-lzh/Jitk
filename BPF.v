@@ -3,8 +3,6 @@ Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 Require Import compcert.common.Memdata.
 
-Module BPF.
-
 Inductive instruction : Type :=
   | ld_w_abs : int -> instruction
   | ld_h_abs : int -> instruction
@@ -131,5 +129,3 @@ Definition prog1 :=
   (jeq_k Byte.zero Byte.one (Int.repr 2048))::
   (ret_k Int.mone)::
   (ret_k Int.zero)::nil.
-
-End BPF.
