@@ -7,6 +7,9 @@ Inductive instruction : Type :=
   | Ild_w_abs : int -> instruction
   | Ild_h_abs : int -> instruction
   | Ild_b_abs : int -> instruction
+  | Ild_w_ind : int -> instruction
+  | Ild_h_ind : int -> instruction
+  | Ild_b_ind : int -> instruction
   | Ild_w_len : instruction
   | Ild_imm   : int -> instruction
   | Ild_mem   : int -> instruction
@@ -17,10 +20,31 @@ Inductive instruction : Type :=
   | Ist       : int -> instruction
   | Istx      : int -> instruction
   | Iadd_k    : int -> instruction
+  | Isub_k    : int -> instruction
+  | Imul_k    : int -> instruction
+  | Idiv_k    : int -> instruction
+  | Iand_k    : int -> instruction
+  | Ior_k     : int -> instruction
+  | Ilsh_k    : int -> instruction
+  | Irsh_k    : int -> instruction
   | Iadd_x    : instruction
+  | Isub_x    : instruction
+  | Imul_x    : instruction
+  | Idiv_x    : instruction
+  | Iand_x    : instruction
+  | Ior_x     : instruction
+  | Ilsh_x    : instruction
+  | Irsh_x    : instruction
+  | Ineg      : instruction
   | Ija       : int -> instruction
+  | Ijgt_k    : Byte.int -> Byte.int -> int -> instruction
+  | Ijge_k    : Byte.int -> Byte.int -> int -> instruction
   | Ijeq_k    : Byte.int -> Byte.int -> int -> instruction
+  | Ijset_k   : Byte.int -> Byte.int -> int -> instruction
+  | Ijgt_x    : Byte.int -> Byte.int -> instruction
+  | Ijge_x    : Byte.int -> Byte.int -> instruction
   | Ijeq_x    : Byte.int -> Byte.int -> instruction
+  | Ijset_x   : Byte.int -> Byte.int -> instruction
   | Iret_k    : int -> instruction
   | Iret_a    : instruction
   | Itax      : instruction
