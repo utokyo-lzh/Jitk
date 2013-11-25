@@ -1,14 +1,17 @@
 COQINC = -I . -R compcert compcert
 COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
+COQDEP = coqdep $(COQINC)
 OCAMLBUILD = ocamlbuild -I compcert/lib -I codegen -I compcert/extraction -I compcert/common -I compcert/driver -I compcert/backend -I compcert/ia32
 
-all: test.native
+FILES = Seccomp.v Seccompjit.v
 
-test.native: test.ml codegen/extraction.vo
+all: test_seccomp.native
+
+test_seccomp.native: test_seccomp.ml codegen/extraction.vo
 	$(OCAMLBUILD) $@
 
-codegen/extraction.vo: BPF.vo BPFjit.vo
+codegen/extraction.vo: $(FILES:.v=.vo)
 
 %.vo: %.v
 	$(COQC) $*.v
