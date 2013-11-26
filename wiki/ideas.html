@@ -20,12 +20,29 @@ NB: ramfs looks simple, but others may be too complicated..
 
 NB: maybe we should get their specifications first.
 
-NB: compile DSL to CompCert's [RTL](http://compcert.inria.fr/doc/html/RTL.html) for now.
-We probably need to prove the RTL program never invokes undefined behavior.
+NB: we probably need to prove the RTL program never invokes undefined behavior.
 
 NB: when CompCert doesn't work (e.g., no x86-64 backend), consider to invoke gcc or llvm
 for code generation.  We then should at least do translation validation.  That means
 we need to convert RTL to LLVM IR.
+
+## Proof
+
+The overall goal is to do backward simulation (refinement),
+to proof that all possible behaviors of the IL are legal behaviors in the DSL.
+This is hard to do in general.  So we can instead do forward simulation,
+to proof that the IL has all good behaviors of the DSL,
+and that the IL is deterministic, which gets backward simulation.
+CompCert seems to have a nice library
+[Smallstep.v](http://compcert.inria.fr/doc/html/Smallstep.html) that deals with the details.
+
+See also:
+[Forward and Backward Simulations Part I: Untimed Systems](http://groups.csail.mit.edu/tds/papers/Lynch/TM-486.pdf), from Nancy.
+
+Another interesting choice is the IL.
+We could use low-level RTL, Cminor, or even Clight (a subset of C,
+where we can directly invoke gcc/clang for better optimizations).
+Not sure which one is easier to do proof.
 
 ## Syscall filtering
 
@@ -62,6 +79,15 @@ This is an interpreter that supports arithmetic operations and branching.
 ## General scripting
 
 Lua in [NetBSD](http://www.phoronix.com/scan.php?page=news_item&px=MTQ4ODk).
+
+## DSL for drivers
+
+[Devil](https://www.usenix.org/conference/osdi-2000/devil-idl-hardware-programming),
+OSDI 2000.
+
+[NDL](http://www.cs.nyu.edu/~cconway/papers/conway-2004-LCTES-ndl.pdf)
+
+DSL for [video device drivers](https://www.usenix.org/conference/dsl-97/domain-specific-language-video-device-drivers-design-implementation)
 
 </xmp>
 <script src="assets/strapdown.js"></script>
