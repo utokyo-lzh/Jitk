@@ -22,6 +22,6 @@ let print_error oc msg =
     List.iter print_one_error msg;
     output_char oc '\n';;
 
-match Seccompjit.transf_program p1 with
+match Seccompjit.transl_program p1 with
     | Errors.OK x -> print_program (Format.formatter_of_out_channel stdout) x
     | Errors.Error msg -> print_error stderr msg;;

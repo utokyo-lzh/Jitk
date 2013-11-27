@@ -1,6 +1,7 @@
 Require Import compcert.common.AST.
 Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
+Require Import compcert.common.Memory.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
@@ -102,17 +103,20 @@ End PROGRAM.
 
 Inductive state : Type :=
   | State:
-    forall (a: int)              (** accumulator *)
-           (x: int)              (** index register *)
-           (m: ZMap.t int)       (** scratch memory *)
-           (f: function)         (** current function *)
-           (pc: Z),              (** program counter *)
+    forall (a: int)              (**r accumulator *)
+           (x: int)              (**r index register *)
+           (sm: ZMap.t int)      (**r scratch memory *)
+           (f: function)         (**r current function *)
+           (pc: Z)               (**r program counter *)
+           (m: mem),             (**r memory state *)
     state
   | Callstate:
-    forall (fd: fundef),         (** calling function *)
+    forall (fd: fundef)          (**r calling function *)
+           (m: mem),             (**r memory state *)
     state
   | Returnstate:
-    forall (v: int),             (** local return value *)
+    forall (v: int)              (**r local return value *)
+           (m: mem),             (**r memory state *)
     state
   .
 
@@ -123,19 +127,19 @@ Definition instruction_at (f: function) (pc: Z) :=
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Salu_add_k:
-      forall a x m f pc k,
+      forall a x sm f pc k m,
       instruction_at f pc = Some (Salu_add_k k) ->
       let a' := Int.add a k in
       let pc' := pc + 1 in
-      step ge (State a x m f pc)
-        E0 (State a' x m f pc')
+      step ge (State a x sm f pc m)
+        E0 (State a' x sm f pc' m)
   | exec_Salu_add_x:
-      forall a x m f pc,
+      forall a x sm f pc m,
       instruction_at f pc = Some (Salu_add_x) ->
       let a' := Int.add a x in
       let pc' := pc + 1 in
-      step ge (State a x m f pc)
-        E0 (State a' x m f pc')
+      step ge (State a x sm f pc m)
+        E0 (State a' x sm f pc' m)
 (*
   | exec_Sld_w_abs:
       forall a a' x m f pc k,
@@ -146,42 +150,43 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
         E0 (State a' x m f pc')
 *)
   | exec_Sld_w_len:
-      forall a x m f pc,
+      forall a x sm f pc m,
       instruction_at f pc = Some (Sld_w_len) ->
       let pc' := pc + 1 in
-      step ge (State a x m f pc)
-        E0 (State sizeof_seccomp_data x m f pc')
+      step ge (State a x sm f pc m)
+        E0 (State sizeof_seccomp_data x sm f pc' m)
   | exec_Sldx_w_len:
-      forall a x m f pc,
+      forall a x sm f pc m,
       instruction_at f pc = Some (Sld_w_len) ->
       let pc' := pc + 1 in
-      step ge (State a x m f pc)
-        E0 (State a sizeof_seccomp_data m f pc')
+      step ge (State a x sm f pc m)
+        E0 (State a sizeof_seccomp_data sm f pc' m)
   | exec_Sret_k:
-      forall a x m f pc k,
+      forall a x sm f pc k m,
       instruction_at f pc = Some (Sret_k k) ->
-      step ge (State a x m f pc)
-        E0 (Returnstate k)
+      step ge (State a x sm f pc m)
+        E0 (Returnstate k m)
   | exec_Sret_a:
-      forall a x m f pc,
+      forall a x sm f pc m,
       instruction_at f pc = Some (Sret_a) ->
-      step ge (State a x m f pc)
-        E0 (Returnstate a)
+      step ge (State a x sm f pc m)
+        E0 (Returnstate a m)
   | exec_call:
-      forall f,
-      step ge (Callstate (Internal f))
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f 0)
+      forall f m,
+      step ge (Callstate (Internal f) m)
+        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f 0 m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=
-  | initial_state_intro: forall b f,
+  | initial_state_intro: forall b fd m0,
     let ge := Genv.globalenv p in
+    Genv.init_mem p = Some m0 ->
     Genv.find_symbol ge p.(prog_main) = Some b ->
-    Genv.find_funct_ptr ge b = Some f ->
-    initial_state p (Callstate f).
+    Genv.find_funct_ptr ge b = Some fd ->
+    initial_state p (Callstate fd m0).
 
 Inductive final_state: state -> int -> Prop :=
-  | final_state_intro: forall v,
-      final_state (Returnstate v) v.
+  | final_state_intro: forall v m,
+      final_state (Returnstate v m) v.
 
 End SEMANTICS.
