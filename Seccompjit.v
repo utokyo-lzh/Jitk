@@ -1,64 +1,61 @@
-Require Import compcert.backend.Cminor.
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
+Require Import compcert.cfrontend.Clight.
+Require Import compcert.cfrontend.Cop.
+Require Import compcert.cfrontend.Ctypes.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 Require Import Seccomp.
 
-Record state: Type := mkstate {
-  st_vars: list ident;
-  st_body: stmt
-}.
-
 Parameter seccomp_memwords: Z.
 
-Local Open Scope string_scope.
-Definition id_a: ident := ident_of_string "A".
-Definition id_x: ident := ident_of_string "X".
-Definition id_mem: ident := ident_of_string "mem".
+Definition id_a:   ident := 1%positive.
+Definition id_x:   ident := 2%positive.
+Definition id_mem: ident := 3%positive.
 
-Fixpoint transf_code (src: Seccomp.code) (n: label) (st: state) : res state :=
+Definition u32: type := Tint I32 Unsigned noattr.
+
+Fixpoint transf_code (src: Seccomp.code) (n: label) : res statement :=
   match src with
-  | nil => OK st
-  | hd::tl => match transf_code tl (Psucc n) st with
+  | nil => OK Sskip
+  | hd::tl => match transf_code tl (Psucc n) with
     | Error msg => Error msg
-    | OK st =>
-      let vars := st.(st_vars) in
-      let body := st.(st_body) in
-      match hd with
+    | OK bodytl =>
+      match (match hd with
       | Salu_add_k k =>
-        let body := Slabel n (Sseq (Sassign id_a (Ebinop Oadd (Evar id_a) (Econst (Ointconst k)))) body) in
-        OK (mkstate vars body)
+        OK (Sset id_a (Ebinop Oadd (Etempvar id_a u32) (Econst_int k u32) u32))
       | Sret_k k =>
-        let body := Slabel n (Sseq (Sreturn (Some (Econst (Ointconst k)))) body) in
-        OK (mkstate vars body)
+        OK (Sreturn (Some (Econst_int k u32)))
       | Sret_a =>
-        let body := Slabel n (Sseq (Sreturn (Some (Evar id_a))) body) in
-        OK (mkstate vars body)
+        OK (Sreturn (Some (Etempvar id_a u32)))
       | _ => Error (msg "FIXME")
+      end) with
+      | Error msg => Error msg
+      | OK bodyhd => OK (Slabel n (Ssequence bodyhd bodytl))
       end
     end
   end.
 
-Definition transf_function (f: Seccomp.function) : res Cminor.function :=
-  let st := mkstate (id_a::id_x::id_mem::nil) Sskip in
-  match transf_code f xH st with
+Definition transf_function (f: Seccomp.function) : res Clight.function :=
+  match transf_code f xH with
   | Error msg => Error msg
-  | OK st =>
-    let sig := mksignature nil (Some Tint) in
-    let vars := st.(st_vars) in
-    let stackspace := Zmult seccomp_memwords 4 in
-    let body := st.(st_body) in
+  | OK body =>
+    let vars := (id_mem, Tarray u32 seccomp_memwords noattr)::nil in
+    let temps := (id_a, u32)::(id_x, u32)::nil in
     (* FIXME: memset(mem, 0, sizeof(mem)) *)
-    let body := Sseq (Sassign id_mem (Econst (Oaddrstack Int.zero))) body in
-    let body := Sseq (Sassign id_x (Econst (Ointconst Int.zero))) body in
-    let body := Sseq (Sassign id_a (Econst (Ointconst Int.zero))) body in
-    OK (Cminor.mkfunction sig nil vars stackspace body)
+    let body := Ssequence (Sset id_x (Econst_int Int.zero u32)) body in
+    let body := Ssequence (Sset id_a (Econst_int Int.zero u32)) body in
+    OK (Clight.mkfunction u32 nil vars temps body)
   end.
 
-Definition transf_fundef (f: Seccomp.fundef) : res Cminor.fundef :=
-  transf_partial_fundef transf_function f.
+Open Local Scope error_monad_scope.
 
-Definition transf_program (p: Seccomp.program) : res Cminor.program :=
+Definition transf_fundef (fd: Seccomp.fundef) : res Clight.fundef :=
+  match fd with
+  | AST.Internal f => do f' <- transf_function f; OK (Clight.Internal f')
+  | _ => Error (msg "external function not allowed")
+  end.
+
+Definition transf_program (p: Seccomp.program) : res Clight.program :=
   transform_partial_program transf_fundef p.

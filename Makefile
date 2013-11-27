@@ -5,8 +5,12 @@ COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
 COQDEP = coqdep $(COQINC)
 
-OCAMLBUILD = ocamlbuild
-OCAMLINC   = -I compcert/lib -I codegen -I compcert/extraction -I compcert/common -I compcert/driver -I compcert/backend -I $(ARCH)/$(VARIANT) -I $(ARCH)
+OCAMLBUILD = ocamlbuild -use-ocamlfind
+OCAMLINC   = \
+	-I codegen -I compcert/extraction \
+	-I compcert/lib -I compcert/common -I compcert/driver \
+	-I compcert/backend -I compcert/cfrontend -I compcert/cparser \
+	-I compcert/$(ARCH)/$(VARIANT) -I compcert/$(ARCH)
 
 FILES = Seccomp.v Seccompjit.v
 

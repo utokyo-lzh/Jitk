@@ -3,8 +3,6 @@ Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
 Require Import Seccomp.
 
-Definition genv := Genv.t fundef unit.
-
 Inductive state : Type :=
   | State:
     forall (a: int)              (** accumulator *)

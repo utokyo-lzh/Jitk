@@ -1,7 +1,10 @@
+Require Import compcert.common.AST.
+Require Import compcert.common.Globalenvs.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
-Require Import compcert.common.AST.
+
+Require Import compcert.cfrontend.Ctypes.
 
 Inductive instruction : Type :=
   | Salu_add_k: int -> instruction
@@ -84,8 +87,14 @@ Parameter sizeof_seccomp_data : int.
 
 Definition code := list instruction.
 
+Section PROGRAM.
+
 Definition function := code.
 
 Definition fundef := AST.fundef function.
 
-Definition program := AST.program fundef unit.
+Definition program := AST.program fundef type.
+
+Definition genv := Genv.t fundef type.
+
+End PROGRAM.
