@@ -5,7 +5,7 @@ COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
 COQDEP = coqdep $(COQINC)
 
-OCAMLBUILD = ocamlbuild -use-ocamlfind
+OCAMLBUILD = ocamlbuild -lib str
 OCAMLINC   = \
 	-I codegen -I compcert/extraction \
 	-I compcert/lib -I compcert/common -I compcert/driver \
