@@ -18,23 +18,24 @@ Definition u32: type := Tint I32 Unsigned noattr.
 
 Open Local Scope error_monad_scope.
 
+Definition transl_instr (instr: Seccomp.instruction) (n: label) : res statement :=
+  match instr with
+  | Salu_add_k k =>
+    OK (Sset id_a (Ebinop Oadd (Etempvar id_a u32) (Econst_int k u32) u32))
+  | Sret_k k =>
+    OK (Sreturn (Some (Econst_int k type_int32s)))
+  | Sret_a =>
+    OK (Sreturn (Some (Ecast (Etempvar id_a u32) type_int32s)))
+  | _ => Error (msg "FIXME")
+  end.
+
 Fixpoint transl_code (src: Seccomp.code) (n: label) : res statement :=
   match src with
   | nil => OK Sskip
   | hd::tl =>
     do bodytl <- transl_code tl (Psucc n);
-    match (match hd with
-    | Salu_add_k k =>
-      OK (Sset id_a (Ebinop Oadd (Etempvar id_a u32) (Econst_int k u32) u32))
-    | Sret_k k =>
-      OK (Sreturn (Some (Econst_int k type_int32s)))
-    | Sret_a =>
-      OK (Sreturn (Some (Ecast (Etempvar id_a u32) type_int32s)))
-    | _ => Error (msg "FIXME")
-    end) with
-      | Error msg => Error msg
-      | OK bodyhd => OK (Slabel n (Ssequence bodyhd bodytl))
-    end
+    do bodyhd <- transl_instr hd n;
+    OK (Slabel n (Ssequence bodyhd bodytl))
   end.
 
 Definition transl_function (f: Seccomp.function) : res Clight.function :=

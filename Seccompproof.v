@@ -4,6 +4,7 @@ Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.common.Globalenvs.
 Require Import compcert.common.Memory.
+Require Import compcert.common.Smallstep.
 Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import Seccomp.
@@ -43,7 +44,12 @@ Qed.
 
 Inductive match_states: Seccomp.state -> Clight.state -> Prop :=
   | match_state:
-      forall a x sm f pc m tf s k e le tm,
+      forall a x sm f pc m tf s k e le tm
+        (TF: transl_function f = OK tf)
+        (* FIXME: mapping between C statement and seccomp instruction? *)
+        (* FIXME: mapping between a/x/sm and e/le *)
+        (MCONT: k = Kstop)
+        (MEXT: Mem.extends m tm),
       match_states (Seccomp.State a x sm f pc m)
                    (Clight.State tf s k e le tm)
   | match_callstate:
@@ -62,6 +68,13 @@ Inductive match_states: Seccomp.state -> Clight.state -> Prop :=
       match_states (Seccomp.Returnstate v m)
                    (Clight.Returnstate tv k tm)
   .
+
+(*
+Lemma transl_step:
+  forall S1 t S2, Seccomp.step ge S1 t S2 ->
+  forall R1, match_states S1 R1 ->
+  exists R2, plus Clight.step1 tge R1 t R2 /\ match_states S2 R2.
+*)
 
 Lemma transl_initial_states:
   forall S, Seccomp.initial_state prog S ->
