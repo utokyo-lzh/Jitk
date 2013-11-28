@@ -56,7 +56,9 @@ Inductive match_states: Seccomp.state -> Clight.state -> Prop :=
                    (Clight.Callstate tfd args k tm)
   | match_returnstate:
       forall v m tv k tm
-        (MV: Vint v = tv),
+        (MV: Vint v = tv)
+        (MCONT: k = Kstop)
+        (MEXT: Mem.extends m tm),
       match_states (Seccomp.Returnstate v m)
                    (Clight.Returnstate tv k tm)
   .
@@ -84,6 +86,16 @@ econstructor; split.
 
  constructor; auto.
  apply Mem.extends_refl.
+Qed.
+
+Lemma transl_final_states:
+  forall S R r,
+  match_states S R -> Seccomp.final_state S r -> Clight.final_state R r.
+Proof.
+intros.
+inv H0.
+inv H.
+constructor.
 Qed.
 
 (* End PRESERVATION. *)
