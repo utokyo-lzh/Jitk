@@ -13,7 +13,7 @@ Require Import Seccompjit.
 
 Variable prog: Seccomp.program.
 Variable tprog: Clight.program.
-Hypothesis TRANSL: transl_program prog = OK tprog.
+Hypothesis TRANSL: Seccompjit.transl_program prog = OK tprog.
 Let ge := Genv.globalenv prog.
 Let tge := Genv.globalenv tprog.
 
@@ -34,7 +34,7 @@ Qed.
 Lemma sig_translated:
   forall fd tfd,
   transl_fundef fd = OK tfd ->
-  Clight.type_of_fundef tfd = Tfunction Tnil u32.
+  Clight.type_of_fundef tfd = Tfunction Tnil type_int32s.
 Proof.
   intros.
   destruct fd; monadInv H.
@@ -61,10 +61,29 @@ Inductive match_states: Seccomp.state -> Clight.state -> Prop :=
                    (Clight.Returnstate tv k tm)
   .
 
-(*
 Lemma transl_initial_states:
   forall S, Seccomp.initial_state prog S ->
   exists R, Clight.initial_state tprog R /\ match_states S R.
-*)
+Proof.
+induction 1.
+exploit function_ptr_translated; eauto .
+intros (tf, (A, B)).
+econstructor; split.
+ econstructor.
+  apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto .
+
+  rewrite (transform_partial_program_main _ _ TRANSL).
+  fold tge.
+  rewrite symbols_preserved.
+  eauto .
+
+  eexact A.
+
+  eapply sig_translated.
+  eexact B.
+
+ constructor; auto.
+ apply Mem.extends_refl.
+Qed.
 
 (* End PRESERVATION. *)
