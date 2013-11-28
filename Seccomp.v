@@ -133,6 +133,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let pc' := pc + 1 in
       step ge (State a x sm f pc m)
         E0 (State a' x sm f pc' m)
+(*
   | exec_Salu_add_x:
       forall a x sm f pc m,
       instruction_at f pc = Some (Salu_add_x) ->
@@ -140,7 +141,6 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let pc' := pc + 1 in
       step ge (State a x sm f pc m)
         E0 (State a' x sm f pc' m)
-(*
   | exec_Sld_w_abs:
       forall a a' x m f pc k,
       instruction_at f pc = Some (Sld_w_abs k) ->
@@ -148,7 +148,6 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let pc' := pc + 1 in
       step ge (State a x m f pc)
         E0 (State a' x m f pc')
-*)
   | exec_Sld_w_len:
       forall a x sm f pc m,
       instruction_at f pc = Some (Sld_w_len) ->
@@ -166,6 +165,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       instruction_at f pc = Some (Sret_k k) ->
       step ge (State a x sm f pc m)
         E0 (Returnstate k m)
+*)
   | exec_Sret_a:
       forall a x sm f pc m,
       instruction_at f pc = Some (Sret_a) ->

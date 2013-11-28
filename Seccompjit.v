@@ -22,8 +22,10 @@ Definition transl_instr (instr: Seccomp.instruction) (n: label) : res statement 
   match instr with
   | Salu_add_k k =>
     OK (Sset id_a (Ebinop Oadd (Etempvar id_a u32) (Econst_int k u32) u32))
+(*
   | Sret_k k =>
     OK (Sreturn (Some (Econst_int k type_int32s)))
+*)
   | Sret_a =>
     OK (Sreturn (Some (Ecast (Etempvar id_a u32) type_int32s)))
   | _ => Error (msg "FIXME")
