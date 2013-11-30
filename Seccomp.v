@@ -6,8 +6,6 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 
-Require Import compcert.cfrontend.Ctypes.
-
 Inductive instruction : Type :=
   | Salu_add_k: int -> instruction
       (** A <- A + k *)
@@ -95,11 +93,16 @@ Definition function := code.
 
 Definition fundef := AST.fundef function.
 
-Definition program := AST.program fundef type.
+Definition program := AST.program fundef unit.
 
-Definition genv := Genv.t fundef type.
+Definition funsig (fd: fundef) :=
+  mksignature nil (Some Tint).
 
 End PROGRAM.
+
+Section SEMANTICS.
+
+Definition genv := Genv.t fundef unit.
 
 Inductive state : Type :=
   | State:
@@ -119,8 +122,6 @@ Inductive state : Type :=
            (m: mem),             (**r memory state *)
     state
   .
-
-Section SEMANTICS.
 
 Definition instruction_at (f: function) (pc: Z) :=
   list_nth_z f pc.

@@ -1,7 +1,7 @@
 open Seccomp
 open Seccompjit
 open AST
-open PrintClight
+open PrintRTL
 open Errors
 open Printf
 open Camlcoq
@@ -23,5 +23,5 @@ let print_error oc msg =
     output_char oc '\n';;
 
 match Seccompjit.transl_program p1 with
-    | Errors.OK x -> print_program (Format.formatter_of_out_channel stdout) x
+    | Errors.OK x -> print_program stdout x
     | Errors.Error msg -> print_error stderr msg;;
