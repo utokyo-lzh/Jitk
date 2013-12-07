@@ -15,6 +15,11 @@ Record state: Type := mkstate {
   st_map: ZMap.t node
 }.
 
+Record fnmap: Type := mkfnmap {
+  fn: RTL.function;
+  map: ZMap.t node
+}.
+
 Inductive state_incr: state -> state -> Prop :=
   state_incr_intro:
     forall (s1 s2: state),
@@ -76,7 +81,7 @@ Fixpoint transl_code (src: Seccomp.code) (pc: Z) (st: state) : res state :=
     OK (add_map pc st)
   end.
 
-Definition transl_function (f: Seccomp.function) : res RTL.function :=
+Definition transl_function (f: Seccomp.function) : res fnmap :=
   let st := mkstate (PTree.empty RTL.instruction) 1%positive (ZMap.init 1%positive) in
   do st <- transl_code f 0 st;
   let sig := mksignature nil (Some Tint) in
@@ -85,13 +90,13 @@ Definition transl_function (f: Seccomp.function) : res RTL.function :=
   let st := add_instr (Iop (Oaddrstack Int.zero) nil reg_mem st.(st_ep)) st in
   let st := add_instr (Iop (Ointconst Int.zero) nil reg_x st.(st_ep)) st in
   let st := add_instr (Iop (Ointconst Int.zero) nil reg_a st.(st_ep)) st in
-  OK (RTL.mkfunction sig nil stacksize st.(st_code) st.(st_ep)).
+  OK (mkfnmap (RTL.mkfunction sig nil stacksize st.(st_code) st.(st_ep)) st.(st_map)).
 
 Local Open Scope string_scope.
 
 Definition transl_fundef (fd: fundef) :=
   match fd with
-  | Internal f => do f' <- transl_function f; OK (Internal f')
+  | Internal f => do f' <- transl_function f; OK (Internal f'.(fn))
   | External ef => Error (msg "no external function allowed")
   end.
 

@@ -8,6 +8,7 @@ Require Import compcert.common.Smallstep.
 Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
+Require Import compcert.lib.Maps.
 Require Import Op.
 Require Import Seccomp.
 Require Import Seccompjit.
@@ -69,12 +70,13 @@ Inductive match_instr (tc: RTL.code): Seccomp.instruction -> node -> node -> Pro
 
 Inductive match_states: Seccomp.state -> RTL.state -> Prop :=
   | match_state:
-      forall a x sm f pc m tstack tf tsp tpc tregs tm
+      forall a x sm f pc m tstack tf tsp tpc tregs tm jmap
         (MA: Vint a = tregs#reg_a)
         (MX: Vint x = tregs#reg_x)
-        (TF: transl_function f = OK tf)
+        (TF: transl_function f = OK (mkfnmap tf jmap))
         (MEXT: Mem.extends m tm)
         (MS: tstack = nil)
+        (MPC: tpc = (ZMap.get pc jmap))
         (MSP: tsp = Vint Int.zero),
       match_states (Seccomp.State a x sm f pc m)
                    (RTL.State tstack tf tsp tpc tregs tm)
@@ -94,13 +96,6 @@ Inductive match_states: Seccomp.state -> RTL.state -> Prop :=
       match_states (Seccomp.Returnstate v m)
                    (RTL.Returnstate tstack tv tm)
   .
-
-(*
-Lemma transl_step:
-  forall S1 t S2, Seccomp.step ge S1 t S2 ->
-  forall R1, match_states S1 R1 ->
-  exists R2, plus RTL.step tge R1 t R2 /\ match_states S2 R2.
-*)
 
 Lemma transl_initial_states:
   forall S, Seccomp.initial_state prog S ->
@@ -132,10 +127,17 @@ Lemma transl_final_states:
   forall S R r,
   match_states S R -> Seccomp.final_state S r -> RTL.final_state R r.
 Proof.
-intros.
-inv H0.
-inv H.
-constructor.
+  intros.
+  inv H0.
+  inv H.
+  constructor.
 Qed.
+
+(*
+Lemma transl_step:
+  forall S1 t S2, Seccomp.step ge S1 t S2 ->
+  forall R1, match_states S1 R1 ->
+  exists R2, star RTL.step tge R1 t R2 /\ match_states S2 R2.
+*)
 
 (* End PRESERVATION. *)
