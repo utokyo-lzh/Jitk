@@ -1,3 +1,4 @@
+Require Import Coq.ZArith.Zbool.
 Require Import compcert.backend.RTL.
 Require Import compcert.backend.Registers.
 Require Import compcert.common.AST.
@@ -184,4 +185,100 @@ Proof.
   apply Plt_ne; apply Plt_trans_succ; apply Plt_succ.
   apply Plt_ne; apply Plt_trans_succ; apply Plt_trans_succ; apply Plt_succ.
 Qed.
+
+
+Lemma pred_of_plus_one:
+  forall x: Z,
+  Z.pred (x + 1) = x.
+Proof.
+  firstorder.
+Qed.
+
+Lemma list_nth_z_last:
+  forall (A: Type) (l: list A) (x: A),
+  list_nth_z (l ++ (x :: nil)) (list_length_z l) = Some x.
+Proof.
+  intros.
+  induction l.
+  auto.
+  rewrite list_length_z_cons.
+  simpl.
+  rewrite pred_of_plus_one.
+  rewrite IHl.
+  apply zeq_false.
+  cut (list_length_z l >= 0).
+  firstorder.
+  apply list_length_z_pos.
+Qed.
+
+Lemma list_length_z_sum:
+  forall (A: Type) (a: list A) (b: list A),
+  list_length_z (a ++ b) = (list_length_z a) + (list_length_z b).
+Proof.
+  intros.
+  induction a.
+  auto.
+  simpl.
+  unfold list_length_z; unfold list_length_z in IHa; simpl.
+  rewrite list_length_z_aux_shift with (m:=0).
+  (* why doesn't this work?
+  rewrite list_length_z_aux_shift with (m:=0) at 2.
+  *)
+  assert (list_length_z_aux a0 1 = list_length_z_aux a0 0 + 1).
+  apply list_length_z_aux_shift.
+  rewrite H.
+  firstorder.
+Qed.
+
+Lemma list_length_z_rev:
+  forall (A: Type) (l: list A),
+  list_length_z l = list_length_z (rev l).
+Proof.
+  induction l.
+  auto.
+  rewrite list_length_z_cons.
+  simpl.
+  rewrite list_length_z_sum.
+  firstorder.
+Qed.
+
+Lemma rtl_opcode_for_salu_add:
+  forall a x sm rf pc m,
+  forall f, f = rev rf ->
+  forall tstack tf tsp tpc tregs tm,
+  match_states (Seccomp.State a x sm f pc m)
+               (RTL.State tstack tf tsp tpc tregs tm) ->
+  forall k,
+  instruction_at f pc = Some (Salu_add_k k) ->
+  exists tpc',
+  (fn_code tf) ! tpc = Some (Iop (Oaddimm k) (reg_a::nil) reg_a tpc').
+Proof.
+  intros.
+  inversion H0; clear H0.   (* match_states *)
+  unfold transl_function in TF; simpl in TF.
+  transl_ok TF; injection H2; clear H2; intros.
+  induction rf.
+
+  (* case 1: f = nil *)
+  rewrite H in H1; simpl in H1; discriminate H1.
+
+  (* case 2: f = rev (a1::rf) *)
+  move f at bottom.   (* kill later *)
+  destruct (Z_eq_bool (list_length_z rf) pc).
+  destruct x2.
+
+  (* case 2a: pc points at a1 *)
+  symmetry in y.
+  rewrite y in H1.
+  unfold instruction_at in H1.
+
+  (* case 2b: pc points before a1 *)
+  simpl in H.
+  rewrite H in H1.
+  rewrite list_length_z_rev in H1.
+  rewrite list_nth_z_last in H1.
+  injection H1; clear H1; intros.
+
+  (* finally, a1 = Salu_add_k k *)
+Abort.
 
