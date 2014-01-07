@@ -19,6 +19,40 @@ Require Import Seccompproof.
 Variable tprog: RTL.program.
 Let tge := Genv.globalenv tprog.
 
+(* leftovers from old Seccompjit.v:
+
+Inductive state_incr: state -> state -> Prop :=
+  state_incr_intro:
+    forall (s1 s2: state),
+    Ple s1.(st_ep) s2.(st_ep) ->
+    (forall pc,
+      s1.(st_code)!pc = None \/ s2.(st_code)!pc = s1.(st_code)!pc) ->
+    state_incr s1 s2.
+
+Lemma state_incr_refl:
+  forall s, state_incr s s.
+Proof.
+  intros.
+  apply state_incr_intro.
+  apply Ple_refl.
+  intros; auto.
+Qed.
+
+Lemma state_incr_trans:
+  forall s1 s2 s3, state_incr s1 s2 -> state_incr s2 s3 -> state_incr s1 s3.
+Proof.
+  intros.
+  inv H; inv H0.
+  apply state_incr_intro.
+  apply Ple_trans with s2.(st_ep); assumption.
+
+  intros.
+  generalize (H2 pc) (H3 pc).
+  intuition congruence.
+Qed.
+
+*)
+
 
 Definition set_fn (k: int) :=
   let ep0 := 1%positive in

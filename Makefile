@@ -13,7 +13,7 @@ OCAMLINC   = \
 	-I compcert/$(ARCH)/$(VARIANT) -I compcert/$(ARCH)
 
 FILES = CpdtTactics.v \
-	Seccomp.v Seccompjit.v Seccompspec.v Seccompproof.v
+	Seccomp.v Seccompjit.v Seccompspec.v #Seccompproof.v
 
 all: test_seccomp.native
 
