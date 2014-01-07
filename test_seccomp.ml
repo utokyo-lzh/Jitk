@@ -19,14 +19,21 @@ let jit_and_print f =
   let p = { prog_defs = [(P.one, Gfun (Internal f))]; prog_main = P.one } in
   match Seccompjit.transl_program p with
   | Errors.OK x -> print_program stdout x
-  | Errors.Error msg -> print_error stderr msg
+  | Errors.Error msg -> print_error stdout msg
+    (* using stdout instead of stderr to fully order diagnostic output *)
 in List.map jit_and_print [
   [
     Seccomp.Salu_add_k Integers.Int.one;
-    Seccomp.Sret_a
+    Seccomp.Sret_a;
   ];
   [
     Seccomp.Salu_add_k Integers.Int.one;
-    Seccomp.Salu_add_k Integers.Int.one
-  ]
+    Seccomp.Salu_add_k Integers.Int.one;
+  ];
+  [
+    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Sret_a;
+    Seccomp.Sret_a;
+  ];
 ];;
