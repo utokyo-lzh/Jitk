@@ -12,7 +12,8 @@ OCAMLINC   = \
 	-I compcert/backend -I compcert/cfrontend -I compcert/cparser \
 	-I compcert/$(ARCH)/$(VARIANT) -I compcert/$(ARCH)
 
-FILES = Seccomp.v Seccompjit.v Seccompspec.v Seccompproof.v
+FILES = CpdtTactics.v \
+	Seccomp.v Seccompjit.v Seccompspec.v Seccompproof.v
 
 all: test_seccomp.native
 
