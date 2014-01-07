@@ -6,6 +6,8 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 
+Set Implicit Arguments.
+
 Inductive instruction : Type :=
   | Salu_add_k: int -> instruction
       (** A <- A + k *)
@@ -110,7 +112,7 @@ Inductive state : Type :=
            (x: int)              (**r index register *)
            (sm: ZMap.t int)      (**r scratch memory *)
            (f: function)         (**r current function *)
-           (pc: Z)               (**r program counter *)
+           (pc: positive)        (**r program counter *)
            (m: mem),             (**r memory state *)
     state
   | Callstate:
@@ -123,15 +125,21 @@ Inductive state : Type :=
     state
   .
 
-Definition instruction_at (f: function) (pc: Z) :=
-  list_nth_z f pc.
+Fixpoint list_nth_pos (A: Type) (l: list A) (n: positive): option A :=
+  match l with
+  | nil => None
+  | hd :: tl => if peq n 1 then Some hd else list_nth_pos tl (Ppred n)
+  end.
+
+Definition instruction_at (f: function) (pc: positive) :=
+  list_nth_pos f pc.
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Salu_add_k:
       forall a x sm f pc k m,
       instruction_at f pc = Some (Salu_add_k k) ->
       let a' := Int.add a k in
-      let pc' := pc + 1 in
+      let pc' := (pc + 1)%positive in
       step ge (State a x sm f pc m)
         E0 (State a' x sm f pc' m)
 (*
@@ -175,7 +183,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_call:
       forall f m,
       step ge (Callstate (Internal f) m)
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f 0 m)
+        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f 1 m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=
