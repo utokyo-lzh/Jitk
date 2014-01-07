@@ -128,7 +128,10 @@ Inductive state : Type :=
 Fixpoint list_nth_pos (A: Type) (l: list A) (n: positive): option A :=
   match l with
   | nil => None
-  | hd :: tl => if peq n 1 then Some hd else list_nth_pos tl (Ppred n)
+  | hd :: tl => match n with
+    | 1%positive => Some hd
+    | _ => list_nth_pos tl (Ppred n)
+    end
   end.
 
 Definition instruction_at (f: function) (pc: positive) :=
