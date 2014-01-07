@@ -6,13 +6,6 @@ open Errors
 open Printf
 open Camlcoq
 
-let f1 = [
-  Seccomp.Salu_add_k Integers.Int.one;
-  Seccomp.Sret_a
-];;
-
-let p1 = { prog_defs = [(P.one, Gfun (Internal f1))]; prog_main = P.one };;
-
 let print_error oc msg =
   let print_one_error = function
   | Errors.MSG s -> output_string oc (Camlcoq.camlstring_of_coqstring s)
@@ -22,6 +15,18 @@ let print_error oc msg =
     List.iter print_one_error msg;
     output_char oc '\n';;
 
-match Seccompjit.transl_program p1 with
-    | Errors.OK x -> print_program stdout x
-    | Errors.Error msg -> print_error stderr msg;;
+let jit_and_print f =
+  let p = { prog_defs = [(P.one, Gfun (Internal f))]; prog_main = P.one } in
+  match Seccompjit.transl_program p with
+  | Errors.OK x -> print_program stdout x
+  | Errors.Error msg -> print_error stderr msg
+in List.map jit_and_print [
+  [
+    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Sret_a
+  ];
+  [
+    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu_add_k Integers.Int.one
+  ]
+];;
