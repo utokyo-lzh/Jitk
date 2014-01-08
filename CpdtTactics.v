@@ -9,6 +9,8 @@
 
 Require Import Eqdep List.
 
+Require Import compcert.common.Errors.
+
 Require Omega.
 
 Set Implicit Arguments.
@@ -97,6 +99,10 @@ Ltac simplHyp invOne :=
 
     (** Similar logic to the cases for constructor injectivity above, but specialized to [Some], since the above cases won't deal with polymorphic constructors. *)
     | [ H : Some _ = Some _ |- _ ] => injection H; clear H
+
+    (** Specialized for compcert/jitk *)
+    | [ H : bind _ _ = OK _ |- _ ] => apply bind_inversion in H
+    | [ H : OK _ = OK _ |- _ ] => injection H; clear H
   end.
 
 (** Find some hypothesis to rewrite with, ensuring that [auto] proves all of the extra subgoals added by [rewrite]. *)
