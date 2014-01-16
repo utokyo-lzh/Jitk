@@ -1,6 +1,6 @@
 include compcert/Makefile.config
 
-COQINC = -I . -R compcert compcert
+COQINC = -I . -R compcert compcert -R c ''
 COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
 COQDEP = coqdep $(COQINC)
@@ -24,6 +24,9 @@ codegen/extraction.vo: $(FILES:.v=.vo)
 
 %.vo: %.v
 	$(COQC) $*.v
+
+c/%.v: c/%.c
+	./compcert/clightgen $<
 
 clean:
 	rm -rf _build *.vo *.glob *.native
