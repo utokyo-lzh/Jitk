@@ -28,6 +28,8 @@ codegen/extraction.vo: $(FILES:.v=.vo)
 c/%.v: c/%.c
 	./compcert/clightgen $<
 
+.PRECIOUS: c/%.v
+
 clean:
 	rm -rf _build *.vo *.glob *.native
 	cd codegen && rm -f *.ml *.mlo *.glob
