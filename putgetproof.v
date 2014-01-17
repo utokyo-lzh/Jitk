@@ -2,6 +2,7 @@ Require Import CpdtTactics.
 Require Import putget.
 Require Import compcert.cfrontend.Clight.
 Require Import compcert.common.Events.
+Require Import compcert.common.Memory.
 Require Import compcert.common.Smallstep.
 Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
@@ -50,12 +51,23 @@ Section s.
         (* crush needed to kill some dead-end goals *)
     end; crush.
 
-    (* just some cleanup *)
-    repeat match goal with
-      | [ H: True |- _ ] => clear H
-      | [ H: ?x = ?x |- _ ] => clear H
+    (* all _v's are in the same place *)
+    match goal with
+      | [ H: Globalenvs.Genv.find_symbol ge _v = Some _ |- _ ] =>
+        rewrite H in *
     end; crush.
 
-(*
+    (* match the memory store and load *)
+    match goal with
+      | [ H: Mem.store _ _ _ _ _ = Some _ |- _ ] =>
+        apply Mem.load_store_same in H
+    end.
+
+    match goal with
+      | [ H: Mem.load _ _ _ _ = Some _ |- _ ] => rewrite H in *
+    end.
+
+    crush.
+  Qed.
+
 End s.
-*)
