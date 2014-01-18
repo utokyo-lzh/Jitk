@@ -110,7 +110,7 @@ Inductive state : Type :=
            (x: int)              (**r index register *)
            (sm: ZMap.t int)      (**r scratch memory *)
            (f: function)         (**r current function *)
-           (pc: Z)               (**r program counter *)
+           (c: code)             (**r current program point *)
            (m: mem),             (**r memory state *)
     state
   | Callstate:
@@ -123,17 +123,12 @@ Inductive state : Type :=
     state
   .
 
-Definition instruction_at (f: function) (pc: Z) :=
-  list_nth_z f pc.
-
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Salu_add_k:
-      forall a x sm f pc k m,
-      instruction_at f pc = Some (Salu_add_k k) ->
+      forall a x sm f k b m,
       let a' := Int.add a k in
-      let pc' := pc + 1 in
-      step ge (State a x sm f pc m)
-        E0 (State a' x sm f pc' m)
+      step ge (State a x sm f (Salu_add_k k :: b) m)
+        E0 (State a' x sm f b m)
 (*
   | exec_Salu_add_x:
       forall a x sm f pc m,
@@ -168,14 +163,13 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
         E0 (Returnstate k m)
 *)
   | exec_Sret_a:
-      forall a x sm f pc m,
-      instruction_at f pc = Some (Sret_a) ->
-      step ge (State a x sm f pc m)
+      forall a x sm f b m,
+      step ge (State a x sm f (Sret_a :: b) m)
         E0 (Returnstate a m)
   | exec_call:
       forall f m,
       step ge (Callstate (Internal f) m)
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f 0 m)
+        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=

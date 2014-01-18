@@ -1,5 +1,4 @@
-Require Import compcert.backend.RTL.
-Require Import compcert.backend.Registers.
+Require Import compcert.backend.Cminor.
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.common.Globalenvs.
@@ -16,7 +15,7 @@ Require Import Seccompjit.
 (* Section PRESERVATION. *)
 
 Variable prog: Seccomp.program.
-Variable tprog: RTL.program.
+Variable tprog: Cminor.program.
 Hypothesis TRANSL: Seccompjit.transl_program prog = OK tprog.
 Let ge := Genv.globalenv prog.
 Let tge := Genv.globalenv tprog.
@@ -47,7 +46,7 @@ Qed.
 Lemma sig_transl_function:
   forall fd tfd,
   transl_fundef fd = OK tfd ->
-  RTL.funsig tfd = mksignature nil (Some Tint).
+  Cminor.funsig tfd = mksignature nil (Some Tint).
 Proof.
   intros.
   destruct fd; monadInv H; auto.
@@ -62,44 +61,41 @@ Proof.
 Qed.
 
 (*
-Inductive match_instr (tc: RTL.code): Seccomp.instruction -> node -> node -> Prop :=
+Inductive match_instr (tc: Cminor.code): Seccomp.instruction -> node -> node -> Prop :=
   | match_Salu_add_k: forall
       match_instr tc (Salu_add_k k) ns 
   .
 *)
 
-Inductive match_states: Seccomp.state -> RTL.state -> Prop :=
+Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
-      forall a x sm f pc m tstack tf tsp tpc tregs tm jmap
-        (MA: Vint a = tregs#reg_a)
-        (MX: Vint x = tregs#reg_x)
-        (TF: transl_function f = OK (mkfnmap tf jmap))
+      forall a x sm f c m tf ts tk tsp te tm
+        (MA: Some (Vint a) = te!reg_a)
+        (MX: Some (Vint x) = te!reg_x)
+        (TF: transl_function f = OK tf)
         (MEXT: Mem.extends m tm)
-        (MS: tstack = nil)
-        (MPC: tpc = (ZMap.get pc jmap))
         (MSP: tsp = Vint Int.zero),
-      match_states (Seccomp.State a x sm f pc m)
-                   (RTL.State tstack tf tsp tpc tregs tm)
+      match_states (Seccomp.State a x sm f c m)
+                   (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
-      forall fd m tstack tfd targs tm
+      forall fd m tfd targs tk tm
         (TF: transl_fundef fd = OK tfd)
         (MEXT: Mem.extends m tm)
-        (MS: tstack = nil)
         (MARGS: targs = nil),
       match_states (Seccomp.Callstate fd m)
-                   (RTL.Callstate tstack tfd targs tm)
+                   (Cminor.Callstate tfd targs tk tm)
   | match_returnstate:
-      forall v m tstack tv tm
+      forall v m tv tk tm
         (MV: Vint v = tv)
         (MEXT: Mem.extends m tm)
-        (MS: tstack = nil),
+        (MK: tk = Kstop),
       match_states (Seccomp.Returnstate v m)
-                   (RTL.Returnstate tstack tv tm)
+                   (Cminor.Returnstate tv tk tm)
   .
 
 Lemma transl_initial_states:
   forall S, Seccomp.initial_state prog S ->
-  exists R, RTL.initial_state tprog R /\ match_states S R.
+  exists R, Cminor.initial_state tprog R /\ match_states S R.
 Proof.
   induction 1.
   exploit function_ptr_translated; eauto.
@@ -107,7 +103,7 @@ Proof.
 
   econstructor; split.
 
-  (* RTL.initial_state tprog R *)
+  (* Cminor.initial_state tprog R *)
   econstructor.
   apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto.
   rewrite (transform_partial_program_main _ _ TRANSL).
@@ -125,7 +121,7 @@ Qed.
 
 Lemma transl_final_states:
   forall S R r,
-  match_states S R -> Seccomp.final_state S r -> RTL.final_state R r.
+  match_states S R -> Seccomp.final_state S r -> Cminor.final_state R r.
 Proof.
   intros.
   inv H0.
@@ -137,7 +133,7 @@ Qed.
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
-  exists R2, star RTL.step tge R1 t R2 /\ match_states S2 R2.
+  exists R2, star Cminor.step tge R1 t R2 /\ match_states S2 R2.
 *)
 
 (* End PRESERVATION. *)
