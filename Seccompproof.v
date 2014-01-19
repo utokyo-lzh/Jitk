@@ -69,6 +69,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (TC: transl_code c = OK ts)
         (MEXT: Mem.extends m tm)
         (MSP: tsp = Vptr sp Int.zero),
+      Mem.range_perm tm sp 0 (fn_stackspace tf) Cur Freeable ->
       match_states (Seccomp.State a x sm f c m)
                    (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
@@ -168,5 +169,12 @@ Proof.
   eapply star_step.
   constructor.
   constructor; rewrite <- MA; auto.
+
+  match goal with
+    [ H: Mem.range_perm _ _ _ _ _ _ |- _ ] =>
+      apply Mem.range_perm_free in H; inv H
+  end.
+
+  match goal with [ H: Mem.free _ _ _ _ = Some _ |- _ ] => rewrite H end.
 
 (* End PRESERVATION. *)
