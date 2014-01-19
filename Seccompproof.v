@@ -62,13 +62,13 @@ Qed.
 
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
-      forall a x sm f c m tf ts tk tsp te tm
+      forall a x sm f c m tf ts tk tsp te tm sp
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
         (MEXT: Mem.extends m tm)
-        (MSP: tsp = Vint Int.zero),
+        (MSP: tsp = Vptr sp Int.zero),
       match_states (Seccomp.State a x sm f c m)
                    (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
@@ -153,9 +153,20 @@ Proof.
   auto.
   auto.
 
-  constructor; auto.
+  econstructor; auto.
   rewrite PTree.gss; auto.
   rewrite PTree.gso; auto.
   unfold reg_x; unfold reg_a; discriminate.
+
+  (* return case *)
+  monadInv TC.
+  econstructor; split.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+  constructor; rewrite <- MA; auto.
 
 (* End PRESERVATION. *)
