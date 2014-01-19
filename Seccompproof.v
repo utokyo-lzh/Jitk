@@ -60,19 +60,13 @@ Proof.
   exact (Genv.find_var_info_transf_partial transl_fundef _ TRANSL).
 Qed.
 
-(*
-Inductive match_instr (tc: Cminor.code): Seccomp.instruction -> node -> node -> Prop :=
-  | match_Salu_add_k: forall
-      match_instr tc (Salu_add_k k) ns 
-  .
-*)
-
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
       forall a x sm f c m tf ts tk tsp te tm
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
         (TF: transl_function f = OK tf)
+        (TC: transl_code c = OK ts)
         (MEXT: Mem.extends m tm)
         (MSP: tsp = Vint Int.zero),
       match_states (Seccomp.State a x sm f c m)
@@ -129,11 +123,9 @@ Proof.
   constructor.
 Qed.
 
-(*
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
-  exists R2, star Cminor.step tge R1 t R2 /\ match_states S2 R2.
-*)
+  exists R2, plus Cminor.step tge R1 t R2 /\ match_states S2 R2.
 
 (* End PRESERVATION. *)
