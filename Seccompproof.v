@@ -126,6 +126,36 @@ Qed.
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
-  exists R2, plus Cminor.step tge R1 t R2 /\ match_states S2 R2.
+  exists R2, star Cminor.step tge R1 t R2 /\ match_states S2 R2.
+Proof.
+  induction 1; intros R1 MST; inv MST.
+  monadInv TC.
+
+  econstructor; split.
+
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+
+  apply eval_Ebinop with (v1 := Vint a) (v2 := Vint k).
+  constructor; auto.
+  constructor; auto.
+  constructor.
+
+  eapply star_step.
+  constructor.
+  apply star_refl.
+  auto.
+  auto.
+  auto.
+  auto.
+
+  constructor; auto.
+  rewrite PTree.gss; auto.
+  rewrite PTree.gso; auto.
+  unfold reg_x; unfold reg_a; discriminate.
 
 (* End PRESERVATION. *)
