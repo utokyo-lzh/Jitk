@@ -161,6 +161,12 @@ Proof.
 
   (* return case *)
   monadInv TC.
+
+  match goal with
+    [ H: Mem.range_perm _ _ _ _ _ _ |- _ ] =>
+      apply Mem.range_perm_free in H; inv H
+  end.
+
   econstructor; split.
   eapply star_step.
   constructor.
@@ -170,11 +176,23 @@ Proof.
   constructor.
   constructor; rewrite <- MA; auto.
 
-  match goal with
-    [ H: Mem.range_perm _ _ _ _ _ _ |- _ ] =>
-      apply Mem.range_perm_free in H; inv H
-  end.
+  match goal with [ H: Mem.free _ _ _ _ = Some _ |- _ ] => exact H end.
+  apply star_refl.
+  auto.
+  auto.
+  auto.
 
-  match goal with [ H: Mem.free _ _ _ _ = Some _ |- _ ] => rewrite H end.
+  constructor.
+  auto.
+(* XXX:
+  m : mem
+  tm : mem
+  x1 : mem
+  MEXT : Mem.extends m tm
+  sp : block
+  H : Mem.free tm sp 0 (fn_stackspace tf) = Some x1
+  ============================
+   Mem.extends m x1
+*)
 
 (* End PRESERVATION. *)
