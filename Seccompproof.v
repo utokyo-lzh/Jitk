@@ -132,9 +132,9 @@ Lemma transl_step:
   exists R2, star Cminor.step tge R1 t R2 /\ match_states S2 R2.
 Proof.
   induction 1; intros R1 MST; inv MST.
-  monadInv TC.
 
   (* State -> State *)
+  monadInv TC.
   econstructor; split.
 
   eapply star_step.
@@ -198,5 +198,8 @@ Proof.
   auto.
 
   (* CallState -> State *)
+  monadInv TF.
+  econstructor; split.
 
+  eapply star_step. constructor.
 (* End PRESERVATION. *)
