@@ -202,4 +202,13 @@ Proof.
   econstructor; split.
 
   eapply star_step. constructor.
+  instantiate (2 := (fst (Mem.alloc tm 0 (fn_stackspace x)))).
+  instantiate (1 := (snd (Mem.alloc tm 0 (fn_stackspace x)))).
+  auto.
+  auto.
+  apply star_refl.
+  auto.
+
+  econstructor.
+
 (* End PRESERVATION. *)
