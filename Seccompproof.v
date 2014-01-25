@@ -199,16 +199,46 @@ Proof.
 
   (* CallState -> State *)
   monadInv TF.
+  monadInv EQ.
+  monadInv EQ0.
   econstructor; split.
 
-  eapply star_step. constructor.
-  instantiate (2 := (fst (Mem.alloc tm 0 (fn_stackspace x)))).
-  instantiate (1 := (snd (Mem.alloc tm 0 (fn_stackspace x)))).
-  auto.
-  auto.
+  eapply star_step.
+  apply step_internal_function with
+    (m' := (fst (Mem.alloc tm 0 (seccomp_memwords * 4))))
+    (sp := (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))); auto.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.  constructor; constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.  constructor; constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  constructor.  constructor; constructor.
+  eapply star_step.
+  constructor.
   apply star_refl.
+
+  auto.
+  auto.
+  auto.
+  auto.
+  auto.
+  auto.
+  auto.
+  auto.
+  auto.
   auto.
 
-  econstructor.
+  econstructor; auto.
+  unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
 
 (* End PRESERVATION. *)
