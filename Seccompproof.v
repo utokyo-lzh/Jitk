@@ -62,14 +62,16 @@ Qed.
 
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
-      forall a x sm f c m tf ts tk tsp te tm sp
+      forall a x sm f c m tf ts tk tsp te tm b tm'
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
-        (MEXT: Mem.extends m tm)
-        (MSP: tsp = Vptr sp Int.zero),
-      Mem.range_perm tm sp 0 (fn_stackspace tf) Cur Freeable ->
+        (MK: call_cont tk = Kstop)
+        (MSP: tsp = Vptr b Int.zero)
+(*        (MPERM: Mem.range_perm tm b 0 tf.(fn_stackspace) Cur Freeable) *)
+        (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
+        (MEXT: Mem.extends m tm'),
       match_states (Seccomp.State a x sm f c m)
                    (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
@@ -132,6 +134,7 @@ Proof.
   induction 1; intros R1 MST; inv MST.
   monadInv TC.
 
+  (* State -> State *)
   econstructor; split.
 
   eapply star_step.
@@ -159,14 +162,16 @@ Proof.
   rewrite PTree.gso; auto.
   unfold reg_x; unfold reg_a; discriminate.
 
-  (* return case *)
-  monadInv TC.
+  exact MFREE. auto.
 
+  (* State -> ReturnState *)
+  monadInv TC.
+(*
   match goal with
     [ H: Mem.range_perm _ _ _ _ _ _ |- _ ] =>
       apply Mem.range_perm_free in H; inv H
   end.
-
+*)
   econstructor; split.
   eapply star_step.
   constructor.
@@ -176,7 +181,10 @@ Proof.
   constructor.
   constructor; rewrite <- MA; auto.
 
+  exact MFREE.
+(*
   match goal with [ H: Mem.free _ _ _ _ = Some _ |- _ ] => exact H end.
+*)
   apply star_refl.
   auto.
   auto.
@@ -184,15 +192,11 @@ Proof.
 
   constructor.
   auto.
-(* XXX:
-  m : mem
-  tm : mem
-  x1 : mem
-  MEXT : Mem.extends m tm
-  sp : block
-  H : Mem.free tm sp 0 (fn_stackspace tf) = Some x1
-  ============================
-   Mem.extends m x1
-*)
+  auto.
+
+  simpl.
+  auto.
+
+  (* CallState -> State *)
 
 (* End PRESERVATION. *)
