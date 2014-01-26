@@ -78,7 +78,8 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
       forall fd m tfd targs tk tm
         (TF: transl_fundef fd = OK tfd)
         (MEXT: Mem.extends m tm)
-        (MARGS: targs = nil),
+        (MARGS: targs = nil)
+        (MK: call_cont tk = Kstop),
       match_states (Seccomp.Callstate fd m)
                    (Cminor.Callstate tfd targs tk tm)
   | match_returnstate:
@@ -238,7 +239,19 @@ Proof.
   auto.
   auto.
 
+  destruct (Mem.range_perm_free
+    (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
+    (snd (Mem.alloc tm 0 (seccomp_memwords * 4))) 0 
+    (seccomp_memwords * 4)).
+  unfold Mem.range_perm.
+  intros.
+  apply Mem.perm_alloc_2 with
+    (m1 := tm)
+    (lo := 0)
+    (hi := seccomp_memwords * 4); auto.
+
   econstructor; auto.
   unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
+  exact e.
 
 (* End PRESERVATION. *)
