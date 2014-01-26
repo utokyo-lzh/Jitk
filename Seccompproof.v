@@ -60,6 +60,51 @@ Proof.
   exact (Genv.find_var_info_transf_partial transl_fundef _ TRANSL).
 Qed.
 
+Definition mem_inj := Mem.mem_inj inject_id.
+
+Lemma inj_refl:
+  forall m, mem_inj m m.
+Proof.
+  intros.
+  constructor; intros; unfold inject_id in H; inv H.
+
+  replace (ofs + 0) with ofs by omega.
+  auto.
+
+  apply Z.divide_0_r.
+
+  replace (ofs + 0) with ofs by omega.
+  apply memval_lessdef_refl.
+Qed.
+
+Lemma inj_trans:
+  forall m1 m2 m3,
+  mem_inj m1 m2 -> mem_inj m2 m3 -> mem_inj m1 m3.
+Proof.
+  unfold mem_inj.
+  apply Mem.mem_inj_compose.
+Qed.
+
+Lemma free_alloc_inj:
+  forall m1 m2 b lo hi m2',
+  Mem.alloc m1 lo hi = (m2, b) ->
+  Mem.free m2 b lo hi = Some m2' ->
+  mem_inj m1 m2'.
+Proof.
+  intros.
+  apply (Mem.free_right_inj inject_id m1 m2 b lo hi m2').
+  apply (Mem.alloc_right_inj inject_id m1 m1 lo hi b m2).
+  exact (inj_refl m1). auto. auto.
+
+  intros.
+  apply (Mem.fresh_block_alloc m1 lo hi m2 b).
+  auto.
+  apply (Mem.perm_valid_block m1 b') in H2.
+  unfold inject_id in H1.
+  inv H1.
+  auto.
+Qed.
+
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
       forall a x sm f c m tf ts tk tsp te tm b tm'
@@ -71,13 +116,13 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (MSP: tsp = Vptr b Int.zero)
 (*        (MPERM: Mem.range_perm tm b 0 tf.(fn_stackspace) Cur Freeable) *)
         (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
-        (MEXT: Mem.extends m tm'),
+        (MINJ: mem_inj m tm'),
       match_states (Seccomp.State a x sm f c m)
                    (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
       forall fd m tfd targs tk tm
         (TF: transl_fundef fd = OK tfd)
-        (MEXT: Mem.extends m tm)
+        (MINJ: mem_inj m tm)
         (MARGS: targs = nil)
         (MK: call_cont tk = Kstop),
       match_states (Seccomp.Callstate fd m)
@@ -85,7 +130,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_returnstate:
       forall v m tv tk tm
         (MV: Vint v = tv)
-        (MEXT: Mem.extends m tm)
+        (MINJ: mem_inj m tm)
         (MK: tk = Kstop),
       match_states (Seccomp.Returnstate v m)
                    (Cminor.Returnstate tv tk tm)
@@ -114,7 +159,7 @@ Proof.
 
   (* match states S R *)
   constructor; auto.
-  apply Mem.extends_refl.
+  apply inj_refl.
 Qed.
 
 Lemma transl_final_states:
@@ -253,5 +298,13 @@ Proof.
   econstructor; auto.
   unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
   exact e.
+
+  apply (free_alloc_inj tm
+    (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
+    (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))
+    0 (seccomp_memwords * 4) _) in e.
+  apply (inj_trans m tm _); auto.
+  auto.
+Qed.
 
 (* End PRESERVATION. *)
