@@ -32,4 +32,4 @@ c/%.v: c/%.c
 
 clean:
 	rm -rf _build *.vo *.glob *.native
-	cd codegen && rm -f *.ml *.mlo *.glob
+	cd codegen && rm -f *.ml *.mli *.mlo *.glob *.vo
