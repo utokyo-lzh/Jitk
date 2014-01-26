@@ -176,7 +176,7 @@ Qed.
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
-  exists R2, star Cminor.step tge R1 t R2 /\ match_states S2 R2.
+  exists R2, plus Cminor.step tge R1 t R2 /\ match_states S2 R2.
 Proof.
   induction 1; intros R1 MST; inv MST.
 
@@ -184,7 +184,7 @@ Proof.
   monadInv TC.
   econstructor; split.
 
-  eapply star_step.
+  eapply plus_left.
   constructor.
   eapply star_step.
   constructor.
@@ -220,7 +220,7 @@ Proof.
   end.
 *)
   econstructor; split.
-  eapply star_step.
+  eapply plus_left.
   constructor.
   eapply star_step.
   constructor.
@@ -250,7 +250,7 @@ Proof.
   monadInv EQ0.
   econstructor; split.
 
-  eapply star_step.
+  eapply plus_left.
   apply step_internal_function with
     (m' := (fst (Mem.alloc tm 0 (seccomp_memwords * 4))))
     (sp := (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))); auto.
@@ -308,9 +308,8 @@ Proof.
   auto.
 Qed.
 
-(*
 Theorem transl_program_correct:
-  forward_simulation (Seccomp.semantics prog) (Cminor.semantics tprog).
+  forward_simulation (Seccompspec.semantics prog) (Cminor.semantics tprog).
 Proof.
   eapply forward_simulation_plus.
   eexact symbols_preserved.
@@ -318,6 +317,5 @@ Proof.
   eexact transl_final_states.
   eexact transl_step.
 Qed.
-*)
 
 (* End TRANSLATION. *)
