@@ -11,8 +11,9 @@ Require Import compcert.lib.Maps.
 Require Import Op.
 Require Import Seccomp.
 Require Import Seccompjit.
+Require Import Seccompspec.
 
-(* Section PRESERVATION. *)
+(* Section TRANSLATION. *)
 
 Variable prog: Seccomp.program.
 Variable tprog: Cminor.program.
@@ -307,4 +308,16 @@ Proof.
   auto.
 Qed.
 
-(* End PRESERVATION. *)
+(*
+Theorem transl_program_correct:
+  forward_simulation (Seccomp.semantics prog) (Cminor.semantics tprog).
+Proof.
+  eapply forward_simulation_plus.
+  eexact symbols_preserved.
+  eexact transl_initial_states.
+  eexact transl_final_states.
+  eexact transl_step.
+Qed.
+*)
+
+(* End TRANSLATION. *)
