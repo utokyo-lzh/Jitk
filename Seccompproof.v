@@ -181,6 +181,7 @@ Proof.
   induction 1; intros R1 MST; inv MST.
 
   (* State -> State *)
+  (* Salu_add_k *)
   monadInv TC.
   econstructor; split.
 
@@ -211,6 +212,38 @@ Proof.
 
   exact MFREE. auto.
 
+  (* Sjmp_ja k *)
+  monadInv TC.
+  destruct (Int.unsigned k).
+
+  (* k = 0 *)
+  econstructor; split.
+  eapply plus_left.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  monadInv EQ1; constructor.
+  apply star_refl.
+  auto.
+  auto.
+  auto.
+
+  econstructor; auto.
+  exact MFREE. auto.
+
+  (* k > 0 *)
+  econstructor; split.
+  eapply plus_left.
+  constructor.
+  eapply star_step.
+  constructor.
+  eapply star_step.
+  monadInv EQ1; constructor.
+
+  (* need some lemma about Cminor.find_label on transl_funbody *)
+
+(*
   (* State -> ReturnState *)
   monadInv TC.
 (*
@@ -317,5 +350,7 @@ Proof.
   eexact transl_final_states.
   eexact transl_step.
 Qed.
+
+*)
 
 (* End TRANSLATION. *)
