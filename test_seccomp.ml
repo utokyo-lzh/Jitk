@@ -28,12 +28,14 @@ in List.map jit_and_print [
   ];
   [
     Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Sjmp_ja Integers.Int.zero;
+    Seccomp.Sjmp_ja Integers.Int.one;
     Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Sret_a;
   ];
   [
     Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Sjmp_ja Integers.Int.one;
     Seccomp.Salu_add_k Integers.Int.one;
-    Seccomp.Sret_a;
-    Seccomp.Sret_a;
   ];
 ];;
