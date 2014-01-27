@@ -25,7 +25,9 @@ Definition transl_instr (instr: Seccomp.instruction) : res Cminor.stmt :=
 
 Fixpoint transl_code (c: Seccomp.code) : res Cminor.stmt :=
   match c with
-  | nil => OK Sskip
+  | nil => OK (Sseq
+               (Sassign reg_a (Econst (Ointconst (Int.repr 123))))
+               (Sreturn (Some (Evar reg_a))))
   | hd::tl =>
     do t <- transl_code tl;
     do h <- transl_instr hd;
