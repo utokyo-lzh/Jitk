@@ -12,6 +12,7 @@ Require Import Op.
 Require Import Seccomp.
 Require Import Seccompjit.
 Require Import Seccompspec.
+Require Import CpdtTactics.
 
 (* Section TRANSLATION. *)
 
@@ -173,6 +174,70 @@ Proof.
   constructor.
 Qed.
 
+Lemma find_label_funbody_code:
+  forall f s1 s2 lbl k,
+  transl_funbody f = OK s1 ->
+  transl_code f = OK s2 ->
+  find_label lbl s1 k = find_label lbl s2 k.
+Proof.
+  intros f s1 s2 lbl k Hf Hc; monadInv Hf; rewrite EQ in Hc; inv Hc; auto.
+Qed.
+
+Lemma no_labels_in_transl_instr:
+  forall i l s l' k,
+  transl_instr i l = OK s ->
+  find_label l' s k = None.
+Proof.
+  destruct i; intros; simpl in H;
+  try destruct (Int.unsigned i); try monadInv H; auto.
+Qed.
+
+Lemma skipn_end_plusone:
+  forall (A:Type) (n:nat) (l:list A) (x:A),
+  (n <= length l)%nat ->
+  skipn (length (x :: l) - n) (x :: l) = skipn (length l - n) l.
+Proof.
+  intros; simpl length; rewrite <- minus_Sn_m; crush.
+Qed.
+
+Lemma find_label_code:
+  forall c tc lbl_i lbl_c lbl_ti lbl_tc lbl k,
+  (lbl < P_of_succ_nat (length c))%positive ->
+  (skipn ((length c) - (Pos.to_nat lbl)) c) = lbl_i :: lbl_c ->
+  transl_instr lbl_i lbl = OK lbl_ti ->
+  transl_code lbl_c = OK lbl_tc ->
+  transl_code c = OK tc ->
+  find_label lbl tc k = Some ((Sseq lbl_ti lbl_tc), k).
+Proof.
+  induction c.
+
+  intros; apply Plt_1 in H; elim H.
+
+  intros; monadInv H3.
+  simpl.
+  case (ident_eq lbl (Pos.of_succ_nat (length c))).
+
+  intros lbleq; rewrite lbleq in *; clear lbleq.
+  rewrite SuccNat2Pos.id_succ in *.
+  rewrite minus_diag in *.
+  simpl in H0; inv H0.
+  rewrite EQ1 in H1; inv H1.
+  rewrite EQ in H2; inv H2.
+  auto.
+
+  intros lblneq.
+  rewrite no_labels_in_transl_instr
+    with (i := a) (l := (Pos.of_succ_nat (length c))); auto.
+  apply IHc with (lbl_i := lbl_i) (lbl_c := lbl_c); auto.
+
+  simpl in H; rewrite Pos.lt_succ_r in H; rewrite Pos.le_lteq in H.
+  destruct H; [ auto | rewrite H in lblneq; destruct lblneq; auto ].
+
+  rewrite skipn_end_plusone in H0; auto.
+  simpl in H; rewrite Pos.lt_succ_r in H.
+  xomega.
+Qed.
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -241,6 +306,8 @@ Proof.
   eapply star_step.
   monadInv EQ1; constructor.
 
+  monadInv TF.
+  simpl.
   (* need some lemma about Cminor.find_label on transl_funbody *)
 
 (*
