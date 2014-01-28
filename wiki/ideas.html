@@ -40,9 +40,13 @@ See also:
 [Forward and Backward Simulations Part I: Untimed Systems](http://groups.csail.mit.edu/tds/papers/Lynch/TM-486.pdf), from Nancy.
 
 Another interesting choice is the IL.
-We could use low-level RTL, Cminor, or even Clight (a subset of C,
-where we can directly invoke gcc/clang for better optimizations).
-Not sure which one is easier to do proof.
+Cminor seems to be the right choice.
+The RTL is too low-level (i.e., architecture-specific)
+and requires global numbering of instructions,
+which makes it much harder to prove anything.
+Clight and Csharpminor
+involve too much C detail, such as signed/unsigned integer types,
+which we often don't really care.
 
 See also:
 [Verified Just-In-Time Compiler on x86](http://www.cl.cam.ac.uk/~mom22/jit/jit.pdf),
