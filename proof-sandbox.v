@@ -14,7 +14,7 @@ Require Import compcert.lib.Maps.
 Require Import Op.
 Require Import Seccomp.
 Require Import Seccompjit.
-Require Import Seccompproof.
+Require Import CpdtTactics.
 
 Variable tprog: RTL.program.
 Let tge := Genv.globalenv tprog.
@@ -170,57 +170,6 @@ Qed.
 Ltac transl_ok H := apply bind_inversion in H; elim H; clear H;
                     intro; intro X; decompose [and] X; clear X.
 
-Lemma rtl_opcode_for_salu_add_at_0:
-  forall a x sm f pc m,
-  forall tstack tf tsp tpc tregs tm,
-  match_states (Seccomp.State a x sm f pc m)
-               (RTL.State tstack tf tsp tpc tregs tm) ->
-  forall k,
-  pc = 0 ->
-  instruction_at f pc = Some (Salu_add_k k) ->
-  exists tpc',
-  (fn_code tf) ! tpc = Some (Iop (Oaddimm k) (reg_a::nil) reg_a tpc').
-Proof.
-  intros.
-  inversion H; clear H.   (* match_states *)
-  unfold transl_function in TF; simpl in TF.
-  transl_ok TF; injection H2; clear H2; intros.
-  induction f.
-
-  (* case 1: f = nil *)
-  simpl in H1; discriminate H1.
-
-  (* case 2: f' = a1::f *)
-  rewrite H0 in H1.
-  compute in H1; injection H1; clear H1; intros.  (* a1 = Salu_add_k k *)
-  rewrite H1 in H.    (* plug Salu_add_k into transl_code *)
-  simpl in H.
-  transl_ok H; injection H16; clear H16; intros.
-
-  (* plug in the add_map for Oaddimm into (tpc = ZMap.get pc jmap) *)
-  symmetry in H16; rewrite H16 in H2.
-  symmetry in H2; rewrite H2 in MPC.
-  rewrite H0 in MPC; simpl in MPC.    (* plug in pc=0 *)
-  rewrite ZMap.gss in MPC.
-
-  rewrite H16 in H15; simpl in H15.
-  symmetry in H15; rewrite H15; rewrite MPC; simpl.
-
-  exists (st_ep x2).
-
-  rewrite PTree.gsspec; rewrite peq_false.
-  rewrite PTree.gsspec; rewrite peq_false.
-  rewrite PTree.gsspec; rewrite peq_false.
-  rewrite PTree.gsspec; rewrite peq_true.
-  auto.
-
-  (* now prove all of the other writes to fn_code were different *)
-  apply Pos.succ_discr.
-  apply Plt_ne; apply Plt_trans_succ; apply Plt_succ.
-  apply Plt_ne; apply Plt_trans_succ; apply Plt_trans_succ; apply Plt_succ.
-Qed.
-
-
 Lemma pred_of_plus_one:
   forall x: Z,
   Z.pred (x + 1) = x.
@@ -276,43 +225,23 @@ Proof.
   firstorder.
 Qed.
 
-Lemma rtl_opcode_for_salu_add:
-  forall a x sm rf pc m,
-  forall f, f = rev rf ->
-  forall tstack tf tsp tpc tregs tm,
-  match_states (Seccomp.State a x sm f pc m)
-               (RTL.State tstack tf tsp tpc tregs tm) ->
-  forall k,
-  instruction_at f pc = Some (Salu_add_k k) ->
-  exists tpc',
-  (fn_code tf) ! tpc = Some (Iop (Oaddimm k) (reg_a::nil) reg_a tpc').
+Lemma skipn_plusone_end:
+  forall (A:Type) (l:list A) (n:nat),
+  skipn n l = nil -> skipn (S n) l = nil.
 Proof.
-  intros.
-  inversion H0; clear H0.   (* match_states *)
-  unfold transl_function in TF; simpl in TF.
-  transl_ok TF; injection H2; clear H2; intros.
-  induction rf.
+  induction l.
+  auto.
+  destruct n.
+  discriminate 1.
+  intros; apply IHl; auto.
+Qed.
 
-  (* case 1: f = nil *)
-  rewrite H in H1; simpl in H1; discriminate H1.
-
-  (* case 2: f = rev (a1::rf) *)
-  move f at bottom.   (* kill later *)
-  destruct (Z_eq_bool (list_length_z rf) pc).
-  destruct x2.
-
-  (* case 2a: pc points at a1 *)
-  symmetry in y.
-  rewrite y in H1.
-  unfold instruction_at in H1.
-
-  (* case 2b: pc points before a1 *)
-  simpl in H.
-  rewrite H in H1.
-  rewrite list_length_z_rev in H1.
-  rewrite list_nth_z_last in H1.
-  injection H1; clear H1; intros.
-
-  (* finally, a1 = Salu_add_k k *)
-Abort.
+Lemma skipn_plusone_middle:
+  forall (A:Type) (l:list A) (n:nat) (l':list A) (x:A),
+  skipn n l = x::l' -> skipn (S n) l = l'.
+Proof.
+  induction l.
+  destruct n; crush.
+  destruct n; [ crush | intros; apply IHl with (x:=x); crush ].
+Qed.
 

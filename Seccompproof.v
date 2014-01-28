@@ -192,6 +192,26 @@ Proof.
   try destruct (Int.unsigned i); try monadInv H; auto.
 Qed.
 
+Lemma transl_code_skipn:
+  forall c tc, transl_code c = OK tc ->
+  forall n,
+  exists xc txc, skipn n c = xc /\ transl_code xc = OK txc.
+Proof.
+  induction c.
+  intros; exists nil; exists tc; destruct n; auto.
+  destruct n.
+  exists (a::c); exists tc; auto.
+  monadInv H; apply IHc with (tc:=x); auto.
+Qed.
+
+Lemma skipn_middle:
+  forall (A:Type) (l:list A) (n:nat) (l':list A),
+  (n < length l)%nat /\ skipn n l = l' ->
+  length l' = (length l - n)%nat /\ exists x l'', l' = x::l''.
+Proof.
+  (* XXX *)
+Admitted.
+
 Lemma skipn_end_plusone:
   forall (A:Type) (n:nat) (l:list A) (x:A),
   (n <= length l)%nat ->
@@ -200,7 +220,7 @@ Proof.
   intros; simpl length; rewrite <- minus_Sn_m; crush.
 Qed.
 
-Lemma find_label_code:
+Lemma find_label_code':
   forall c tc lbl_i lbl_c lbl_ti lbl_tc lbl k,
   (lbl < P_of_succ_nat (length c))%positive ->
   (skipn ((length c) - (Pos.to_nat lbl)) c) = lbl_i :: lbl_c ->
@@ -236,6 +256,31 @@ Proof.
   rewrite skipn_end_plusone in H0; auto.
   simpl in H; rewrite Pos.lt_succ_r in H.
   xomega.
+Qed.
+
+Lemma find_label_code:
+  forall c tc lbl k,
+  (lbl < P_of_succ_nat (length c))%positive ->
+  transl_code c = OK tc ->
+  exists lbl_i lbl_c lbl_ti lbl_tc,
+  (skipn ((length c) - (Pos.to_nat lbl)) c) = lbl_i :: lbl_c ->
+  transl_instr lbl_i lbl = OK lbl_ti ->
+  transl_code lbl_c = OK lbl_tc ->
+  find_label lbl tc k = Some ((Sseq lbl_ti lbl_tc), k).
+Proof.
+  intros.
+  destruct transl_code_skipn with
+    (c:=c) (tc:=tc) (n:=(length c - Pos.to_nat lbl)%nat); auto.
+  destruct H1.
+  destruct skipn_middle with
+    (l:=c) (n:=(length c - Pos.to_nat lbl)%nat) (l':=x).
+  split; [ xomega | destruct H1; auto ].
+  destruct H3; exists x1; destruct H3; exists x2.
+  destruct H1; rewrite H3 in H4; monadInv H4.
+  rewrite H3 in H2.
+  exists x4; exists x3; intros.
+  apply find_label_code' with
+    (c:=c) (lbl_i:=x1) (lbl_c:=x2); auto.
 Qed.
 
 Lemma transl_step:
@@ -298,6 +343,12 @@ Proof.
   exact MFREE. auto.
 
   (* k > 0 *)
+(*
+  destruct find_label_code with
+    (c:=f) (tc:=??)
+    (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
+    (k:=(call_cont tk)).
+*)
   econstructor; split.
   eapply plus_left.
   constructor.
