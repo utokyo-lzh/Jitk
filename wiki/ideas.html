@@ -16,11 +16,13 @@ It would be great if we can extend this scheme to other kernel
 components, such as filesystems, drivers,
 and the [security subsystem](http://kernsec.org/wiki/index.php/Projects).
 
+NB: prove higher-level security properties (rather than memory safety, etc.)?
+
 NB: ramfs looks simple, but others may be too complicated..
 
-NB: maybe we should get their specifications first.
-
-NB: we probably need to prove the RTL program never invokes undefined behavior.
+NB: we need to prove the generated program never invokes undefined behavior.
+To do so, we need to prove the original program (e.g., seccomp), once accepted,
+never invokes undefined behavior---undefined code is not allowed in the kernel.
 
 NB: when CompCert doesn't work (e.g., no x86-64 backend), consider to invoke gcc or llvm
 for code generation.  We then should at least do translation validation.  That means
