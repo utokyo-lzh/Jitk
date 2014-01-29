@@ -376,12 +376,27 @@ Proof.
   exact MFREE. auto.
 
   (* k > 0 *)
-(*
+  monadInv TF.
+  remember EQ0 as xEQ0; clear HeqxEQ0.
+  monadInv xEQ0.
   destruct find_label_code with
-    (c:=f) (tc:=??)
+    (c:=f) (tc:=x3)
     (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
-    (k:=(call_cont tk)).
+    (k:=(call_cont tk)); auto.
+
+  (* next subgoal:
+
+      Pos.of_succ_nat (length b) - 1 - p < Pos.of_succ_nat (length f)
+
+    so we need to prove that b (the number of Seccomp instructions that
+    come after Sjmp) is shorter than f (the entire Seccomp program).
+   *)
+
+(*
+  repeat destruct H.
 *)
+
+(*
   econstructor; split.
   eapply plus_left.
   constructor.
@@ -390,9 +405,9 @@ Proof.
   eapply star_step.
   monadInv EQ1; constructor.
 
-  monadInv TF.
   simpl.
   (* need some lemma about Cminor.find_label on transl_funbody *)
+*)
 
 (*
   (* State -> ReturnState *)
