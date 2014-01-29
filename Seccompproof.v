@@ -204,13 +204,46 @@ Proof.
   monadInv H; apply IHc with (tc:=x); auto.
 Qed.
 
+Lemma skipn_length: forall (A:Type) (l:list A) (n:nat),
+  (n < length l)%nat -> length (skipn n l) = (length l - n)%nat.
+Proof.
+  intros A l.
+  induction l; intros; destruct n.
+
+  simpl; omega.
+  simpl; auto.
+
+  simpl; auto.
+  simpl.
+  apply IHl.
+  firstorder.
+Qed.
+
+Lemma skipn_exists: forall (A:Type) (l:list A) (n:nat),
+  (n < length l)%nat -> exists x l', skipn n l = x::l'.
+Proof.
+  intros A l.
+  induction l; intros; destruct n.
+
+  simpl in *; omega.
+  simpl in *; omega.
+
+  simpl.
+  exists a, l. auto.
+  apply IHl.
+  simpl in *. omega.
+Qed.
+
 Lemma skipn_middle:
   forall (A:Type) (l:list A) (n:nat) (l':list A),
   (n < length l)%nat /\ skipn n l = l' ->
   length l' = (length l - n)%nat /\ exists x l'', l' = x::l''.
 Proof.
-  (* XXX *)
-Admitted.
+  split; firstorder; subst l'.
+
+  apply skipn_length. auto.
+  apply skipn_exists. auto.
+Qed.
 
 Lemma skipn_end_plusone:
   forall (A:Type) (n:nat) (l:list A) (x:A),
