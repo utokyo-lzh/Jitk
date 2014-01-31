@@ -2,20 +2,20 @@ Require Import Arith.
 Require Import CpdtTactics.
 
 Inductive diskblock :=
-  | Data : nat -> diskblock.
+  | Data : forall (data:nat), diskblock
+  | Log : forall (addr0:nat) (data0:nat) (addr1:nat) (data1:nat), diskblock
+  | EmptyLog : diskblock.
 
 Definition disk := nat -> diskblock.
 
 Definition empty_disk : disk :=
   fun n => Data 0.
 
-Definition disk_write (addr:nat) (val:nat) (d:disk) : disk :=
-  fun n => if eq_nat_dec n addr then Data val else d n.
+Definition disk_write (addr:nat) (val:diskblock) (d:disk) : disk :=
+  fun n => if eq_nat_dec n addr then val else d n.
 
-Definition disk_read (addr:nat) (d:disk) : nat :=
-  match d addr with
-  | Data n => n
-  end.
+Definition disk_read (addr:nat) (d:disk) : diskblock :=
+  d addr.
 
 
 Inductive flaky_disk :=
@@ -30,14 +30,14 @@ Definition flaky_fix (fd:flaky_disk) : flaky_disk :=
   | GoodDisk d => GoodDisk d
   end.
 
-Definition flaky_write (addr:nat) (val:nat) (fd:flaky_disk) : flaky_disk :=
+Definition flaky_write (addr:nat) (val:diskblock) (fd:flaky_disk) : flaky_disk :=
   match fd with
   | FlakyDisk _ 0 => fd
   | FlakyDisk d (S k) => FlakyDisk (disk_write addr val d) k
   | GoodDisk d => GoodDisk (disk_write addr val d)
   end.
 
-Definition flaky_read (addr:nat) (fd:flaky_disk) : nat :=
+Definition flaky_read (addr:nat) (fd:flaky_disk) : diskblock :=
   match fd with
   | FlakyDisk d _ => disk_read addr d
   | GoodDisk d => disk_read addr d
@@ -45,14 +45,16 @@ Definition flaky_read (addr:nat) (fd:flaky_disk) : nat :=
 
 
 Definition inc (addr:nat) (fd:flaky_disk) : flaky_disk :=
-  let old := flaky_read addr fd in
-  flaky_write addr (old+1) fd.
+  match flaky_read addr fd with
+  | Data x => flaky_write addr (Data (x+1)) fd
+  | _ => fd
+  end.
 
 
 Theorem inc_ok:
   forall fd fd' addr k,
-  flaky_read addr fd = k /\ inc addr fd = fd' ->
-  flaky_read addr fd = k \/ flaky_read addr fd = (k+1).
+  flaky_read addr fd = Data k /\ inc addr fd = fd' ->
+  flaky_read addr fd = Data k \/ flaky_read addr fd = Data (k+1).
 Proof.
   crush.
 Qed.
@@ -60,18 +62,31 @@ Qed.
 
 Definition log_apply (fd:flaky_disk) : flaky_disk :=
   match flaky_read 0 fd with
-  | 0 => fd
-  | S k => flaky_write 0 0 (inc (k+2) (inc (k+1) fd))
+  | Log a0 d0 a1 d1 =>
+    flaky_write 0 EmptyLog (flaky_write a0 (Data d0) (flaky_write a1 (Data d1) fd))
+  | _ => fd
+  end.
+
+Definition block_inc (b:diskblock) : nat :=
+  match b with
+  | Data x => x+1
+  | _ => 0
   end.
 
 Definition log_doubleinc (addr:nat) (fd:flaky_disk) : flaky_disk :=
   let fd0 := log_apply fd in
-  let fd1 := flaky_write 0 (S addr) fd0 in
+  let d0 := flaky_read (addr+1) fd0 in
+  let d1 := flaky_read (addr+2) fd0 in
+  let fd1 := flaky_write 0 (Log (addr+1) (block_inc d0)
+                                (addr+2) (block_inc d1)) fd0 in
   log_apply fd1.
 
 Definition log_read (addr:nat) (fd:flaky_disk) : nat :=
   let fd0 := log_apply fd in
-  flaky_read (S addr) fd0.
+  match flaky_read (S addr) fd0 with
+  | Data x => x
+  | _ => 0
+  end.
 
 
 Lemma disk_read_same:
@@ -161,5 +176,9 @@ Proof.
   repeat rewrite_disk_ops.
   destruct n.
   repeat rewrite_disk_ops; auto.
-  (* Aha, I have a bug!  Applying "inc" twice.. *)
+  repeat rewrite_disk_ops.
+  destruct n.
+  repeat rewrite_disk_ops; auto.
+  repeat rewrite_disk_ops; auto.
+Qed.
 
