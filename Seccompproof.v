@@ -149,19 +149,19 @@ Proof.
   econstructor; split.
 
   (* Cminor.initial_state tprog R *)
-  econstructor.
-  apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto.
-  rewrite (transform_partial_program_main _ _ TRANSL).
-  fold tge.
-  rewrite symbols_preserved.
-  eauto.
-  eexact A.
-  eapply sig_transl_function.
-  eexact B.
+  - econstructor.
+    + apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto.
+    + rewrite (transform_partial_program_main _ _ TRANSL).
+      fold tge.
+      rewrite symbols_preserved.
+      eauto.
+    + eexact A.
+    + eapply sig_transl_function.
+      eexact B.
 
   (* match states S R *)
-  constructor; auto.
-  apply inj_refl.
+  - constructor; auto.
+    apply inj_refl.
 Qed.
 
 Lemma transl_final_states:
@@ -198,10 +198,10 @@ Lemma transl_code_skipn:
   exists xc txc, skipn n c = xc /\ transl_code xc = OK txc.
 Proof.
   induction c.
-  intros; exists nil; exists tc; destruct n; auto.
-  destruct n.
-  exists (a::c); exists tc; auto.
-  monadInv H; apply IHc with (tc:=x); auto.
+  - intros; exists nil; exists tc; destruct n; auto.
+  - destruct n.
+    + exists (a::c); exists tc; auto.
+    + monadInv H; apply IHc with (tc:=x); auto.
 Qed.
 
 Lemma skipn_length: forall (A:Type) (l:list A) (n:nat),
@@ -210,13 +210,13 @@ Proof.
   intros A l.
   induction l; intros; destruct n.
 
-  simpl; omega.
-  simpl; auto.
+  - simpl; omega.
+  - simpl; auto.
 
-  simpl; auto.
-  simpl.
-  apply IHl.
-  firstorder.
+  - simpl; auto.
+  - simpl.
+    apply IHl.
+    firstorder.
 Qed.
 
 Lemma skipn_exists: forall (A:Type) (l:list A) (n:nat),
@@ -225,13 +225,13 @@ Proof.
   intros A l.
   induction l; intros; destruct n.
 
-  simpl in *; omega.
-  simpl in *; omega.
+  - simpl in *; omega.
+  - simpl in *; omega.
 
-  simpl.
-  exists a, l. auto.
-  apply IHl.
-  simpl in *. omega.
+  - simpl.
+    exists a, l. auto.
+  - apply IHl.
+    simpl in *. omega.
 Qed.
 
 Lemma skipn_middle:
@@ -241,8 +241,8 @@ Lemma skipn_middle:
 Proof.
   split; firstorder; subst l'.
 
-  apply skipn_length. auto.
-  apply skipn_exists. auto.
+  - apply skipn_length. auto.
+  - apply skipn_exists. auto.
 Qed.
 
 Lemma skipn_end_plusone:
@@ -264,31 +264,31 @@ Lemma find_label_code':
 Proof.
   induction c.
 
-  intros; apply Plt_1 in H; elim H.
+  - intros; apply Plt_1 in H; elim H.
 
-  intros; monadInv H3.
-  simpl.
-  case (ident_eq lbl (Pos.of_succ_nat (length c))).
+  - intros; monadInv H3.
+    simpl.
+    case (ident_eq lbl (Pos.of_succ_nat (length c))).
 
-  intros lbleq; rewrite lbleq in *; clear lbleq.
-  rewrite SuccNat2Pos.id_succ in *.
-  rewrite minus_diag in *.
-  simpl in H0; inv H0.
-  rewrite EQ1 in H1; inv H1.
-  rewrite EQ in H2; inv H2.
-  auto.
+    + intros lbleq; rewrite lbleq in *; clear lbleq.
+      rewrite SuccNat2Pos.id_succ in *.
+      rewrite minus_diag in *.
+      simpl in H0; inv H0.
+      rewrite EQ1 in H1; inv H1.
+      rewrite EQ in H2; inv H2.
+      auto.
 
-  intros lblneq.
-  rewrite no_labels_in_transl_instr
-    with (i := a) (l := (Pos.of_succ_nat (length c))); auto.
-  apply IHc with (lbl_i := lbl_i) (lbl_c := lbl_c); auto.
+    + intros lblneq.
+      rewrite no_labels_in_transl_instr
+        with (i := a) (l := (Pos.of_succ_nat (length c))); auto.
+      apply IHc with (lbl_i := lbl_i) (lbl_c := lbl_c); auto.
 
-  simpl in H; rewrite Pos.lt_succ_r in H; rewrite Pos.le_lteq in H.
-  destruct H; [ auto | rewrite H in lblneq; destruct lblneq; auto ].
+      * simpl in H; rewrite Pos.lt_succ_r in H; rewrite Pos.le_lteq in H.
+        destruct H; [ auto | rewrite H in lblneq; destruct lblneq; auto ].
 
-  rewrite skipn_end_plusone in H0; auto.
-  simpl in H; rewrite Pos.lt_succ_r in H.
-  xomega.
+      * rewrite skipn_end_plusone in H0; auto.
+        simpl in H; rewrite Pos.lt_succ_r in H.
+        xomega.
 Qed.
 
 Lemma find_label_code:
@@ -307,13 +307,13 @@ Proof.
   destruct H1.
   destruct skipn_middle with
     (l:=c) (n:=(length c - Pos.to_nat lbl)%nat) (l':=x).
-  split; [ xomega | destruct H1; auto ].
-  destruct H3; exists x1; destruct H3; exists x2.
-  destruct H1; rewrite H3 in H4; monadInv H4.
-  rewrite H3 in H2.
-  exists x4; exists x3; intros.
-  apply find_label_code' with
-    (c:=c) (lbl_i:=x1) (lbl_c:=x2); auto.
+  - split; [ xomega | destruct H1; auto ].
+  - destruct H3; exists x1; destruct H3; exists x2.
+    destruct H1; rewrite H3 in H4; monadInv H4.
+    rewrite H3 in H2.
+    exists x4; exists x3; intros.
+    apply find_label_code' with
+      (c:=c) (lbl_i:=x1) (lbl_c:=x2); auto.
 Qed.
 
 Lemma transl_step:
@@ -325,64 +325,64 @@ Proof.
 
   (* State -> State *)
   (* Salu_add_k *)
-  monadInv TC.
-  econstructor; split.
+  - monadInv TC.
+    econstructor; split.
 
-  eapply plus_left.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.
+    eapply plus_left.
+    constructor.
+    eapply star_step.
+    constructor.
+    eapply star_step.
+    constructor.
 
-  apply eval_Ebinop with (v1 := Vint a) (v2 := Vint k).
-  constructor; auto.
-  constructor; auto.
-  constructor.
+    apply eval_Ebinop with (v1 := Vint a) (v2 := Vint k).
+    constructor; auto.
+    constructor; auto.
+    constructor.
 
-  eapply star_step.
-  constructor.
-  apply star_refl.
-  auto.
-  auto.
-  auto.
-  auto.
+    eapply star_step.
+    constructor.
+    apply star_refl.
+    auto.
+    auto.
+    auto.
+    auto.
 
-  econstructor; auto.
-  rewrite PTree.gss; auto.
-  rewrite PTree.gso; auto.
-  unfold reg_x; unfold reg_a; discriminate.
+    econstructor; auto.
+    rewrite PTree.gss; auto.
+    rewrite PTree.gso; auto.
+    unfold reg_x; unfold reg_a; discriminate.
 
-  exact MFREE. auto.
+    exact MFREE. auto.
 
   (* Sjmp_ja k *)
-  monadInv TC.
-  destruct (Int.unsigned k).
+  - monadInv TC.
+    destruct (Int.unsigned k).
 
-  (* k = 0 *)
-  econstructor; split.
-  eapply plus_left.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  monadInv EQ1; constructor.
-  apply star_refl.
-  auto.
-  auto.
-  auto.
+    (* k = 0 *)
+    + econstructor; split.
+      eapply plus_left.
+      constructor.
+      eapply star_step.
+      constructor.
+      eapply star_step.
+      monadInv EQ1; constructor.
+      apply star_refl.
+      auto.
+      auto.
+      auto.
 
-  econstructor; auto.
-  exact MFREE. auto.
+      econstructor; auto.
+      exact MFREE. auto.
 
-  (* k > 0 *)
-  monadInv TF.
-  remember EQ0 as xEQ0; clear HeqxEQ0.
-  monadInv xEQ0.
-  destruct find_label_code with
-    (c:=f) (tc:=x3)
-    (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
-    (k:=(call_cont tk)); auto.
+    (* k > 0 *)
+    + monadInv TF.
+      remember EQ0 as xEQ0; clear HeqxEQ0.
+      monadInv xEQ0.
+      destruct find_label_code with
+        (c:=f) (tc:=x3)
+        (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
+        (k:=(call_cont tk)); auto.
 
   (* next subgoal:
 
