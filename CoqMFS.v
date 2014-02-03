@@ -19,23 +19,16 @@ Definition disk_read (addr:nat) (d:disk) : nat :=
   | Data n => n
   end.
 
-Lemma disk_rw_same:
+Lemma disk_rw:
   forall a a' v d,
-  a = a' ->
-  (disk_read a (disk_write a' v d)) = v.
+  (disk_read a (disk_write a' v d)) = 
+  if eq_nat_dec a a' then v else disk_read a d.
 Proof.
   unfold disk_read; unfold disk_write.
   intros; destruct (eq_nat_dec a a'); crush.
 Qed.
 
-Lemma disk_rw_other:
-  forall a a' v d,
-  a <> a' ->
-  (disk_read a (disk_write a' v d)) = disk_read a d.
-Proof.
-  unfold disk_read; unfold disk_write.
-  intros; destruct (eq_nat_dec a a'); crush.
-Qed.
+Hint Rewrite disk_rw.
 
 Opaque disk.
 Opaque disk_read.
@@ -61,24 +54,12 @@ Definition fdisk_read (addr:nat) (fd:fdisk) : nat :=
   | FlakyDisk d _ => disk_read addr d 
   end.
 
-Lemma fdisk_rw_same:
+Lemma fdisk_rw:
   forall a a' v fd fd',
-  a = a' /\ fdisk_write a' v fd = Some fd' ->
-  fdisk_read a fd' = v.
+  fdisk_write a' v fd = Some fd' ->
+  fdisk_read a fd' = if eq_nat_dec a a' then v else fdisk_read a fd.
 Proof.
-  intros.
-  destruct fd.
-  destruct n; crush; apply disk_rw_same; auto.
-Qed.
-
-Lemma fdisk_rw_other:
-  forall a a' v fd fd',
-  a <> a' /\ fdisk_write a' v fd = Some fd' ->
-  fdisk_read a fd' = fdisk_read a fd.
-Proof.
-  intros.
-  destruct fd.
-  destruct n; crush; apply disk_rw_other; auto.
+  destruct fd; destruct n; crush.
 Qed.
 
 Lemma fdisk_crash:
@@ -87,7 +68,7 @@ Lemma fdisk_crash:
   forall a' v',
   fdisk_write a' v' fd = None.
 Proof.
-  intros; destruct fd; destruct n; crush.
+  destruct fd; destruct n; crush.
 Qed.
 
 
@@ -131,15 +112,12 @@ Lemma mfdisk_test_inc_works:
   (fdisk_read a fd' = fdisk_read a fd \/
    fdisk_read a fd' = fdisk_read a fd + 1).
 Proof.
-  unfold mfdisk_test_inc; unfold mfdisk_read; unfold mfdisk_write.
-  unfold mbind; unfold mret; unfold fdisk_write.
-  intros.
   destruct fd.
   destruct n.
   - crush.
   - split.
-    + crush; apply disk_rw_other; crush.
-    + right; crush; apply disk_rw_same; crush.
+    + crush; destruct (eq_nat_dec a' a); crush.
+    + right; crush; destruct (eq_nat_dec a a); crush.
 Qed.
 
 
