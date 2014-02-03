@@ -19,13 +19,19 @@ Definition disk_read (addr:nat) (d:disk) : nat :=
   | Data n => n
   end.
 
+Ltac destruct_eq_nat :=
+  match goal with
+  | [ |- context[if (eq_nat_dec ?X ?Y) then _ else _] ] => destruct (eq_nat_dec X Y)
+  end.
+
+Ltac crush_eq := repeat ( crush; destruct_eq_nat ).
+
 Lemma disk_rw:
   forall a a' v d,
   (disk_read a (disk_write a' v d)) = 
   if eq_nat_dec a a' then v else disk_read a d.
 Proof.
-  unfold disk_read; unfold disk_write.
-  intros; destruct (eq_nat_dec a a'); crush.
+  unfold disk_read; unfold disk_write; crush_eq.
 Qed.
 
 Hint Rewrite disk_rw.
@@ -112,12 +118,7 @@ Lemma mfdisk_test_inc_works:
   (fdisk_read a fd' = fdisk_read a fd \/
    fdisk_read a fd' = fdisk_read a fd + 1).
 Proof.
-  destruct fd.
-  destruct n.
-  - crush.
-  - split.
-    + crush; destruct (eq_nat_dec a' a); crush.
-    + right; crush; destruct (eq_nat_dec a a); crush.
+  destruct fd; destruct n; crush_eq.
 Qed.
 
 
