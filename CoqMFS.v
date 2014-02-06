@@ -122,4 +122,16 @@ Proof.
 Qed.
 
 
+(* A log partition *)
+Definition log_blocks := 10.
+
+Definition ldisk_log_read (addr: {a:nat|a<log_blocks}) :=
+  mfdisk_read (proj1_sig addr).
+Definition ldisk_log_write (addr: {a:nat|a<log_blocks}) (val:nat) :=
+  mfdisk_write (proj1_sig addr) val.
+
+Definition ldisk_data_read (addr:nat) :=
+  mfdisk_read (addr+log_blocks).
+Definition ldisk_data_write (addr:nat) (val:nat) :=
+  mfdisk_write (addr+log_blocks) val.
 
