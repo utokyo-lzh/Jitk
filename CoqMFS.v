@@ -102,8 +102,35 @@ Definition mfdisk_read (addr:nat) : mfdisk nat :=
   fun fd =>
     (fd, Some (fdisk_read addr fd)).
 
+Notation "a >>= f" := (mbind a f) (left associativity, at level 50).
+
 Notation "'do' x <- y ; z" := (mbind y (fun x => z))
   (left associativity, at level 200, x ident, y at level 100, z at level 200).
+
+Lemma mon_left_id:
+  forall (A:Type) (a:A) (R:Type) (f:A->mfdisk R),
+  mret a >>= f = f a.
+Proof.
+  crush.
+Qed.
+
+Lemma mon_right_id:
+  forall (A:Type) (a:mfdisk A),
+  a >>= mret = a.
+Proof.
+  intros; unfold mbind; apply functional_extensionality; intros.
+  destruct (a x); destruct o; crush.
+Qed.
+
+Lemma mon_assoc:
+  forall (A:Type) (a:mfdisk A)
+         (B:Type) (f:A->mfdisk B)
+         (C:Type) (g:B->mfdisk C),
+  (a >>= f) >>= g = a >>= (fun x => (f x >>= g)).
+Proof.
+  intros; unfold mbind; apply functional_extensionality; intros.
+  destruct (a x); destruct o; crush.
+Qed.
 
 
 Definition mfdisk_test_inc (addr:nat) : mfdisk unit :=
