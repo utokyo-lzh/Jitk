@@ -104,9 +104,59 @@ GAL: [video device drivers](https://www.usenix.org/conference/dsl-97/domain-spec
 
 [Rathaxes](http://www.rathaxes.org/)
 
-## DSL for file systems
+## Verifying file systems
 
-[BilbyFs](http://plosworkshop.org/2013/preprint/keller.pdf)
+[BilbyFs](http://plosworkshop.org/2013/preprint/keller.pdf).  Workshop
+paper, work-in-progress.  Uses three DSLs to implement a file system,
+generate C code from DSLs, prove functional correctness, no concurrency
+or crash-recovery.
+[Earlier paper](http://www.ssrg.nicta.com.au/publications/papers/Amani_RM_12.pdf).
+
+[Formalizing a Hierarchical FS](http://iwi.eldoc.ub.rug.nl/FILES/root/2009/ElNotThCpScHesselink/2009ElNotesThCompSciHesselink.pdf).
+Spec for an abstract file system with directories, and a proof of
+refinement to an "implementation" that's still pretty abstract.
+Good related work coverage of verified file system papers.
+
+[A Mini Challenge: Build a verifiable filesystem](http://spinroot.com/gerard/pdf/Formal_Aspects_Paper.pdf).
+JPL workshop-style paper on arguing that verifying file systems
+is a good idea.  They are worried about complex failure models
+(e.g., bit errors in flash).  Working on a verified FS but no
+results yet.  Follow-on:
+[POSIX and the Verification Grand Challenge: a roadmap](http://ieeexplore.ieee.org.libproxy.mit.edu/stamp/stamp.jsp?tp=&arnumber=4492888).
+
+[Specification of the Unix filing system](http://users.cis.fiu.edu/~hex/CEN6075-09/Z/Unix.pdf).
+Describes what a specification of a POSIX file system might look
+like.  No access control aspects.  Specification in Z.
+
+[POSIX file store in Z/Eves: an experiment in the verified software repository](http://ieeexplore.ieee.org.libproxy.mit.edu/stamp/stamp.jsp?tp=&arnumber=4276297), [SM thesis](http://itee.uq.edu.au/~zhengfu/A_refinement_of_the_UNIX_Filing_System_using_Z.pdf).
+Java HashMap-based implementation of a POSIX file system with a proof
+that it matches the Z-based specification (close to the above).
+
+[A Specification for the Synergy File System](http://www.computationallogic.com/reports/files/120.pdf).
+POSIX-like file system spec, including permissions, processes, fork, etc.
+Specification in Z.
+
+[An Executable Model of the Synergy File System](http://www.computationallogic.com/reports/files/121.pdf).
+ACL2 model (executable), checked against their Z spec (above).
+
+[Some aspects of Unix file-system security](http://isabelle.in.tum.de/library/HOL/HOL-Unix/outline.pdf).
+Isabelle model of Unix FS security.
+
+[Modeling and Proof of a Tree-structured File System in Event-B and Rodin](http://www.ensiie.fr/~dubois/PR_2010/TreeFileSysICFEM2008.pdf).
+TBD.
+
+[Verifying a file system implementation](http://people.csail.mit.edu/rinard/paper/icfem04.pdf).
+TBD.
+
+## File system model-checking (not full verification)
+
+[Model-Checking the Linux Virtual File System](http://www.researchgate.net/publication/221550933_Model-Checking_the_Linux_Virtual_File_System/file/d912f51003277a778a.pdf).
+Trying to model-check Linux VFS code (i.e.,
+non-FS-specific parts, like dcache, syscalls, etc) using
+[SMART](http://www.cs.ucr.edu/~ciardo/SMART/).  No significant results.
+
+Junfeng's papers: [EXPLODE](http://www.cs.columbia.edu/~junfeng/papers/yang-explode-osdi.pdf),
+[FiSC](http://www.cs.columbia.edu/~junfeng/papers/yang-fisc-osdi.pdf), etc.
 
 ## Systems programming with Idris
 
@@ -115,6 +165,12 @@ GAL: [video device drivers](https://www.usenix.org/conference/dsl-97/domain-spec
 [Idris – Systems Programming meets Full Dependent Types](http://eb.host.cs.st-andrews.ac.uk/writings/plpv11.pdf)
 
 Could we use Idris to build a verified file system?
+
+## Concurrency
+
+[CompCertTSO](http://www.cl.cam.ac.uk/~pes20/CompCertTSO/doc/)
+
+[Concurrent Cminor](https://www.cs.princeton.edu/~appel/cminor/), now [VST](http://vst.cs.princeton.edu/)
 
 </xmp>
 <script src="assets/strapdown.js"></script>
