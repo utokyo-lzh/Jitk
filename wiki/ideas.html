@@ -20,9 +20,10 @@ NB: prove higher-level security properties (rather than memory safety, etc.)?
 
 NB: ramfs looks simple, but others may be too complicated..
 
-NB: we need to prove the generated program never invokes undefined behavior.
-To do so, we need to prove the original program (e.g., seccomp), once accepted,
-never invokes undefined behavior---undefined code is not allowed in the kernel.
+NB: we need to prove three things:
+- the translation is correct;
+- accepted seccomp programs never invoke undefined behavior;
+- generated code always terminates.
 
 NB: when CompCert doesn't work (e.g., no x86-64 backend), consider to invoke gcc or llvm
 for code generation.  We then should at least do translation validation.  That means
