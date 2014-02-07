@@ -115,6 +115,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
         (MK: call_cont tk = Kstop)
+        (TAIL: is_tail c f)
         (MSP: tsp = Vptr b Int.zero)
 (*        (MPERM: Mem.range_perm tm b 0 tf.(fn_stackspace) Cur Freeable) *)
         (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
@@ -353,6 +354,7 @@ Proof.
     rewrite PTree.gso; auto.
     unfold reg_x; unfold reg_a; discriminate.
 
+    apply is_tail_cons_left with (i := Salu_add_k k). auto.
     exact MFREE. auto.
 
   (* Sjmp_ja k *)
@@ -373,6 +375,7 @@ Proof.
       auto.
 
       econstructor; auto.
+      simpl. apply is_tail_cons_left with (i := Sjmp_ja k). auto.
       exact MFREE. auto.
 
     (* k > 0 *)
