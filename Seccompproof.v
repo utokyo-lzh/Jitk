@@ -190,7 +190,7 @@ Lemma no_labels_in_transl_instr:
   find_label l' s k = None.
 Proof.
   destruct i; intros; simpl in H;
-  try destruct (Int.unsigned i); try monadInv H; auto.
+  try destruct (l - Int.unsigned i); try monadInv H; auto.
 Qed.
 
 Lemma transl_code_skipn:
