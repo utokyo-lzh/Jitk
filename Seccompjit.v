@@ -15,15 +15,14 @@ Definition reg_mem: ident := 3%positive.
 Open Local Scope error_monad_scope.
 
 Definition transl_instr (instr: Seccomp.instruction)
-                        (lbl: label) : res Cminor.stmt :=
+                        (nextlbl: Z) : res Cminor.stmt :=
   match instr with
   | Salu_add_k k =>
     OK (Sassign reg_a (Ebinop Oadd (Evar reg_a) (Econst (Ointconst k))))
   | Sjmp_ja k =>
-    match (Int.unsigned k) with
-    | Z0 => OK Sskip
-    | Zpos p => OK (Sgoto (lbl - 1 - p)%positive)
-    | Zneg _ => Error (msg "Impossible")
+    match nextlbl - (Int.unsigned k) with
+    | Zpos p => OK (Sgoto p)
+    | _ => Error (msg "Illegal offset")
     end
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
@@ -34,10 +33,10 @@ Fixpoint transl_code (c: Seccomp.code) : res Cminor.stmt :=
   match c with
   | nil => OK Sskip
   | hd::tl =>
-    let lbl := P_of_succ_nat (length tl) in
+    let n := length tl in
     do t <- transl_code tl;
-    do h <- transl_instr hd lbl;
-    OK (Slabel lbl (Sseq h t))
+    do h <- transl_instr hd (Z_of_nat n);
+    OK (Slabel (P_of_succ_nat n) (Sseq h t))
   end.
 
 Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=

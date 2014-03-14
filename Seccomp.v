@@ -133,8 +133,10 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
         E0 (State a' x sm f b m)
   | exec_Sjmp_ja:
       forall a x sm f k b m,
+      let off := Int.unsigned k in
+      off < (list_length_z b) ->
       step ge (State a x sm f (Sjmp_ja k :: b) m)
-        E0 (State a x sm f (skipn (Z.to_nat (Int.unsigned k)) b) m)
+        E0 (State a x sm f (skipn (nat_of_Z off) b) m)
 (*
   | exec_Salu_add_x:
       forall a x sm f pc m,
