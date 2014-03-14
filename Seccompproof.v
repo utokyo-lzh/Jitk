@@ -254,6 +254,7 @@ Proof.
   intros; simpl length; rewrite <- minus_Sn_m; crush.
 Qed.
 
+(*
 Lemma find_label_code':
   forall c tc lbl_i lbl_c lbl_ti lbl_tc lbl k,
   (lbl < P_of_succ_nat (length c))%positive ->
@@ -316,6 +317,7 @@ Proof.
     apply find_label_code' with
       (c:=c) (lbl_i:=x1) (lbl_c:=x2); auto.
 Qed.
+*)
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
@@ -359,8 +361,12 @@ Proof.
 
   (* Sjmp_ja k *)
   - monadInv TC.
-    destruct (Int.unsigned k).
+    remember (Z.of_nat (length b) - Int.unsigned k) as newlbl.
+    destruct newlbl; crush.
 
+    (* legal k *)
+
+(*
     (* k = 0 *)
     + econstructor; split.
       eapply plus_left.
@@ -377,8 +383,10 @@ Proof.
       econstructor; auto.
       simpl. apply is_tail_cons_left with (i := Sjmp_ja k). auto.
       exact MFREE. auto.
+*)
 
     (* k > 0 *)
+(*
     + monadInv TF.
       remember EQ0 as xEQ0; clear HeqxEQ0.
       monadInv xEQ0.
@@ -386,6 +394,7 @@ Proof.
         (c:=f) (tc:=x3)
         (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
         (k:=(call_cont tk)); auto.
+*)
 
   (* next subgoal:
 
