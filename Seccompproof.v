@@ -362,6 +362,88 @@ Proof.
     + apply IHprefix with (x:=x); auto.
 Qed.
 
+Lemma is_tail_exists_prefix:
+  forall A:Type,
+  forall a b:list A,
+  is_tail a b ->
+  exists p,
+  b = p ++ a.
+Proof.
+  intros.
+  induction H.
+  - exists nil; auto.
+  - destruct IHis_tail; exists (i :: x); crush.
+Qed.
+
+Lemma is_tail_strict_prefix:
+  forall A:Type,
+  forall b' b:list A,
+  is_tail b' b ->
+  list_length_z b' < list_length_z b ->
+  exists x:A,
+  exists prefix:list A,
+  b = prefix ++ (x :: b').
+Proof.
+  (* XXX *)
+Admitted.
+
+Lemma is_tail_skipn:
+  forall A:Type,
+  forall n,
+  forall l:list A,
+  is_tail (skipn n l) l.
+Proof.
+  induction n; [ crush | destruct l; crush ].
+Qed.
+
+Lemma transl_code_label:
+  forall b c b' c' k,
+  transl_code b = OK c ->
+  transl_code b' = OK c' ->
+  is_tail b' b ->
+  list_length_z b' < list_length_z b ->
+  find_label (P_of_succ_nat (length b')) c k = Some (c', k).
+Proof.
+  intros.
+  destruct (is_tail_strict_prefix instruction b' b); auto.
+  destruct H3.
+  apply transl_code_label_prefix with (prefix:=x0) (x:=x); crush.
+Qed.
+
+(*
+Lemma transl_code_label:
+  forall b c c' off p k,
+  off < list_length_z b ->
+  Z.pos p = list_length_z b - off ->
+  transl_code b = OK c ->
+  transl_code (skipn (nat_of_Z off) b) = OK c' ->
+  find_label p c k = Some (c', k).
+Proof.
+*)
+
+Lemma transl_code_suffix:
+  forall b c b',
+  transl_code b = OK c ->
+  is_tail b' b ->
+  exists c',
+  transl_code b' = OK c'.
+Proof.
+  intros.
+  destruct (is_tail_exists_prefix _ b' b); auto.
+  clear H0.
+  generalize H; clear H.
+  generalize H1; clear H1.
+  generalize c; clear c.
+  generalize b; clear b.
+  induction x.
+  - intros; exists c; crush.
+  - intros.
+    rewrite H1 in H; clear H1.
+    monadInv H.
+    apply IHx with (b:=(x++b')) (c:=x0); auto.
+Qed.
+
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -378,14 +460,14 @@ Proof.
     constructor.
     eapply star_step.
     constructor.
-    eapply star_step.
-    constructor.
 
     apply eval_Ebinop with (v1 := Vint a) (v2 := Vint k).
     constructor; auto.
     constructor; auto.
     constructor.
 
+    eapply star_step.
+    constructor.
     eapply star_step.
     constructor.
     apply star_refl.
@@ -404,65 +486,53 @@ Proof.
 
   (* Sjmp_ja k *)
   - monadInv TC.
-    remember (Z.of_nat (length b) - Int.unsigned k) as newlbl.
-    destruct newlbl; crush.
+    remember (match - Int.unsigned k with
+              | 0 => Z.pos (Pos.of_succ_nat (length b))
+              | Z.pos y' => Z.pos (Pos.of_succ_nat (length b) + y')
+              | Z.neg y' => Z.pos_sub (Pos.of_succ_nat (length b)) y'
+              end) as newlabel.
+    destruct newlabel; crush.
 
-    (* legal k *)
+    monadInv TF.
+    monadInv EQ0.
 
-(*
-    (* k = 0 *)
-    + econstructor; split.
-      eapply plus_left.
-      constructor.
-      eapply star_step.
-      constructor.
-      eapply star_step.
-      monadInv EQ1; constructor.
-      apply star_refl.
-      auto.
-      auto.
-      auto.
+    destruct (transl_code_suffix b x0 (skipn (nat_of_Z off) b)).
+    + auto.
+    + apply is_tail_skipn.
 
-      econstructor; auto.
-      simpl. apply is_tail_cons_left with (i := Sjmp_ja k). auto.
-      exact MFREE. auto.
-*)
+    econstructor; split.
+    eapply plus_left.
+    constructor.
+    eapply star_step.
+    constructor.
 
-    (* k > 0 *)
-(*
-    + monadInv TF.
-      remember EQ0 as xEQ0; clear HeqxEQ0.
-      monadInv xEQ0.
-      destruct find_label_code with
-        (c:=f) (tc:=x3)
-        (lbl:=(Pos.of_succ_nat (length b) - 1 - p)%positive)
-        (k:=(call_cont tk)); auto.
-*)
+    simpl.
+    cut (p = P_of_succ_nat (length (skipn (nat_of_Z off) b))).
+    intros; rewrite H1.
+    simpl.    (* remove transl_funbody's preamble from find_label's arg *)
+    apply transl_code_label with (b:=f); crush.
 
-  (* next subgoal:
+    apply is_tail_trans with (l2:=b).
+    apply is_tail_skipn.
+    apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
 
-      Pos.of_succ_nat (length b) - 1 - p < Pos.of_succ_nat (length f)
+    (* XXX need to prove:
+        list_length_z (skipn (nat_of_Z off) b) < list_length_z f
+    *)
 
-    so we need to prove that b (the number of Seccomp instructions that
-    come after Sjmp) is shorter than f (the entire Seccomp program).
-   *)
+    (* XXX need to prove:
+        p = Pos.of_succ_nat (length (skipn (nat_of_Z off) b))
+    *)
 
-(*
-  repeat destruct H.
-*)
+    apply star_refl.
+    auto.
+    auto.
 
-(*
-  econstructor; split.
-  eapply plus_left.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  monadInv EQ1; constructor.
-
-  simpl.
-  (* need some lemma about Cminor.find_label on transl_funbody *)
-*)
+    econstructor; crush.
+    unfold transl_function; unfold transl_funbody; crush.
+    apply is_tail_trans with (l2:=b).
+    apply is_tail_skipn.
+    apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
 
 (*
   (* State -> ReturnState *)
