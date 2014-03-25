@@ -254,71 +254,6 @@ Proof.
   intros; simpl length; rewrite <- minus_Sn_m; crush.
 Qed.
 
-(*
-Lemma find_label_code':
-  forall c tc lbl_i lbl_c lbl_ti lbl_tc lbl k,
-  (lbl < P_of_succ_nat (length c))%positive ->
-  (skipn ((length c) - (Pos.to_nat lbl)) c) = lbl_i :: lbl_c ->
-  transl_instr lbl_i lbl = OK lbl_ti ->
-  transl_code lbl_c = OK lbl_tc ->
-  transl_code c = OK tc ->
-  find_label lbl tc k = Some ((Sseq lbl_ti lbl_tc), k).
-Proof.
-  induction c.
-
-  - intros; apply Plt_1 in H; elim H.
-
-  - intros; monadInv H3.
-    simpl.
-    case (ident_eq lbl (Pos.of_succ_nat (length c))).
-
-    + intros lbleq; rewrite lbleq in *; clear lbleq.
-      rewrite SuccNat2Pos.id_succ in *.
-      rewrite minus_diag in *.
-      simpl in H0; inv H0.
-      rewrite EQ1 in H1; inv H1.
-      rewrite EQ in H2; inv H2.
-      auto.
-
-    + intros lblneq.
-      rewrite no_labels_in_transl_instr
-        with (i := a) (l := (Pos.of_succ_nat (length c))); auto.
-      apply IHc with (lbl_i := lbl_i) (lbl_c := lbl_c); auto.
-
-      * simpl in H; rewrite Pos.lt_succ_r in H; rewrite Pos.le_lteq in H.
-        destruct H; [ auto | rewrite H in lblneq; destruct lblneq; auto ].
-
-      * rewrite skipn_end_plusone in H0; auto.
-        simpl in H; rewrite Pos.lt_succ_r in H.
-        xomega.
-Qed.
-
-Lemma find_label_code:
-  forall c tc lbl k,
-  (lbl < P_of_succ_nat (length c))%positive ->
-  transl_code c = OK tc ->
-  exists lbl_i lbl_c lbl_ti lbl_tc,
-  (skipn ((length c) - (Pos.to_nat lbl)) c) = lbl_i :: lbl_c ->
-  transl_instr lbl_i lbl = OK lbl_ti ->
-  transl_code lbl_c = OK lbl_tc ->
-  find_label lbl tc k = Some ((Sseq lbl_ti lbl_tc), k).
-Proof.
-  intros.
-  destruct transl_code_skipn with
-    (c:=c) (tc:=tc) (n:=(length c - Pos.to_nat lbl)%nat); auto.
-  destruct H1.
-  destruct skipn_middle with
-    (l:=c) (n:=(length c - Pos.to_nat lbl)%nat) (l':=x).
-  - split; [ xomega | destruct H1; auto ].
-  - destruct H3; exists x1; destruct H3; exists x2.
-    destruct H1; rewrite H3 in H4; monadInv H4.
-    rewrite H3 in H2.
-    exists x4; exists x3; intros.
-    apply find_label_code' with
-      (c:=c) (lbl_i:=x1) (lbl_c:=x2); auto.
-Qed.
-*)
-
 Lemma transl_instr_no_labels:
   forall i n c l k,
   transl_instr i n = OK c ->
@@ -409,17 +344,6 @@ Proof.
   destruct H3.
   apply transl_code_label_prefix with (prefix:=x0) (x:=x); crush.
 Qed.
-
-(*
-Lemma transl_code_label:
-  forall b c c' off p k,
-  off < list_length_z b ->
-  Z.pos p = list_length_z b - off ->
-  transl_code b = OK c ->
-  transl_code (skipn (nat_of_Z off) b) = OK c' ->
-  find_label p c k = Some (c', k).
-Proof.
-*)
 
 Lemma transl_code_suffix:
   forall b c b',
