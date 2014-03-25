@@ -319,6 +319,49 @@ Proof.
 Qed.
 *)
 
+Lemma transl_instr_no_labels:
+  forall i n c l k,
+  transl_instr i n = OK c ->
+  find_label l c k = None.
+Proof.
+  destruct i; crush; destruct (n - Int.unsigned i); crush.
+Qed.
+
+Lemma psucc_ne:
+  forall a b,
+  a <> b -> P_of_succ_nat a <> P_of_succ_nat b.
+Proof.
+  (* XXX *)
+Admitted.
+
+Lemma transl_code_label_prefix:
+  forall b c prefix x c' k,
+  transl_code b = OK c ->
+  transl_code (prefix ++ (x :: b)) = OK c' ->
+  find_label (P_of_succ_nat (length b)) c' k = Some (c, k).
+Proof.
+  induction prefix.
+  - intros.
+    monadInv H0.
+    unfold find_label; fold find_label.
+    rewrite transl_instr_no_labels
+      with (i:=x) (n:=(Z.pos (Pos.of_succ_nat (length b)))); auto.
+    unfold ident_eq.
+    destruct (peq (Pos.of_succ_nat (length b))
+                  (Pos.of_succ_nat (length b))); crush.
+  - intros.
+    monadInv H0.
+    unfold find_label; fold find_label.
+    rewrite transl_instr_no_labels
+      with (i:=a) (n:=(Z.pos (Pos.of_succ_nat (length (prefix ++ x :: b)))));
+      auto.
+    unfold ident_eq.
+    destruct (peq (Pos.of_succ_nat (length b))
+                  (Pos.of_succ_nat (length (prefix ++ x :: b)))).
+    + rewrite app_length in e; apply psucc_ne in e; crush.
+    + apply IHprefix with (x:=x); auto.
+Qed.
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
