@@ -35,8 +35,8 @@ Fixpoint transl_code (c: Seccomp.code) : res Cminor.stmt :=
   | hd::tl =>
     let n := length tl in
     do t <- transl_code tl;
-    do h <- transl_instr hd (Z_of_nat n);
-    OK (Slabel (P_of_succ_nat n) (Sseq h t))
+    do h <- transl_instr hd (Z_of_nat (S n));
+    OK (Sseq h (Slabel (P_of_succ_nat n) t))
   end.
 
 Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=
