@@ -240,8 +240,14 @@ Lemma is_tail_strict_prefix:
   exists prefix:list A,
   b = prefix ++ (x :: b').
 Proof.
-  (* XXX *)
-Admitted.
+  intros.
+  destruct (is_tail_exists_prefix A b' b); auto.
+  destruct x; crush.
+  assert (a::x <> nil); crush.
+  destruct (exists_last H1); destruct s.
+  exists x1; exists x0.
+  rewrite app_comm_cons; rewrite e; crush.
+Qed.
 
 Lemma is_tail_skipn:
   forall A:Type,
@@ -342,8 +348,8 @@ Proof.
     monadInv EQ0.
 
     destruct (transl_code_suffix b x0 (skipn (nat_of_Z off) b)).
-    + auto.
-    + apply is_tail_skipn.
+    auto.
+    apply is_tail_skipn.
 
     econstructor; split.
     eapply plus_left.
