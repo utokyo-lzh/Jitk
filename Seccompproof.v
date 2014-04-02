@@ -262,6 +262,30 @@ Proof.
   induction n; [ crush | destruct l; crush ].
 Qed.
 
+Lemma list_length_z_skipn:
+  forall A:Type,
+  forall x,
+  forall l:list A,
+  list_length_z (skipn x l) <= list_length_z l.
+Proof.
+  induction x.
+  - crush.
+  - induction l.
+    + crush.
+    + rewrite list_length_z_cons.
+      crush.
+Qed.
+
+Lemma list_length_z_istail:
+  forall A:Type,
+  forall v:A,
+  forall b l:list A,
+  is_tail (v :: b) l ->
+  list_length_z b < list_length_z l.
+Proof.
+  (* XXX *)
+Admitted.
+
 Lemma transl_code_label:
   forall b c b' c' k,
   transl_code b = OK c ->
@@ -371,9 +395,9 @@ Proof.
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
 
-    (* XXX need to prove:
-        list_length_z (skipn (nat_of_Z off) b) < list_length_z f
-    *)
+    apply Z.le_lt_trans with (m:=(list_length_z b)).
+    + apply list_length_z_skipn.
+    + apply list_length_z_istail with (v:=(Sjmp_ja k)); auto.
 
     (* XXX need to prove:
         p = Pos.of_succ_nat (length (skipn (nat_of_Z off) b))
