@@ -187,8 +187,12 @@ Lemma psucc_ne:
   forall a b,
   a <> b -> P_of_succ_nat a <> P_of_succ_nat b.
 Proof.
-  (* XXX *)
-Admitted.
+  unfold not.
+  intros.
+  apply H.
+  apply SuccNat2Pos.inj.
+  auto.
+Qed.
 
 Lemma transl_code_label_prefix:
   forall b c prefix x c' k,
