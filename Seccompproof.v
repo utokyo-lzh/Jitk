@@ -276,6 +276,19 @@ Proof.
       crush.
 Qed.
 
+Lemma list_length_z_istail':
+  forall A:Type,
+  forall b l:list A,
+  is_tail b l ->
+  b <> nil ->
+  list_length_z (skipn 1 b) < list_length_z l.
+Proof.
+  intros A b l H.
+  induction H.
+  - destruct c; [ crush | rewrite list_length_z_cons; crush ].
+  - rewrite list_length_z_cons; crush.
+Qed.
+
 Lemma list_length_z_istail:
   forall A:Type,
   forall v:A,
@@ -283,8 +296,12 @@ Lemma list_length_z_istail:
   is_tail (v :: b) l ->
   list_length_z b < list_length_z l.
 Proof.
-  (* XXX *)
-Admitted.
+  intros.
+  remember (v::b) as b'.
+  cut (b = skipn 1 b').
+  - intros; rewrite H0; apply list_length_z_istail'; crush.
+  - crush.
+Qed.
 
 Lemma transl_code_label:
   forall b c b' c' k,
