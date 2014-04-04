@@ -14,6 +14,7 @@
 #include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/init.h>
+#include <linux/filter.h>
 #include <linux/ftrace.h>
 #include <linux/proc_fs.h>
 #include <linux/seq_file.h>
@@ -43,7 +44,7 @@ struct seccomp_filter {
 	atomic_t usage;
 	struct seccomp_filter *prev;
 	unsigned short len;
-	void *insns;
+	u8 insns[];
 };
 
 static int binary_run_filter(void *dummy, void *insns)
@@ -52,18 +53,24 @@ static int binary_run_filter(void *dummy, void *insns)
 	// TODO: maybe set some magic number - pad nops or allocate
 	// code at some specific address, and we can run it as either
 	// binary or BPF.
-	return SECCOMP_RET_ALLOW;
+	/* no infinite recusion - parent_ip checking */
+	return sk_run_filter(dummy, insns);
 }
+
+#define SYM_RUN_FILTER			"sk_run_filter"
+#define SYM_PARENT_RUN_FILTER		"__secure_computing"
+#define SYM_PARENT_NEXT_RUN_FILTER	"prctl_get_seccomp"
+static unsigned long addr_run_filter;
+static unsigned long addr_parent_run_filter;
+static unsigned long addr_parent_next_run_filter;
 
 static void notrace seccomp_ftrace_handler(
         unsigned long ip, unsigned long parent_ip,
         struct ftrace_ops *op, struct pt_regs *regs)
 {
-	char str[KSYM_SYMBOL_LEN];
-
-	sprint_symbol_no_offset(str, parent_ip);
 	/* skip if not calling from seccomp (e.g., packet_rcv) */
-	if (strcmp(str, "__secure_computing"))
+	if (parent_ip < addr_parent_run_filter ||
+	    parent_ip >= addr_parent_next_run_filter)
 		return;
 
 	preempt_disable_notrace();
@@ -79,15 +86,12 @@ static struct ftrace_ops seccomp_ftrace_ops __read_mostly = {
 
 static int seccomp_ftrace_enabled;
 
-#define secure_computing_name "sk_run_filter"
-static unsigned long secure_computing_addr;
-
 /* called with enabled_mutex */
 static int arm_seccomp(void)
 {
 	int ret;
 
-	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, secure_computing_addr, 0, 0);
+	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, addr_run_filter, 0, 0);
 	if (ret) {
 		pr_warn("%s: ftrace_set_filter_ip failed, return %d\n", __func__, ret);
 		return ret;
@@ -99,7 +103,7 @@ static int arm_seccomp(void)
 			return ret;
 		}
 	}
-	pr_info("%s: `%s' armed\n", __func__, secure_computing_name);
+	pr_info("%s: `%s' armed\n", __func__, SYM_RUN_FILTER);
 	return 0;
 }
 
@@ -115,12 +119,12 @@ static int disarm_seccomp(void)
 			return ret;
 		}
 	}
-	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, secure_computing_addr, 1, 0);
+	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, addr_run_filter, 1, 0);
 	if (ret) {
 		pr_warn("%s: ftrace_set_filter_ip failed, return %d", __func__, ret);
 		return ret;
 	}
-	pr_info("%s: `%s' disarmed\n", __func__, secure_computing_name);
+	pr_info("%s: `%s' disarmed\n", __func__, SYM_RUN_FILTER);
 	return 0;
 }
 
@@ -226,9 +230,11 @@ static int __init bseccomp_init(void)
 {
 	struct proc_dir_entry *base_dir;
 
-	secure_computing_addr = kallsyms_lookup_name(secure_computing_name);
-	if (!secure_computing_addr) {
-		pr_info("%s: failed to locate `%s'\n", __func__, secure_computing_name);
+	addr_run_filter = kallsyms_lookup_name(SYM_RUN_FILTER);
+	addr_parent_run_filter = kallsyms_lookup_name(SYM_PARENT_RUN_FILTER);
+	addr_parent_next_run_filter = kallsyms_lookup_name(SYM_PARENT_NEXT_RUN_FILTER);
+	if (!addr_run_filter || !addr_parent_run_filter || !addr_parent_next_run_filter) {
+		pr_info("%s: failed to locate symbols\n", __func__);
 		return -ENOTSUPP;
 	}
 
