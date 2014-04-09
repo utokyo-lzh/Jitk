@@ -49,7 +49,7 @@ Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=
 
 Definition transl_function (f: Seccomp.function) : res Cminor.function :=
   do body <- transl_funbody f;
-  let sig := mksignature nil (Some Tint) in
+  let sig := mksignature nil (Some Tint) cc_default in
   let vars := reg_a::reg_x::reg_mem::nil in
   let stackspace := (Zmult seccomp_memwords 4) in
   OK (Cminor.mkfunction sig nil vars stackspace body).

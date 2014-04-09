@@ -6,9 +6,6 @@ Require Import compcert.common.Errors.
 
 Extraction Blacklist List String Int.
 
-Extract Constant Memdata.big_endian =>
-  "Memdataaux.big_endian".
-
 Extraction Inline Errors.bind Errors.bind2.
 
 Extract Constant AST.ident_of_string =>

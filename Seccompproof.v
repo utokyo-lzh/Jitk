@@ -48,7 +48,7 @@ Qed.
 Lemma sig_transl_function:
   forall fd tfd,
   transl_fundef fd = OK tfd ->
-  Cminor.funsig tfd = mksignature nil (Some Tint).
+  Cminor.funsig tfd = mksignature nil (Some Tint) cc_default.
 Proof.
   intros.
   destruct fd; monadInv H; auto.
