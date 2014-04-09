@@ -2,6 +2,7 @@ Require Import ExtrOcamlBasic.
 Require Import ExtrOcamlString.
 Require Import Seccomp.
 Require Import Seccompjit.
+Require Import Seccompenc.
 Require Import compcert.common.Errors.
 
 Extraction Blacklist List String Int.
@@ -20,3 +21,4 @@ Extract Constant Seccompjit.seccomp_memwords =>
 Cd "codegen".
 Extraction Library Seccomp.
 Extraction Library Seccompjit.
+Extraction Library Seccompenc.
