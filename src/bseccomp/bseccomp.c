@@ -47,6 +47,17 @@ struct seccomp_filter {
 	u8 insns[];
 };
 
+#define SYM_RUN_FILTER			"sk_run_filter"
+#define SYM_PARENT_RUN_FILTER		"__secure_computing"
+#define SYM_ATTACH_FILTER		"seccomp_attach_user_filter"
+#define SYM_PARENT_ATTACH_FILTER	"prctl_set_seccomp"
+static unsigned long addr_run_filter;
+static unsigned long addr_parent_run_filter;
+static unsigned long size_parent_run_filter;
+static unsigned long addr_attach_filter;
+static unsigned long addr_parent_attach_filter;
+static unsigned long size_parent_attach_filter;
+
 static int binary_run_filter(void *dummy, void *insns)
 {
 	pr_info("%s\n", __func__);
@@ -57,20 +68,22 @@ static int binary_run_filter(void *dummy, void *insns)
 	return sk_run_filter(dummy, insns);
 }
 
-#define SYM_RUN_FILTER			"sk_run_filter"
-#define SYM_PARENT_RUN_FILTER		"__secure_computing"
-#define SYM_PARENT_NEXT_RUN_FILTER	"prctl_get_seccomp"
-static unsigned long addr_run_filter;
-static unsigned long addr_parent_run_filter;
-static unsigned long addr_parent_next_run_filter;
+static long binary_attach_filter(char __user *user_filter)
+{
+	typedef long (*attach_filter_t)(char __user *user_filter);
+	attach_filter_t orig_attach = (attach_filter_t)addr_attach_filter;
 
-static void notrace seccomp_ftrace_handler(
+	pr_info("%s\n", __func__);
+	return orig_attach(user_filter);
+}
+
+static void notrace run_ftrace_handler(
         unsigned long ip, unsigned long parent_ip,
         struct ftrace_ops *op, struct pt_regs *regs)
 {
 	/* skip if not calling from seccomp (e.g., packet_rcv) */
 	if (parent_ip < addr_parent_run_filter ||
-	    parent_ip >= addr_parent_next_run_filter)
+	    parent_ip >= addr_parent_run_filter + size_parent_run_filter)
 		return;
 
 	preempt_disable_notrace();
@@ -79,52 +92,55 @@ static void notrace seccomp_ftrace_handler(
 	preempt_enable_notrace();
 }
 
-static struct ftrace_ops seccomp_ftrace_ops __read_mostly = {
-	.func = seccomp_ftrace_handler,
+static void notrace attach_ftrace_handler(
+        unsigned long ip, unsigned long parent_ip,
+        struct ftrace_ops *op, struct pt_regs *regs)
+{
+	/* avoid recursive calls */
+	if (parent_ip < addr_parent_attach_filter ||
+	    parent_ip >= addr_parent_attach_filter + size_parent_attach_filter)
+		return;
+
+	preempt_disable_notrace();
+	/* hijack seccomp_attach_user_filter */
+	regs->ip = (unsigned long)binary_attach_filter;
+	preempt_enable_notrace();
+}
+
+
+static struct ftrace_ops run_ftrace_ops __read_mostly = {
+	.func = run_ftrace_handler,
 	.flags = FTRACE_OPS_FL_SAVE_REGS,
 };
 
-static int seccomp_ftrace_enabled;
+static struct ftrace_ops attach_ftrace_ops __read_mostly = {
+	.func = attach_ftrace_handler,
+	.flags = FTRACE_OPS_FL_SAVE_REGS,
+};
 
 /* called with enabled_mutex */
-static int arm_seccomp(void)
+static int arm_seccomp(struct ftrace_ops *fops, unsigned long ip, const char *sym)
 {
 	int ret;
 
-	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, addr_run_filter, 0, 0);
-	if (ret) {
-		pr_warn("%s: ftrace_set_filter_ip failed, return %d\n", __func__, ret);
-		return ret;
-	}
-	if (++seccomp_ftrace_enabled == 1) {
-		ret = register_ftrace_function(&seccomp_ftrace_ops);
-		if (ret) {
-			pr_warn("%s: register_ftrace_function failed\n", __func__);
-			return ret;
-		}
-	}
-	pr_info("%s: `%s' armed\n", __func__, SYM_RUN_FILTER);
+	ret = ftrace_set_filter_ip(fops, ip, 0, 0);
+	WARN(ret, "%s: ftrace_set_filter_ip `%s' failed (%d)\n", __func__, sym, ret);
+	ret = register_ftrace_function(fops);
+	WARN(ret, "%s: register_ftrace_function `%s' failed (%d)\n", __func__, sym, ret);
+	pr_info("%s: `%s' armed\n", __func__, sym);
 	return 0;
 }
 
 /* called with enabled_mutex */
-static int disarm_seccomp(void)
+static int disarm_seccomp(struct ftrace_ops *fops, unsigned long ip, const char *sym)
 {
-	int ret = 0;
+	int ret;
 
-	if (!--seccomp_ftrace_enabled) {
-		ret = unregister_ftrace_function(&seccomp_ftrace_ops);
-		if (ret) {
-			pr_warn("%s: unregister_ftrace_function failed, return %d\n", __func__, ret);
-			return ret;
-		}
-	}
-	ret = ftrace_set_filter_ip(&seccomp_ftrace_ops, addr_run_filter, 1, 0);
-	if (ret) {
-		pr_warn("%s: ftrace_set_filter_ip failed, return %d", __func__, ret);
-		return ret;
-	}
-	pr_info("%s: `%s' disarmed\n", __func__, SYM_RUN_FILTER);
+	ret = unregister_ftrace_function(fops);
+	WARN(ret, "%s: unregister_ftrace_function `%s' failed (%d)\n", __func__, sym, ret);
+	ret = ftrace_set_filter_ip(fops, ip, 1, 0);
+	WARN(ret, "%s: ftrace_set_filter_ip `%s' failed (%d)", __func__, sym, ret);
+	pr_info("%s: `%s' disarmed\n", __func__, sym);
 	return 0;
 }
 
@@ -152,10 +168,15 @@ static ssize_t enabled_write(struct file *file, const char __user *user_buf,
 	if (enabled == bv)
 		goto out;
 
-	if (bv)
-		armed = arm_seccomp();		/* install jprobe */
-	else
-		armed = disarm_seccomp();	/* uninstall jprobe */
+	if (bv) {
+		armed =	arm_seccomp(&run_ftrace_ops, addr_run_filter, SYM_RUN_FILTER) ||
+			arm_seccomp(&attach_ftrace_ops, addr_attach_filter, SYM_ATTACH_FILTER)
+			;
+	} else {
+		armed = disarm_seccomp(&run_ftrace_ops, addr_run_filter, SYM_RUN_FILTER) ||
+			disarm_seccomp(&attach_ftrace_ops, addr_attach_filter, SYM_ATTACH_FILTER)
+			;
+	}
 	if (armed) {
 		ret = armed;
 		goto out;
@@ -212,7 +233,6 @@ static ssize_t bfilter_write(struct file *file, const char __user *buf, size_t c
 		return -EFAULT;
 	}
 
-	/* is it really useful to support multiple filters? */
 	filter->prev = current->seccomp.filter;
 	current->seccomp.filter = filter;
 	return count;
@@ -226,14 +246,37 @@ static const struct file_operations bfilter_fops = {
 	.write		= bfilter_write,
 };
 
+#define kallsyms_lookup_size_offset ((lookup_size_offset_t)(addr_lookup_size_offset))
+typedef int (*lookup_size_offset_t)(unsigned long, unsigned long *, unsigned long *);
+static unsigned long addr_lookup_size_offset;
+
+static unsigned long kallsyms_lookup_name_size(const char *name, unsigned long *symbolsize)
+{
+	unsigned long addr = kallsyms_lookup_name(name);
+
+	if (addr) {
+		unsigned long offset;
+		int ret;
+
+		ret = kallsyms_lookup_size_offset(addr, symbolsize, &offset);
+		WARN(ret || offset, "kallsyms_lookup_size_offset `%s' (%d)", name, ret);
+	}
+	return addr;
+}
+
 static int __init bseccomp_init(void)
 {
 	struct proc_dir_entry *base_dir;
 
+	addr_lookup_size_offset = kallsyms_lookup_name("kallsyms_lookup_size_offset");
 	addr_run_filter = kallsyms_lookup_name(SYM_RUN_FILTER);
-	addr_parent_run_filter = kallsyms_lookup_name(SYM_PARENT_RUN_FILTER);
-	addr_parent_next_run_filter = kallsyms_lookup_name(SYM_PARENT_NEXT_RUN_FILTER);
-	if (!addr_run_filter || !addr_parent_run_filter || !addr_parent_next_run_filter) {
+	addr_parent_run_filter = kallsyms_lookup_name_size(SYM_PARENT_RUN_FILTER, &size_parent_run_filter);
+	addr_attach_filter = kallsyms_lookup_name(SYM_ATTACH_FILTER);
+	addr_parent_attach_filter = kallsyms_lookup_name_size(SYM_PARENT_ATTACH_FILTER, &size_parent_attach_filter);
+	if (!addr_run_filter ||
+	    !addr_parent_run_filter ||
+	    !addr_attach_filter ||
+	    !addr_parent_attach_filter) {
 		pr_info("%s: failed to locate symbols\n", __func__);
 		return -ENOTSUPP;
 	}
