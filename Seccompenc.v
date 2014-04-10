@@ -55,6 +55,7 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
   | BPF_S_ALU_ADD_K => OK (Salu (Aaddimm k))
   | BPF_S_ALU_ADD_X => OK (Salu Aadd)
   | BPF_S_JMP_JA    => OK (Sjmp_ja k)
+  | Zpos x => Error (MSG "unknown opcode: " :: POS x :: nil)
   | _ => Error (msg "unknown opcode")
   end.
 
