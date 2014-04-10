@@ -26,11 +26,14 @@ Record encoding : Type := mkenc {
   enc_k: int
 }.
 
-Notation BPF_S_RET_K     := 1.
-Notation BPF_S_RET_A     := 2.
-Notation BPF_S_ALU_ADD_K := 3.
-Notation BPF_S_ALU_ADD_X := 4.
-Notation BPF_S_JMP_JA    := 41.
+(* linux-git/include/uapi/linux/filter.h *)
+Notation BPF_S_RET_K     := 6.
+Notation BPF_S_RET_A     := 22.
+Notation BPF_S_LD_W_ABS  := 32.
+Notation BPF_S_JMP_JA    := 5.
+Notation BPF_S_JMP_JEQ_K := 21.
+Notation BPF_S_ALU_ADD_K := 4.
+Notation BPF_S_ALU_ADD_X := 12.
 
 Definition mkencx (c:Z) (jt jf:byte) (k:int) :=
   mkenc (Short.repr c) jt jf k.
@@ -39,22 +42,41 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
   match i with
   | Sret_a =>
     OK (mkencx BPF_S_RET_A Byte.zero Byte.zero Int.zero)
+  | Sret_k k =>
+    OK (mkencx BPF_S_RET_K Byte.zero Byte.zero k)
+
+  | Sld_w_abs k =>
+    OK (mkencx BPF_S_LD_W_ABS Byte.zero Byte.zero k)
+
   | Salu (Aaddimm k) =>
     OK (mkencx BPF_S_ALU_ADD_K Byte.zero Byte.zero k)
   | Salu Aadd =>
     OK (mkencx BPF_S_ALU_ADD_X Byte.zero Byte.zero Int.zero)
+
   | Sjmp_ja k =>
     OK (mkencx BPF_S_JMP_JA Byte.zero Byte.zero k)
+  | Sjmp_jeq_k t f k =>
+    OK (mkencx BPF_S_JMP_JEQ_K t f k)
+
   | _ => Error (msg "unknown Seccomp.instruction")
   end.
 
 Definition decode_inst (e: encoding) : res Seccomp.instruction :=
   let k := e.(enc_k) in
+  let t := e.(enc_jt) in
+  let f := e.(enc_jf) in
   match Short.unsigned e.(enc_code) with
   | BPF_S_RET_A     => OK (Sret_a)
+  | BPF_S_RET_K     => OK (Sret_k k)
+
+  | BPF_S_LD_W_ABS  => OK (Sld_w_abs k)
+
   | BPF_S_ALU_ADD_K => OK (Salu (Aaddimm k))
   | BPF_S_ALU_ADD_X => OK (Salu Aadd)
+
   | BPF_S_JMP_JA    => OK (Sjmp_ja k)
+  | BPF_S_JMP_JEQ_K => OK (Sjmp_jeq_k t f k)
+
   | Zpos x => Error (MSG "unknown opcode: " :: POS x :: nil)
   | _ => Error (msg "unknown opcode")
   end.
