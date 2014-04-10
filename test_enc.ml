@@ -66,11 +66,11 @@ let decenc_test f =
 ;;
 
 let main () =
-    let argc = Array.length Sys.argv in
-    if argc < 2 then
-        (Format.printf "Usage: %s <FILE>\n" Sys.executable_name; exit 1)
-    else
-        decenc_test Sys.argv.(1)
+  let argc = Array.length Sys.argv in
+  if argc < 2 then
+    (Format.printf "Usage: %s <FILE>\n" Sys.executable_name; exit 1)
+  else
+    decenc_test Sys.argv.(1)
 ;;
 
 main ()
