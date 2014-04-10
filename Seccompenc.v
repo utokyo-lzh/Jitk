@@ -121,6 +121,37 @@ Proof.
   exists a; exists a0; exists a1; exists a2; auto.
 Qed.
 
+Lemma length_8:
+  forall A:Type,
+  forall l:list A,
+  length l = 8%nat ->
+  exists a b c d e f g h:A, l = [a;b;c;d;e;f;g;h].
+Proof.
+  intros.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  destruct l; crush.
+  exists a; exists a0; exists a1; exists a2; exists a3;
+    exists a4; exists a5; exists a6; auto.
+Qed.
+
+Lemma encode_bytes_length:
+  forall e l,
+  encode_bytes e = OK l -> length l = 8%nat.
+Proof.
+  intros.
+  monadInv H.
+  repeat rewrite app_length.
+  repeat rewrite encode_int_length.
+  auto.
+Qed.
+
 (* From http://compcert.inria.fr/doc/html/Memdata.html *)
 Lemma decode_encode_int_1':
   forall x, Byte.repr (decode_int (encode_int 1 (Byte.unsigned x))) = x.
@@ -179,9 +210,30 @@ Fixpoint seccomp_decode (l: list byte) : res Seccomp.code :=
   | _ => Error (msg "uneven bytes")
   end.
 
+(* This is so that "monadInv H" below doesn't unfold encode_bytes *)
+Opaque encode_bytes.
+Opaque decode_bytes.
+
 Theorem seccomp_encode_decode:
   forall c l,
   seccomp_encode c = OK l -> seccomp_decode l = OK c.
 Proof.
-  (* XXX *)
-Admitted.
+  induction c.
+  - crush.
+  - intros.
+    monadInv H.
+    destruct (length_8 byte x0 (encode_bytes_length _ _ EQ1)).
+    destruct H.
+    destruct H.
+    destruct H.
+    destruct H.
+    destruct H.
+    destruct H.
+    destruct H.
+    rewrite H; simpl.
+    rewrite (encode_decode_bytes x); simpl.
+    rewrite (encode_decode_inst a); simpl.
+    rewrite IHc; simpl; auto.
+    crush.
+    crush.
+Qed.
