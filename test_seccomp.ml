@@ -23,19 +23,19 @@ let jit_and_print f =
     (* using stdout instead of stderr to fully order diagnostic output *)
 in List.map jit_and_print [
   [
-    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu (Aaddimm Integers.Int.one);
     Seccomp.Sret_a;
   ];
   [
-    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu (Aaddimm Integers.Int.one);
     Seccomp.Sjmp_ja Integers.Int.zero;
     Seccomp.Sjmp_ja Integers.Int.one;
-    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu (Aaddimm Integers.Int.one);
     Seccomp.Sret_a;
   ];
   [
-    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu (Aaddimm Integers.Int.one);
     Seccomp.Sjmp_ja Integers.Int.one;
-    Seccomp.Salu_add_k Integers.Int.one;
+    Seccomp.Salu (Aaddimm Integers.Int.one);
   ];
 ];;

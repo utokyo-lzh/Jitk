@@ -14,11 +14,17 @@ Definition reg_mem: ident := 3%positive.
 
 Open Local Scope error_monad_scope.
 
+Definition transl_op (op: Seccomp.alu) : Cminor.expr :=
+  match op with
+  | Aadd => Ebinop Oadd (Evar reg_a) (Evar reg_x)
+  | Aaddimm k => Ebinop Oadd (Evar reg_a) (Econst (Ointconst k))
+  end.
+
 Definition transl_instr (instr: Seccomp.instruction)
                         (nextlbl: Z) : res Cminor.stmt :=
   match instr with
-  | Salu_add_k k =>
-    OK (Sassign reg_a (Ebinop Oadd (Evar reg_a) (Econst (Ointconst k))))
+  | Salu op =>
+    OK (Sassign reg_a (transl_op op))
   | Sjmp_ja k =>
     match nextlbl - (Int.unsigned k) with
     | Zpos p => OK (Sgoto p)

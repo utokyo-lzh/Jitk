@@ -8,45 +8,25 @@ Require Import compcert.lib.Maps.
 
 Set Implicit Arguments.
 
+Inductive alu : Type :=
+  | Aadd: alu
+  | Aaddimm: int -> alu
+(*
+  | Asub: operation
+  | Asubimm: int -> operation
+  | Amul: operation
+  | Adiv: operation
+  | Aand: opeartion
+  | Aor: opeartion
+  | Axor: opeartion
+  | Alsh: opeartion
+  | Arsh: opeartion
+*)
+  .
+
 Inductive instruction : Type :=
-  | Salu_add_k: int -> instruction
-      (** A <- A + k *)
-  | Salu_sub_k: int -> instruction
-      (** A <- A - k *)
-  | Salu_mul_k: int -> instruction
-      (** A <- A * k *)
-  | Salu_div_k: int -> instruction
-      (** A <- A / k *)
-  | Salu_and_k: int -> instruction
-      (** A <- A & k *)
-  | Salu_or_k: int -> instruction
-      (** A <- A | k *)
-  | Salu_xor_k: int -> instruction
-      (** A <- A ^ k *)
-  | Salu_lsh_k: int -> instruction
-      (** A <- A << k *)
-  | Salu_rsh_k: int -> instruction
-      (** A <- A >> k *)
-  | Salu_add_x: instruction
-      (** A <- A + X *)
-  | Salu_sub_x: instruction
-      (** A <- A - X *)
-  | Salu_mul_x: instruction
-      (** A <- A * X *)
-  | Salu_div_x: instruction
-      (** A <- A / X *)
-  | Salu_and_x: instruction
-      (** A <- A & X *)
-  | Salu_or_x: instruction
-      (** A <- A | X *)
-  | Salu_xor_x: int -> instruction
-      (** A <- A ^ X *)
-  | Salu_lsh_x: instruction
-      (** A <- A << X *)
-  | Salu_rsh_x: instruction
-      (** A <- A >> X *)
-  | Salu_neg: instruction
-      (** A <- -A *)
+  | Salu: alu -> instruction
+      (** A <- arithmetic *)
   | Sld_w_abs: int -> instruction
       (** A <- seccomp_bpf_load(k), access struct seccomp_data *)
   | Sld_w_len: instruction
@@ -125,11 +105,17 @@ Inductive state : Type :=
     state
   .
 
+Definition eval_alu (op: alu) (a: int) (x: int): int :=
+  match op with
+  | Aadd => Int.add a x
+  | Aaddimm k => Int.add a k
+  end.
+
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
-  | exec_Salu_add_k:
-      forall a x sm f k b m,
-      let a' := Int.add a k in
-      step ge (State a x sm f (Salu_add_k k :: b) m)
+  | exec_Salu:
+      forall op a x sm f b m,
+      let a' := eval_alu op a x in
+      step ge (State a x sm f (Salu op :: b) m)
         E0 (State a' x sm f b m)
   | exec_Sjmp_ja:
       forall a x sm f k b m,
