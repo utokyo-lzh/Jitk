@@ -15,9 +15,12 @@ OCAMLINC   = \
 FILES = CpdtTactics.v \
 	Seccomp.v Seccompjit.v Seccompspec.v Seccompenc.v #Seccompproof.v
 
-all: test_seccomp.native
+all: test_seccomp.native test_enc.native
 
 test_seccomp.native: test_seccomp.ml codegen/extraction.vo
+	$(OCAMLBUILD) $(OCAMLINC) $@
+
+test_enc.native: test_enc.ml codegen/extraction.vo
 	$(OCAMLBUILD) $(OCAMLINC) $@
 
 codegen/extraction.vo: $(FILES:.v=.vo)
