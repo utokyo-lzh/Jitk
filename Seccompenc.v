@@ -5,6 +5,7 @@ Require Import compcert.common.Errors.
 Require Import compcert.common.Memdata.
 Require Import compcert.lib.Integers.
 Require Import Seccomp.
+Require Import CpdtTactics.
 
 Open Local Scope list_scope.
 Open Local Scope error_monad_scope.
@@ -51,8 +52,8 @@ Lemma encode_decode_inst:
   forall i e,
   encode_inst i = OK e -> decode_inst e = OK i.
 Proof.
-  (* XXX *)
-Admitted.
+  induction i; crush.
+Qed.
 
 Definition encode_bytes (e: encoding) : res (list byte) :=
   OK ((encode_int 2 (Short.unsigned (enc_code e))) ++
