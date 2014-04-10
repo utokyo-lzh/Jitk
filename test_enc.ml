@@ -62,15 +62,18 @@ let decenc_test f =
   let s = read_file f in
   let bpf = decode s in
   let ss = encode bpf in
-  print_string ss
+  if s = ss then
+    (print_string "Test passed.\n"; exit 0)
+  else
+    (print_string ss; exit 1)
 ;;
 
 let main () =
-  let argc = Array.length Sys.argv in
-  if argc < 2 then
-    (Format.printf "Usage: %s <FILE>\n" Sys.executable_name; exit 1)
-  else
-    decenc_test Sys.argv.(1)
+    let argc = Array.length Sys.argv in
+    if argc < 2 then
+        (Format.printf "Usage: %s <FILE>\n" Sys.executable_name; exit 1)
+    else
+        decenc_test Sys.argv.(1)
 ;;
 
 main ()
