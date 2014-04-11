@@ -65,15 +65,11 @@ Definition transl_instr (instr: Seccomp.instruction)
   | Salu op =>
     OK (Sassign reg_a (transl_op op))
   | Sjmp_ja k =>
-    match nextlbl - (Int.unsigned k) with
-    | Zpos p => OK (Sgoto p)
-    | _ => Error (msg "Illegal offset")
-    end
+    OK (Sgoto (Z.to_pos (nextlbl - (Int.unsigned k))))
   | Sjmp_jc cond jt jf =>
-    match nextlbl - (Byte.unsigned jt), nextlbl - (Byte.unsigned jf) with
-    | Zpos pt, Zpos pf => OK (Sifthenelse (transl_cond cond) (Sgoto pt) (Sgoto pf))
-    | _, _ => Error (msg "Illegal offset")
-    end
+    OK (Sifthenelse (transl_cond cond)
+          (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jt))))
+          (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jf)))))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>
