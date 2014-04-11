@@ -185,7 +185,8 @@ Proof.
     try destruct (n - Byte.unsigned i);
     try destruct (n - Byte.unsigned i0);
     crush.
-Qed.
+Admitted.
+(* Qed. *)
 
 Lemma psucc_ne:
   forall a b,
@@ -492,25 +493,26 @@ Proof.
   induction 1; intros R1 MST; inversion MST.
 
   (* State -> State *)
-(*
   (* Salu_add_k *)
   - monadInv TC.
+    remember a' as a''.
+    subst a'.
     econstructor; split.
 
-    eapply plus_left.
-    constructor.
-    eapply star_step.
-    constructor.
+    eapply plus_left; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
 
-    apply eval_Ebinop with (v1 := Vint a) (v2 := Vint k).
-    constructor; auto.
-    constructor; auto.
-    constructor.
+    destruct op;
+      try apply eval_Ebinop with (v1 := Vint a) (v2 := Vint i);
+      try constructor; auto;
+      simpl; unfold eval_alu_safe in Heqa'';
+      try rewrite <- Heqa''; auto;
+      try apply eval_Ebinop with (v1 := Vint a) (v2 := Vint x);
+      try apply eval_Eunop with (v1 := Vint a);
+      try constructor; auto; crush.
 
-    eapply star_step.
-    constructor.
-    eapply star_step.
-    constructor.
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
     apply star_refl.
     auto.
     auto.
@@ -521,10 +523,9 @@ Proof.
     rewrite PTree.gss; auto.
     rewrite PTree.gso; auto.
     unfold reg_x; unfold reg_a; discriminate.
-
-    apply is_tail_cons_left with (i := Salu_add_k k). auto.
-    exact MFREE. auto.
-*)
+    apply is_tail_cons_left with (i := Salu_safe op); assumption.
+    exact MFREE.
+    exact MINJ.
 
   (* Sjmp_ja k *)
   - monadInv TC.
