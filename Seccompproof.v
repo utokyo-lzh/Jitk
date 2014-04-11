@@ -625,6 +625,25 @@ Proof.
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush.
 
+  (* Sld_w_abs k *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    constructor.  simpl.  auto.
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    apply star_refl.
+    auto.
+    auto.
+    auto.
+    auto.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto.
+    unfold reg_x; unfold reg_a; discriminate.
+    apply is_tail_cons_left with (i:=Sld_w_abs k); assumption.
+    exact MFREE.
+    exact MINJ.
+
   (* Sret_a *)
   - monadInv TC.
     econstructor; split.
