@@ -307,16 +307,18 @@ Proof.
   - crush.
 Qed.
 
-Lemma length_skipn_pos:
+Lemma list_length_nat_z:
   forall A:Type,
   forall l:list A,
-  forall p,
-  Z.pos p < list_length_z l ->
-  (Pos.of_succ_nat (length l) - p)%positive =
-  Pos.of_succ_nat (length (skipn (Pos.to_nat p) l)).
+  list_length_z l = Z.of_nat (length l).
 Proof.
-  (* XXX *)
-Admitted.
+  induction l.
+  - crush.
+  - rewrite list_length_z_cons; rewrite IHl.
+    unfold length.
+    rewrite Nat2Z.inj_succ.
+    crush.
+Qed.
 
 Lemma length_pos:
   forall A:Type,
@@ -325,6 +327,25 @@ Lemma length_pos:
   Z.pos p < list_length_z l ->
   (p < Pos.of_succ_nat (length l))%positive.
 Proof.
+  intros.
+  rewrite list_length_nat_z in H.
+  apply Pos.ltb_lt.
+  rewrite Pos2Z.inj_ltb.
+  apply Z.ltb_lt.
+  apply (Z.lt_le_trans _ _ _ H).
+  rewrite Zpos_P_of_succ_nat.
+  crush.
+Qed.
+
+Lemma length_skipn_pos:
+  forall A:Type,
+  forall l:list A,
+  forall p,
+  Z.pos p < list_length_z l ->
+  (Pos.of_succ_nat (length l) - p)%positive =
+  Pos.of_succ_nat (length (skipn (Pos.to_nat p) l)).
+Proof.
+  
   (* XXX *)
 Admitted.
 
