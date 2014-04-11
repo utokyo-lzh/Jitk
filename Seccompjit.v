@@ -14,29 +14,37 @@ Definition reg_mem: ident := 3%positive.
 
 Open Local Scope error_monad_scope.
 
-Definition transl_op (op: Seccomp.alu) : Cminor.expr :=
+Definition transl_alu_safe (op: Seccomp.alu_safe) : Cminor.expr :=
   match op with
   | Aaddimm k => Ebinop Oadd (Evar reg_a) (Econst (Ointconst k))
   | Asubimm k => Ebinop Osub (Evar reg_a) (Econst (Ointconst k))
   | Amulimm k => Ebinop Omul (Evar reg_a) (Econst (Ointconst k))
-  | Adivimm k => Ebinop Odivu (Evar reg_a) (Econst (Ointconst k))
-  | Amodimm k => Ebinop Omodu (Evar reg_a) (Econst (Ointconst k))
   | Aandimm k => Ebinop Oand (Evar reg_a) (Econst (Ointconst k))
   | Aorimm k => Ebinop Oor (Evar reg_a) (Econst (Ointconst k))
   | Axorimm k => Ebinop Oxor (Evar reg_a) (Econst (Ointconst k))
-  | Alshimm k => Ebinop Oshl (Evar reg_a) (Econst (Ointconst k))
-  | Arshimm k => Ebinop Oshru (Evar reg_a) (Econst (Ointconst k))
   | Aadd => Ebinop Oadd (Evar reg_a) (Evar reg_x)
   | Asub => Ebinop Osub (Evar reg_a) (Evar reg_x)
   | Amul => Ebinop Omul (Evar reg_a) (Evar reg_x)
-  | Adiv => Ebinop Odivu (Evar reg_a) (Evar reg_x)
-  | Amod => Ebinop Omodu (Evar reg_a) (Evar reg_x)
   | Aand => Ebinop Oand (Evar reg_a) (Evar reg_x)
   | Aor => Ebinop Oor (Evar reg_a) (Evar reg_x)
   | Axor => Ebinop Oxor (Evar reg_a) (Evar reg_x)
-  | Alsh => Ebinop Oshl (Evar reg_a) (Evar reg_x)
-  | Arsh => Ebinop Oshru (Evar reg_a) (Evar reg_x)
   | Aneg => Eunop Onegint (Evar reg_a)
+  end.
+
+Definition transl_alu_div (op: Seccomp.alu_div) : Cminor.expr * Cminor.expr :=
+  match op with
+  | Adivimm k => (Ebinop Odivu (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
+  | Amodimm k => (Ebinop Omodu (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
+  | Adiv      => (Ebinop Odivu (Evar reg_a) (Evar reg_x), (Evar reg_x))
+  | Amod      => (Ebinop Omodu (Evar reg_a) (Evar reg_x), (Evar reg_x))
+  end.
+
+Definition transl_alu_shift (op: Seccomp.alu_shift) : Cminor.expr * Cminor.expr :=
+  match op with
+  | Alshimm k => (Ebinop Oshl (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
+  | Arshimm k => (Ebinop Oshru (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
+  | Alsh      => (Ebinop Oshl (Evar reg_a) (Evar reg_x), (Evar reg_x))
+  | Arsh      => (Ebinop Oshru (Evar reg_a) (Evar reg_x), (Evar reg_x))
   end.
 
 Definition transl_cond (cond: Seccomp.condition) :=
@@ -62,8 +70,18 @@ Definition transl_cond (cond: Seccomp.condition) :=
 Definition transl_instr (instr: Seccomp.instruction)
                         (nextlbl: Z) : res Cminor.stmt :=
   match instr with
-  | Salu op =>
-    OK (Sassign reg_a (transl_op op))
+  | Salu_safe op =>
+    OK (Sassign reg_a (transl_alu_safe op))
+  | Salu_div op =>
+    let (resultexp, divexp) := transl_alu_div op in
+    OK (Sifthenelse (Ebinop (Ocmpu Ceq) divexp (Econst (Ointconst Int.zero)))
+                    (Sassign reg_a (Econst (Ointconst Int.zero)))
+                    (Sassign reg_a resultexp))
+  | Salu_shift op =>
+    let (resultexp, shiftexp) := transl_alu_shift op in
+    OK (Sifthenelse (Ebinop (Ocmpu Clt) shiftexp (Econst (Ointconst Int.iwordsize)))
+                    (Sassign reg_a resultexp)
+                    (Sassign reg_a (Econst (Ointconst Int.zero))))
   | Sjmp_ja k =>
     OK (Sgoto (Z.to_pos (nextlbl - (Int.unsigned k))))
   | Sjmp_jc cond jt jf =>
