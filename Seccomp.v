@@ -163,11 +163,13 @@ Definition eval_cond (cond: condition) (a: int) (x: int): bool :=
   end.
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
+(*
   | exec_Salu:
       forall op a x sm f b m,
       let a' := eval_alu op a x in
       step ge (State a x sm f (Salu op :: b) m)
         E0 (State a' x sm f b m)
+*)
   | exec_Sjmp_ja:
       forall a x sm f k b m,
       let off := Int.unsigned k in
