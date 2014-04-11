@@ -16,12 +16,17 @@ FILES = CpdtTactics.v \
 	Seccomp.v Seccompjit.v Seccompspec.v Seccompenc.v \
 	Seccompencproof.v Seccompproof.v
 
-all: test_seccomp.native test_enc.native test_gen.native test_gencminor.native
+all:	test_seccomp.native test_enc.native \
+	test_gen.native test_gencminor.native \
+	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh)
 
 test_%.native: test_%.ml codegen/extraction.vo
 	rm -f $@
 	$(OCAMLBUILD) $(OCAMLINC) -no-links $@
 	ln -s _build/$@ .
+
+examples/%/dump_bytes: examples/%/dump_bytes.c
+	gcc $< -o $@
 
 codegen/extraction.vo: $(FILES:.v=.vo)
 

@@ -6,3 +6,4 @@
 *.glob
 *.native
 /c/*.v
+/examples/*/dump_bytes
