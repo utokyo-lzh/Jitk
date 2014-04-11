@@ -178,8 +178,11 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
         E0 (State a x sm f (skipn (nat_of_Z off) b) m)
   | exec_Sjmp_jc:
       forall cond jt jf a x sm f b m,
-      let off := Byte.unsigned (if (eval_cond cond a x) then jt else jf) in
-      off < (list_length_z b) ->
+      let off_t := Byte.unsigned jt in
+      let off_f := Byte.unsigned jf in
+      off_t < (list_length_z b) ->
+      off_f < (list_length_z b) ->
+      let off := if (eval_cond cond a x) then off_t else off_f in
       step ge (State a x sm f (Sjmp_jc cond jt jf :: b) m)
         E0 (State a x sm f (skipn (nat_of_Z off) b) m)
 (*
