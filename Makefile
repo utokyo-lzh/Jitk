@@ -18,11 +18,9 @@ FILES = CpdtTactics.v \
 
 all: test_seccomp.native test_enc.native
 
-test_seccomp.native: test_seccomp.ml codegen/extraction.vo
-	$(OCAMLBUILD) $(OCAMLINC) $@
-
-test_enc.native: test_enc.ml codegen/extraction.vo
-	$(OCAMLBUILD) $(OCAMLINC) $@
+test_%.native: test_%.ml codegen/extraction.vo
+	$(OCAMLBUILD) $(OCAMLINC) -no-links $@
+	ln -s _build/$@ .
 
 codegen/extraction.vo: $(FILES:.v=.vo)
 
@@ -32,7 +30,7 @@ codegen/extraction.vo: $(FILES:.v=.vo)
 c/%.v: c/%.c
 	./compcert/clightgen $<
 
-.PRECIOUS: c/%.v
+.PRECIOUS: c/%.v test_%.native
 
 clean:
 	rm -rf _build *.vo *.glob *.native
