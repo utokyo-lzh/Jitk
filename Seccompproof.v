@@ -180,7 +180,11 @@ Lemma transl_instr_no_labels:
   transl_instr i n = OK c ->
   find_label l c k = None.
 Proof.
-  destruct i; crush; destruct (n - Int.unsigned i); crush.
+  destruct i; crush;
+    try destruct (n - Int.unsigned i);
+    try destruct (n - Byte.unsigned i);
+    try destruct (n - Byte.unsigned i0);
+    crush.
 Qed.
 
 Lemma psucc_ne:
