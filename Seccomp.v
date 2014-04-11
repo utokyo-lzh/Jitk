@@ -9,19 +9,38 @@ Require Import compcert.lib.Maps.
 Set Implicit Arguments.
 
 Inductive alu : Type :=
-  | Aadd: alu
   | Aaddimm: int -> alu
-(*
-  | Asub: operation
-  | Asubimm: int -> operation
-  | Amul: operation
-  | Adiv: operation
-  | Aand: opeartion
-  | Aor: opeartion
-  | Axor: opeartion
-  | Alsh: opeartion
-  | Arsh: opeartion
-*)
+  | Asubimm: int -> alu
+  | Amulimm: int -> alu
+  | Adivimm: int -> alu
+  | Amodimm: int -> alu
+  | Aandimm: int -> alu
+  | Aorimm: int -> alu
+  | Axorimm: int -> alu
+  | Alshimm: int -> alu
+  | Arshimm: int -> alu
+  | Aadd: alu
+  | Asub: alu
+  | Amul: alu
+  | Adiv: alu
+  | Amod: alu
+  | Aand: alu
+  | Aor: alu
+  | Axor: alu
+  | Alsh: alu
+  | Arsh: alu
+  | Aneg: alu
+  .
+
+Inductive condition : Type :=
+  | Jgtimm: int -> condition
+  | Jgeimm: int -> condition
+  | Jeqimm: int -> condition
+  | Jsetimm: int -> condition
+  | Jgt: condition
+  | Jge: condition
+  | Jeq: condition
+  | Jset: condition
   .
 
 Inductive instruction : Type :=
@@ -46,14 +65,7 @@ Inductive instruction : Type :=
   | Sstx: int -> instruction
       (** [k] <- X *)
   | Sjmp_ja: int -> instruction
-  | Sjmp_jgt_k: byte -> byte -> int -> instruction
-  | Sjmp_jge_k: byte -> byte -> int -> instruction
-  | Sjmp_jeq_k: byte -> byte -> int -> instruction
-  | Sjmp_jset_k: byte -> byte -> int -> instruction
-  | Sjmp_jgt_x: byte -> byte -> instruction
-  | Sjmp_jge_x: byte -> byte -> instruction
-  | Sjmp_jeq_x: byte -> byte -> instruction
-  | Sjmp_jset_x: byte -> byte -> instruction
+  | Sjmp_jc: condition -> byte -> byte -> instruction
   | Smisc_tax: instruction
       (** X <- A *)
   | Smisc_txa: instruction
@@ -107,8 +119,47 @@ Inductive state : Type :=
 
 Definition eval_alu (op: alu) (a: int) (x: int): int :=
   match op with
-  | Aadd => Int.add a x
   | Aaddimm k => Int.add a k
+  | Asubimm k => Int.sub a k
+  | Amulimm k => Int.mul a k
+  | Adivimm k => Int.divu a k
+  | Amodimm k => Int.modu a k
+  | Aandimm k => Int.and a k
+  | Aorimm k => Int.or a k
+  | Axorimm k => Int.xor a k
+  | Alshimm k => Int.shl a k
+  | Arshimm k => Int.shru a k
+  | Aadd => Int.add a x
+  | Asub => Int.sub a x
+  | Amul => Int.mul a x
+  | Adiv => Int.divu a x
+  | Amod => Int.modu a x
+  | Aand => Int.and a x
+  | Aor => Int.or a x
+  | Axor => Int.xor a x
+  | Alsh => Int.shl a x
+  | Arsh => Int.shru a x
+  | Aneg => Int.neg a
+  end.
+
+Definition eval_cond (cond: condition) (a: int) (x: int): bool :=
+  match cond with
+  | Jsetimm k => negb (Int.eq (Int.and a k) Int.zero)
+    (* A & k *)
+  | Jgtimm k => Int.cmpu Cgt a k
+    (* A > k *)
+  | Jgeimm k => Int.cmpu Cge a k
+    (* A >= k *)
+  | Jeqimm k => Int.eq a k
+    (* A == k *)
+  | Jset => negb (Int.eq (Int.and a x) Int.zero)
+    (* A & X *)
+  | Jgt => Int.cmpu Cgt a x
+    (* A > X *)
+  | Jge => Int.cmpu Cge a x
+    (* A >= X *)
+  | Jeq => Int.eq a x
+    (* A == X *)
   end.
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
@@ -123,14 +174,13 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       off < (list_length_z b) ->
       step ge (State a x sm f (Sjmp_ja k :: b) m)
         E0 (State a x sm f (skipn (nat_of_Z off) b) m)
+  | exec_Sjmp_jc:
+      forall cond jt jf a x sm f b m,
+      let off := Byte.unsigned (if (eval_cond cond a x) then jt else jf) in
+      off < (list_length_z b) ->
+      step ge (State a x sm f (Sjmp_jc cond jt jf :: b) m)
+        E0 (State a x sm f (skipn (nat_of_Z off) b) m)
 (*
-  | exec_Salu_add_x:
-      forall a x sm f pc m,
-      instruction_at f pc = Some (Salu_add_x) ->
-      let a' := Int.add a x in
-      let pc' := pc + 1 in
-      step ge (State a x sm f pc m)
-        E0 (State a' x sm f pc' m)
   | exec_Sld_w_abs:
       forall a a' x m f pc k,
       instruction_at f pc = Some (Sld_w_abs k) ->
@@ -150,15 +200,14 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let pc' := pc + 1 in
       step ge (State a x sm f pc m)
         E0 (State a sizeof_seccomp_data sm f pc' m)
-  | exec_Sret_k:
-      forall a x sm f pc k m,
-      instruction_at f pc = Some (Sret_k k) ->
-      step ge (State a x sm f pc m)
-        E0 (Returnstate k m)
 *)
   | exec_Sret_a:
       forall a x sm f b m,
       step ge (State a x sm f (Sret_a :: b) m)
+        E0 (Returnstate a m)
+  | exec_Sret_k:
+      forall a x sm f k b m,
+      step ge (State a x sm f (Sret_k k :: b) m)
         E0 (Returnstate a m)
   | exec_call:
       forall f m,

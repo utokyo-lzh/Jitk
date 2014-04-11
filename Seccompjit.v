@@ -16,8 +16,47 @@ Open Local Scope error_monad_scope.
 
 Definition transl_op (op: Seccomp.alu) : Cminor.expr :=
   match op with
-  | Aadd => Ebinop Oadd (Evar reg_a) (Evar reg_x)
   | Aaddimm k => Ebinop Oadd (Evar reg_a) (Econst (Ointconst k))
+  | Asubimm k => Ebinop Osub (Evar reg_a) (Econst (Ointconst k))
+  | Amulimm k => Ebinop Omul (Evar reg_a) (Econst (Ointconst k))
+  | Adivimm k => Ebinop Odivu (Evar reg_a) (Econst (Ointconst k))
+  | Amodimm k => Ebinop Omodu (Evar reg_a) (Econst (Ointconst k))
+  | Aandimm k => Ebinop Oand (Evar reg_a) (Econst (Ointconst k))
+  | Aorimm k => Ebinop Oor (Evar reg_a) (Econst (Ointconst k))
+  | Axorimm k => Ebinop Oxor (Evar reg_a) (Econst (Ointconst k))
+  | Alshimm k => Ebinop Oshl (Evar reg_a) (Econst (Ointconst k))
+  | Arshimm k => Ebinop Oshru (Evar reg_a) (Econst (Ointconst k))
+  | Aadd => Ebinop Oadd (Evar reg_a) (Evar reg_x)
+  | Asub => Ebinop Osub (Evar reg_a) (Evar reg_x)
+  | Amul => Ebinop Omul (Evar reg_a) (Evar reg_x)
+  | Adiv => Ebinop Odivu (Evar reg_a) (Evar reg_x)
+  | Amod => Ebinop Omodu (Evar reg_a) (Evar reg_x)
+  | Aand => Ebinop Oand (Evar reg_a) (Evar reg_x)
+  | Aor => Ebinop Oor (Evar reg_a) (Evar reg_x)
+  | Axor => Ebinop Oxor (Evar reg_a) (Evar reg_x)
+  | Alsh => Ebinop Oshl (Evar reg_a) (Evar reg_x)
+  | Arsh => Ebinop Oshru (Evar reg_a) (Evar reg_x)
+  | Aneg => Eunop Onegint (Evar reg_a)
+  end.
+
+Definition transl_cond (cond: Seccomp.condition) :=
+  match cond with
+  | Jsetimm k => Ebinop Oand (Evar reg_a) (Econst (Ointconst k))
+    (* A & k *)
+  | Jgtimm k => Ebinop (Ocmpu Cgt) (Evar reg_a) (Econst (Ointconst k))
+    (* A > k *)
+  | Jgeimm k => Ebinop (Ocmpu Cge) (Evar reg_a) (Econst (Ointconst k))
+    (* A >= k *)
+  | Jeqimm k => Ebinop (Ocmpu Ceq) (Evar reg_a) (Econst (Ointconst k))
+    (* A == k *)
+  | Jset => Ebinop Oand (Evar reg_a) (Evar reg_x)
+    (* A & X *)
+  | Jgt => Ebinop (Ocmpu Cgt) (Evar reg_a) (Evar reg_x)
+    (* A > X *)
+  | Jge => Ebinop (Ocmpu Cge) (Evar reg_a) (Evar reg_x)
+    (* A >= X *)
+  | Jeq => Ebinop (Ocmpu Ceq) (Evar reg_a) (Evar reg_x)
+    (* A == X *)
   end.
 
 Definition transl_instr (instr: Seccomp.instruction)
@@ -30,8 +69,15 @@ Definition transl_instr (instr: Seccomp.instruction)
     | Zpos p => OK (Sgoto p)
     | _ => Error (msg "Illegal offset")
     end
+  | Sjmp_jc cond jt jf =>
+    match nextlbl - (Byte.unsigned jt), nextlbl - (Byte.unsigned jf) with
+    | Zpos pt, Zpos pf => OK (Sifthenelse (transl_cond cond) (Sgoto pt) (Sgoto pf))
+    | _, _ => Error (msg "Illegal offset")
+    end
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
+  | Sret_k k =>
+    OK (Sreturn (Some (Econst (Ointconst k))))
   | _ => Error (msg "FIXME")
   end.
 

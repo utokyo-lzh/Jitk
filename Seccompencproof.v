@@ -11,7 +11,7 @@ Lemma encode_decode_inst:
   forall i e,
   encode_inst i = OK e -> decode_inst e = OK i.
 Proof.
-  induction i; crush; try destruct a; crush.
+  induction i; crush; try destruct a; try destruct c; crush.
 Qed.
 
 Lemma length_1:

@@ -56,9 +56,9 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
 
   | Sjmp_ja k =>
     OK (mkencx BPF_S_JMP_JA Byte.zero Byte.zero k)
-  | Sjmp_jeq_k t f k =>
+  | Sjmp_jc (Jeqimm k) t f =>
     OK (mkencx BPF_S_JMP_JEQ_K t f k)
-  | Sjmp_jset_k t f k =>
+  | Sjmp_jc (Jsetimm k) t f =>
     OK (mkencx BPF_S_JMP_JSET_K t f k)
 
   | _ => Error (msg "unknown Seccomp.instruction")
@@ -78,8 +78,8 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
   | BPF_S_ALU_ADD_X  => OK (Salu Aadd)
 
   | BPF_S_JMP_JA     => OK (Sjmp_ja k)
-  | BPF_S_JMP_JEQ_K  => OK (Sjmp_jeq_k t f k)
-  | BPF_S_JMP_JSET_K => OK (Sjmp_jset_k t f k)
+  | BPF_S_JMP_JEQ_K  => OK (Sjmp_jc (Jeqimm k) t f)
+  | BPF_S_JMP_JSET_K => OK (Sjmp_jc (Jsetimm k) t f)
 
   | Zpos x => Error (MSG "unknown opcode: " :: POS x :: nil)
   | _ => Error (msg "unknown opcode")
