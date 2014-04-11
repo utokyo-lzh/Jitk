@@ -328,6 +328,21 @@ Proof.
   (* XXX *)
 Admitted.
 
+Lemma length_skipn_pos':
+  forall A:Type,
+  forall b:list A,
+  forall z p,
+  z < list_length_z b ->
+  Z.pos p = match - z with
+    | 0 => Z.pos (Pos.of_succ_nat (length b))
+    | Z.pos y => Z.pos (Pos.of_succ_nat (length b) + y)
+    | Z.neg y => Z.pos_sub (Pos.of_succ_nat (length b)) y
+    end ->
+  p = Pos.of_succ_nat (length (skipn (nat_of_Z z) b)).
+Proof.
+  (* XXX *)
+Admitted.
+
 Lemma transl_code_label:
   forall b c b' c' k,
   transl_code b = OK c ->
@@ -363,7 +378,6 @@ Proof.
     monadInv H.
     apply IHx with (b:=(x++b')) (c:=x0); auto.
 Qed.
-
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
@@ -409,6 +423,10 @@ Proof.
 
   (* Sjmp_ja k *)
   - monadInv TC.
+    monadInv TF.
+    monadInv EQ0.
+    subst off.
+
     remember (match - Int.unsigned k with
               | 0 => Z.pos (Pos.of_succ_nat (length b))
               | Z.pos y' => Z.pos (Pos.of_succ_nat (length b) + y')
@@ -416,40 +434,26 @@ Proof.
               end) as newlabel.
     destruct newlabel; crush.
 
-    monadInv TF.
-    monadInv EQ0.
-
-    destruct (transl_code_suffix b x0 (skipn (nat_of_Z off) b)).
-    auto.
-    apply is_tail_skipn.
+    destruct (transl_code_suffix b x0 (skipn (nat_of_Z (Int.unsigned k)) b));
+      [ auto | apply is_tail_skipn | idtac ].
 
     econstructor; split.
-    eapply plus_left.
-    constructor.
-    eapply star_step.
-    constructor.
+    eapply plus_left ; [ constructor | idtac | idtac ].
+    eapply star_step ; [ constructor | idtac | idtac ].
 
-    simpl.
-    cut (p = P_of_succ_nat (length (skipn (nat_of_Z off) b))).
-    intros; rewrite H1.
+    rewrite length_skipn_pos' with (b:=b) (z:=Int.unsigned k) (p:=p);
+      [ idtac | auto | auto ].
+
     simpl.    (* remove transl_funbody's preamble from find_label's arg *)
     apply transl_code_label with (b:=f); crush.
 
-    apply is_tail_trans with (l2:=b).
-    apply is_tail_skipn.
-    apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
+    apply is_tail_trans with (l2:=b);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush ].
 
-    apply Z.le_lt_trans with (m:=(list_length_z b)).
-    apply list_length_z_skipn.
-    apply list_length_z_istail with (v:=(Sjmp_ja k)); auto.
-
-    subst off.
-    destruct (Int.unsigned_range k).
-    destruct (Int.unsigned k); crush.
-    rewrite Z.pos_sub_gt in Heqnewlabel.
-    inv Heqnewlabel.
-    apply length_skipn_pos; auto.
-    apply length_pos; auto.
+    apply Z.le_lt_trans with (m:=(list_length_z b));
+      [ apply list_length_z_skipn
+      | apply list_length_z_istail with (v:=(Sjmp_ja k)); auto ].
 
     apply star_refl.
     auto.
@@ -460,6 +464,8 @@ Proof.
     apply is_tail_trans with (l2:=b).
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
+
+
 
 (*
   (* State -> ReturnState *)
