@@ -208,7 +208,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Sret_k:
       forall a x sm f k b m,
       step ge (State a x sm f (Sret_k k :: b) m)
-        E0 (Returnstate a m)
+        E0 (Returnstate k m)
   | exec_call:
       forall f m,
       step ge (Callstate (Internal f) m)
