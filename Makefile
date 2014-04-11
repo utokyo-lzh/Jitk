@@ -16,9 +16,10 @@ FILES = CpdtTactics.v \
 	Seccomp.v Seccompjit.v Seccompspec.v Seccompenc.v \
 	Seccompencproof.v #Seccompproof.v
 
-all: test_seccomp.native test_enc.native
+all: test_seccomp.native test_enc.native test_gen.native
 
 test_%.native: test_%.ml codegen/extraction.vo
+	rm -f $@
 	$(OCAMLBUILD) $(OCAMLINC) -no-links $@
 	ln -s _build/$@ .
 
