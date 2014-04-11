@@ -337,6 +337,20 @@ Proof.
   crush.
 Qed.
 
+Lemma length_skipn:
+  forall A:Type,
+  forall l:list A,
+  forall n,
+  (n <= (length l))%nat ->
+  length (skipn n l) = ((length l) - n)%nat.
+Proof.
+  intros.
+  rewrite <- (firstn_skipn n l) at 2.
+  rewrite app_length.
+  rewrite firstn_length.
+  rewrite min_l; crush.
+Qed. 
+
 Lemma length_skipn_pos:
   forall A:Type,
   forall l:list A,
@@ -345,9 +359,33 @@ Lemma length_skipn_pos:
   (Pos.of_succ_nat (length l) - p)%positive =
   Pos.of_succ_nat (length (skipn (Pos.to_nat p) l)).
 Proof.
-  
-  (* XXX *)
-Admitted.
+  intros.
+  rewrite list_length_nat_z in H.
+  rewrite length_skipn.
+  repeat rewrite Pos.of_nat_succ.
+  rewrite <- (Pos2Nat.id p) at 1.
+  rewrite <- Nat2Pos.inj_sub.
+  rewrite Nat2Pos.inj_iff.
+  rewrite minus_Sn_m.
+  auto.
+  rewrite Nat2Z.inj_le.
+  rewrite <- Z2Nat.inj_pos.
+  rewrite Z2Nat.id.
+  crush.
+  crush.
+  apply NPeano.Nat.sub_gt.
+  rewrite Nat2Z.inj_lt.
+  rewrite positive_nat_Z.
+  rewrite Nat2Z.inj_succ.
+  crush.
+  crush.
+  elim (Pos2Nat.is_pos p); crush.
+  rewrite Nat2Z.inj_le.
+  rewrite <- Z2Nat.inj_pos.
+  rewrite Z2Nat.id.
+  crush.
+  crush.
+Qed.
 
 Lemma length_skipn_pos':
   forall A:Type,
