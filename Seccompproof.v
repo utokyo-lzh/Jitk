@@ -382,12 +382,22 @@ Proof.
     apply IHx with (b:=(x++b')) (c:=x0); auto.
 Qed.
 
+Lemma cond_match:
+  forall cond,
+  forall a x sm f op m,
+  forall tf ts tk tsp te tm,
+  match_states (State a x sm f op m) (Cminor.State tf ts tk tsp te tm) ->
+  exists v, eval_expr tge tsp te tm (transl_cond cond) v /\ Val.bool_of_val v (eval_cond cond a x).
+Proof.
+  (* XXX *)
+Admitted.
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
   exists R2, plus Cminor.step tge R1 t R2 /\ match_states S2 R2.
 Proof.
-  induction 1; intros R1 MST; inv MST.
+  induction 1; intros R1 MST; inversion MST.
 
   (* State -> State *)
 (*
@@ -428,10 +438,10 @@ Proof.
   - monadInv TC.
     monadInv TF.
     monadInv EQ0.
-    subst off.
 
-    destruct (transl_code_suffix b x0 (skipn (nat_of_Z (Int.unsigned k)) b));
+    destruct (transl_code_suffix b x1 (skipn (nat_of_Z off) b));
       [ auto | apply is_tail_skipn | idtac ].
+    subst off.
 
     econstructor; split.
     eapply plus_left ; [ constructor | idtac | idtac ].
@@ -459,6 +469,70 @@ Proof.
     apply is_tail_trans with (l2:=b).
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
+
+  (* Sjmp_jc cond jt jf *)
+  - remember tf as tf_orig; generalize Heqtf_orig; generalize tf_orig.
+    remember ts as ts_orig; generalize Heqts_orig; generalize ts_orig.
+    (* What a silly way to get around monadInv clearing things... *)
+    monadInv TC.
+    monadInv TF.
+    monadInv EQ0.
+    intros; rewrite Heqtf_orig; rewrite Heqts_orig.
+
+    destruct (transl_code_suffix b x1 (skipn (nat_of_Z off) b));
+      [ auto | apply is_tail_skipn | idtac ].
+    subst off.
+
+    econstructor; split.
+    eapply plus_left; [ constructor | idtac | idtac ].
+
+    eapply star_step.
+    destruct (cond_match cond a x sm f (Sjmp_jc cond jt jf :: b) m
+                              tf_orig ts_orig tk (Vptr b0 Int.zero) te tm); crush.
+    apply step_ifthenelse with (v:=x3); [ auto | exact H3 ].
+
+    eapply star_step.
+    destruct (eval_cond cond a x); constructor.
+
+    (* true branch *)
+    rewrite length_skipn_pos' ; [ idtac | destruct (Byte.unsigned_range jt); auto ].
+
+    rewrite Heqtf_orig; simpl.    (* remove transl_funbody's preamble from find_label's arg *)
+    apply transl_code_label with (b:=f); crush.
+
+    apply is_tail_trans with (l2:=b);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush ].
+
+    apply Z.le_lt_trans with (m:=(list_length_z b));
+      [ apply list_length_z_skipn
+      | apply list_length_z_istail with (v:=(Sjmp_jc cond jt jf)); auto ].
+
+    (* false branch *)
+    rewrite length_skipn_pos' ; [ idtac | destruct (Byte.unsigned_range jf); auto ].
+
+    rewrite Heqtf_orig; simpl.    (* remove transl_funbody's preamble from find_label's arg *)
+    apply transl_code_label with (b:=f); crush.
+
+    apply is_tail_trans with (l2:=b);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush ].
+
+    apply Z.le_lt_trans with (m:=(list_length_z b));
+      [ apply list_length_z_skipn
+      | apply list_length_z_istail with (v:=(Sjmp_jc cond jt jf)); auto ].
+
+    apply star_refl.
+    auto.
+    auto.
+    auto.
+
+    econstructor; crush.
+    unfold transl_function; unfold transl_funbody; crush.
+    apply is_tail_trans with (l2:=b).
+    apply is_tail_skipn.
+    apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush.
+
 
 (*
   (* State -> ReturnState *)
