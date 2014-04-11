@@ -331,14 +331,14 @@ Admitted.
 Lemma length_skipn_pos':
   forall A:Type,
   forall b:list A,
-  forall z p,
+  forall z,
   z < list_length_z b ->
-  Z.pos p = match - z with
-    | 0 => Z.pos (Pos.of_succ_nat (length b))
-    | Z.pos y => Z.pos (Pos.of_succ_nat (length b) + y)
-    | Z.neg y => Z.pos_sub (Pos.of_succ_nat (length b)) y
-    end ->
-  p = Pos.of_succ_nat (length (skipn (nat_of_Z z) b)).
+  (Z.to_pos
+     match - z with
+     | 0 => Z.pos (Pos.of_succ_nat (length b))
+     | Z.pos y => Z.pos (Pos.of_succ_nat (length b) + y)
+     | Z.neg y => Z.pos_sub (Pos.of_succ_nat (length b)) y
+     end) = Pos.of_succ_nat (length (skipn (nat_of_Z z) b)).
 Proof.
   (* XXX *)
 Admitted.
@@ -427,13 +427,6 @@ Proof.
     monadInv EQ0.
     subst off.
 
-    remember (match - Int.unsigned k with
-              | 0 => Z.pos (Pos.of_succ_nat (length b))
-              | Z.pos y' => Z.pos (Pos.of_succ_nat (length b) + y')
-              | Z.neg y' => Z.pos_sub (Pos.of_succ_nat (length b)) y'
-              end) as newlabel.
-    destruct newlabel; crush.
-
     destruct (transl_code_suffix b x0 (skipn (nat_of_Z (Int.unsigned k)) b));
       [ auto | apply is_tail_skipn | idtac ].
 
@@ -441,8 +434,7 @@ Proof.
     eapply plus_left ; [ constructor | idtac | idtac ].
     eapply star_step ; [ constructor | idtac | idtac ].
 
-    rewrite length_skipn_pos' with (b:=b) (z:=Int.unsigned k) (p:=p);
-      [ idtac | auto | auto ].
+    rewrite length_skipn_pos' ; [ idtac | auto ].
 
     simpl.    (* remove transl_funbody's preamble from find_label's arg *)
     apply transl_code_label with (b:=f); crush.
@@ -464,8 +456,6 @@ Proof.
     apply is_tail_trans with (l2:=b).
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
-
-
 
 (*
   (* State -> ReturnState *)
