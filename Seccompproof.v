@@ -307,6 +307,27 @@ Proof.
   - crush.
 Qed.
 
+Lemma length_skipn_pos:
+  forall A:Type,
+  forall l:list A,
+  forall p,
+  Z.pos p < list_length_z l ->
+  (Pos.of_succ_nat (length l) - p)%positive =
+  Pos.of_succ_nat (length (skipn (Pos.to_nat p) l)).
+Proof.
+  (* XXX *)
+Admitted.
+
+Lemma length_pos:
+  forall A:Type,
+  forall l:list A,
+  forall p,
+  Z.pos p < list_length_z l ->
+  (p < Pos.of_succ_nat (length l))%positive.
+Proof.
+  (* XXX *)
+Admitted.
+
 Lemma transl_code_label:
   forall b c b' c' k,
   transl_code b = OK c ->
@@ -352,6 +373,7 @@ Proof.
   induction 1; intros R1 MST; inv MST.
 
   (* State -> State *)
+(*
   (* Salu_add_k *)
   - monadInv TC.
     econstructor; split.
@@ -383,6 +405,7 @@ Proof.
 
     apply is_tail_cons_left with (i := Salu_add_k k). auto.
     exact MFREE. auto.
+*)
 
   (* Sjmp_ja k *)
   - monadInv TC.
@@ -417,12 +440,16 @@ Proof.
     apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
 
     apply Z.le_lt_trans with (m:=(list_length_z b)).
-    + apply list_length_z_skipn.
-    + apply list_length_z_istail with (v:=(Sjmp_ja k)); auto.
+    apply list_length_z_skipn.
+    apply list_length_z_istail with (v:=(Sjmp_ja k)); auto.
 
-    (* XXX need to prove:
-        p = Pos.of_succ_nat (length (skipn (nat_of_Z off) b))
-    *)
+    subst off.
+    destruct (Int.unsigned_range k).
+    destruct (Int.unsigned k); crush.
+    rewrite Z.pos_sub_gt in Heqnewlabel.
+    inv Heqnewlabel.
+    apply length_skipn_pos; auto.
+    apply length_pos; auto.
 
     apply star_refl.
     auto.
