@@ -437,7 +437,7 @@ Proof.
     eapply plus_left ; [ constructor | idtac | idtac ].
     eapply star_step ; [ constructor | idtac | idtac ].
 
-    rewrite length_skipn_pos' ; [ idtac | auto ].
+    rewrite length_skipn_pos' ; [ idtac | destruct (Int.unsigned_range k); auto ].
 
     simpl.    (* remove transl_funbody's preamble from find_label's arg *)
     apply transl_code_label with (b:=f); crush.
