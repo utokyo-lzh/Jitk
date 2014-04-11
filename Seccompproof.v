@@ -566,103 +566,100 @@ Proof.
     apply is_tail_skipn.
     apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush.
 
+  (* Sret_a *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    constructor; rewrite <- MA; auto.
+    exact MFREE.
 
-(*
-  (* State -> ReturnState *)
-  monadInv TC.
-(*
-  match goal with
-    [ H: Mem.range_perm _ _ _ _ _ _ |- _ ] =>
-      apply Mem.range_perm_free in H; inv H
-  end.
-*)
-  econstructor; split.
-  eapply plus_left.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.
-  constructor; rewrite <- MA; auto.
+    apply star_refl.
+    auto.
+    auto.
+    auto.
 
-  exact MFREE.
-(*
-  match goal with [ H: Mem.free _ _ _ _ = Some _ |- _ ] => exact H end.
-*)
-  apply star_refl.
-  auto.
-  auto.
-  auto.
+    constructor.
+    auto.
+    auto.
 
-  constructor.
-  auto.
-  auto.
+    simpl.
+    auto.
 
-  simpl.
-  auto.
+  (* Sret_k *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    constructor; constructor.
+    exact MFREE.
+
+    apply star_refl.
+    auto.
+    auto.
+    auto.
+
+    constructor.
+    auto.
+    auto.
+
+    simpl.
+    auto.
 
   (* CallState -> State *)
-  monadInv TF.
-  monadInv EQ.
-  monadInv EQ0.
-  econstructor; split.
+  - monadInv TF.
+    monadInv EQ.
+    monadInv EQ0.
+    econstructor; split.
 
-  eapply plus_left.
-  apply step_internal_function with
-    (m' := (fst (Mem.alloc tm 0 (seccomp_memwords * 4))))
-    (sp := (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))); auto.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.  constructor; constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.  constructor; constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.
-  eapply star_step.
-  constructor.  constructor; constructor.
-  eapply star_step.
-  constructor.
-  apply star_refl.
+    eapply plus_left.
+    apply step_internal_function with
+      (m' := (fst (Mem.alloc tm 0 (seccomp_memwords * 4))))
+      (sp := (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))); auto.
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor; constructor; constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor; constructor; constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    eapply star_step; [ constructor; constructor; constructor | idtac | idtac ].
+    eapply star_step; [ constructor | idtac | idtac ].
+    apply star_refl.
 
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
-  auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
+    auto.
 
-  destruct (Mem.range_perm_free
-    (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
-    (snd (Mem.alloc tm 0 (seccomp_memwords * 4))) 0 
-    (seccomp_memwords * 4)).
-  unfold Mem.range_perm.
-  intros.
-  apply Mem.perm_alloc_2 with
-    (m1 := tm)
-    (lo := 0)
-    (hi := seccomp_memwords * 4); auto.
+    destruct (Mem.range_perm_free
+      (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
+      (snd (Mem.alloc tm 0 (seccomp_memwords * 4))) 0 
+      (seccomp_memwords * 4)).
+    unfold Mem.range_perm.
+    intros.
+    apply Mem.perm_alloc_2 with
+      (m1 := tm)
+      (lo := 0)
+      (hi := seccomp_memwords * 4); auto.
 
-  econstructor; auto.
-  unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
-  exact e.
+    econstructor; auto.
+    unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
+    constructor.
+    exact e.
 
-  apply (free_alloc_inj tm
-    (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
-    (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))
-    0 (seccomp_memwords * 4) _) in e.
-  apply (inj_trans m tm _); auto.
-  auto.
+    apply (free_alloc_inj tm
+      (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
+      (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))
+      0 (seccomp_memwords * 4) _) in e.
+    apply (inj_trans m tm _); auto.
+    auto.
 Qed.
 
 Theorem transl_program_correct:
@@ -674,7 +671,5 @@ Proof.
   eexact transl_final_states.
   eexact transl_step.
 Qed.
-
-*)
 
 (* End TRANSLATION. *)
