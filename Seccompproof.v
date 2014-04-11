@@ -332,7 +332,7 @@ Lemma length_skipn_pos':
   forall A:Type,
   forall b:list A,
   forall z,
-  z < list_length_z b ->
+  0 <= z < list_length_z b ->
   (Z.to_pos
      match - z with
      | 0 => Z.pos (Pos.of_succ_nat (length b))
@@ -340,8 +340,11 @@ Lemma length_skipn_pos':
      | Z.neg y => Z.pos_sub (Pos.of_succ_nat (length b)) y
      end) = Pos.of_succ_nat (length (skipn (nat_of_Z z) b)).
 Proof.
-  (* XXX *)
-Admitted.
+  destruct z; crush.
+  rewrite Z.pos_sub_gt;
+    [ apply length_skipn_pos; auto
+    | apply length_pos; auto ].
+Qed.
 
 Lemma transl_code_label:
   forall b c b' c' k,
