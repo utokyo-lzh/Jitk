@@ -49,9 +49,9 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
   | Sld_w_abs k =>
     OK (mkencx BPF_S_LD_W_ABS Byte.zero Byte.zero k)
 
-  | Salu (Aaddimm k) =>
+  | Salu_safe (Aaddimm k) =>
     OK (mkencx BPF_S_ALU_ADD_K Byte.zero Byte.zero k)
-  | Salu Aadd =>
+  | Salu_safe Aadd =>
     OK (mkencx BPF_S_ALU_ADD_X Byte.zero Byte.zero Int.zero)
 
   | Sjmp_ja k =>
@@ -74,8 +74,8 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
 
   | BPF_S_LD_W_ABS   => OK (Sld_w_abs k)
 
-  | BPF_S_ALU_ADD_K  => OK (Salu (Aaddimm k))
-  | BPF_S_ALU_ADD_X  => OK (Salu Aadd)
+  | BPF_S_ALU_ADD_K  => OK (Salu_safe (Aaddimm k))
+  | BPF_S_ALU_ADD_X  => OK (Salu_safe Aadd)
 
   | BPF_S_JMP_JA     => OK (Sjmp_ja k)
   | BPF_S_JMP_JEQ_K  => OK (Sjmp_jc (Jeqimm k) t f)
