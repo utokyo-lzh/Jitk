@@ -70,6 +70,8 @@ Definition transl_instr (instr: Seccomp.instruction)
     OK (Sifthenelse (transl_cond cond)
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jt))))
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jf)))))
+  | Sld_w_abs k =>
+    OK (Sassign reg_a (Econst (Ointconst Int.one)))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>

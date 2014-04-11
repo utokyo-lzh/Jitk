@@ -2,6 +2,7 @@ Require Import compcert.common.AST.
 Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
 Require Import compcert.common.Memory.
+Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
@@ -182,14 +183,12 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       off < (list_length_z b) ->
       step ge (State a x sm f (Sjmp_jc cond jt jf :: b) m)
         E0 (State a x sm f (skipn (nat_of_Z off) b) m)
-(*
   | exec_Sld_w_abs:
-      forall a a' x m f pc k,
-      instruction_at f pc = Some (Sld_w_abs k) ->
-      seccomp_bpf_load k a' ->
-      let pc' := pc + 1 in
-      step ge (State a x m f pc)
-        E0 (State a' x m f pc')
+      forall a a' k x sm f b m,
+      a' = Int.one ->
+      step ge (State a x sm f (Sld_w_abs k :: b) m)
+        E0 (State a' x sm f b m)
+(*
   | exec_Sld_w_len:
       forall a x sm f pc m,
       instruction_at f pc = Some (Sld_w_len) ->
