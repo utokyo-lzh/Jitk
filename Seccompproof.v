@@ -382,6 +382,19 @@ Proof.
     apply IHx with (b:=(x++b')) (c:=x0); auto.
 Qed.
 
+Ltac cond_match_binop H a i :=
+  split;
+  [ simpl; simpl in H; 
+    try apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i);
+    try constructor; auto;
+    simpl;
+    unfold Val.cmpu; unfold Val.cmpu_bool; unfold Int.cmpu;
+    try rewrite H; auto;
+    rewrite negb_false_iff in H;
+    generalize (Int.eq_spec (Int.and a i) Int.zero);
+    rewrite H; intro HA; rewrite HA; auto
+  | try constructor; try rewrite <- H; constructor ].
+
 Lemma cond_match:
   forall cond,
   forall a x sm f op m,
@@ -389,8 +402,28 @@ Lemma cond_match:
   match_states (State a x sm f op m) (Cminor.State tf ts tk tsp te tm) ->
   exists v, eval_expr tge tsp te tm (transl_cond cond) v /\ Val.bool_of_val v (eval_cond cond a x).
 Proof.
-  (* XXX *)
-Admitted.
+  intros.
+  inv H.
+  case_eq (eval_cond cond a x).
+  - intros; destruct cond;
+    [ exists Vtrue; cond_match_binop H a i
+    | exists Vtrue; cond_match_binop H a i
+    | exists Vtrue; cond_match_binop H a i
+    | exists (Vint (Int.and a i)); cond_match_binop H a i
+    | exists Vtrue; cond_match_binop H a x
+    | exists Vtrue; cond_match_binop H a x
+    | exists Vtrue; cond_match_binop H a x
+    | exists (Vint (Int.and a x)); cond_match_binop H a x ].
+  - intros; destruct cond;
+    [ exists Vfalse; cond_match_binop H a i
+    | exists Vfalse; cond_match_binop H a i
+    | exists Vfalse; cond_match_binop H a i
+    | exists Vzero; cond_match_binop H a i
+    | exists Vfalse; cond_match_binop H a x
+    | exists Vfalse; cond_match_binop H a x
+    | exists Vfalse; cond_match_binop H a x
+    | exists Vzero; cond_match_binop H a x ].
+Qed.
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
