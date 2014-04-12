@@ -19,7 +19,8 @@ FILES = CpdtTactics.v \
 	Seccompfilter.v \
 	Seccompenc.v \
 	Seccompencproof.v \
-	#Seccompproof.v
+	#Seccompproof.v \
+	#Seccompbproof.v
 
 all:	test_seccomp.native test_enc.native \
 	test_gen.native test_gencminor.native \
