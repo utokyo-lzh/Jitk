@@ -88,7 +88,7 @@ Inductive instruction : Type :=
   .
 
 (** sizeof struct seccomp_data *)
-Parameter sizeof_seccomp_data : int.
+Parameter sizeof_seccomp_data : Z.
 
 Definition code := list instruction.
 
@@ -116,6 +116,7 @@ Inductive state : Type :=
            (sm: ZMap.t int)      (**r scratch memory *)
            (f: function)         (**r current function *)
            (c: code)             (**r current program point *)
+           (p: block)            (**r input packet *)
            (m: mem),             (**r memory state *)
     state
   | Callstate:
@@ -183,63 +184,67 @@ Definition eval_cond (cond: condition) (a: int) (x: int): bool :=
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Salu_safe:
-      forall op a x sm f b m,
+      forall op a x sm f b p m,
       let a' := eval_alu_safe op a x in
-      step ge (State a x sm f (Salu_safe op :: b) m)
-        E0 (State a' x sm f b m)
+      step ge (State a x sm f (Salu_safe op :: b) p m)
+        E0 (State a' x sm f b p m)
   | exec_Salu_div:
-      forall op a x sm f b m,
+      forall op a x sm f b p m,
       let a' := eval_alu_div op a x in
-      step ge (State a x sm f (Salu_div op :: b) m)
-        E0 (State a' x sm f b m)
+      step ge (State a x sm f (Salu_div op :: b) p m)
+        E0 (State a' x sm f b p m)
   | exec_Salu_shift:
-      forall op a x sm f b m,
+      forall op a x sm f b p m,
       let a' := eval_alu_shift op a x in
-      step ge (State a x sm f (Salu_shift op :: b) m)
-        E0 (State a' x sm f b m)
+      step ge (State a x sm f (Salu_shift op :: b) p m)
+        E0 (State a' x sm f b p m)
   | exec_Sjmp_ja:
-      forall a x sm f k b m,
+      forall a x sm f k b p m,
       let off := Int.unsigned k in
       off < (list_length_z b) ->
-      step ge (State a x sm f (Sjmp_ja k :: b) m)
-        E0 (State a x sm f (skipn (nat_of_Z off) b) m)
+      step ge (State a x sm f (Sjmp_ja k :: b) p m)
+        E0 (State a x sm f (skipn (nat_of_Z off) b) p m)
   | exec_Sjmp_jc:
-      forall cond jt jf a x sm f b m,
+      forall cond jt jf a x sm f b p m,
       let off := Byte.unsigned (if (eval_cond cond a x) then jt else jf) in
       off < (list_length_z b) ->
-      step ge (State a x sm f (Sjmp_jc cond jt jf :: b) m)
-        E0 (State a x sm f (skipn (nat_of_Z off) b) m)
+      step ge (State a x sm f (Sjmp_jc cond jt jf :: b) p m)
+        E0 (State a x sm f (skipn (nat_of_Z off) b) p m)
   | exec_Sld_w_abs:
-      forall a a' k x sm f b m,
-      a' = Int.one ->
-      step ge (State a x sm f (Sld_w_abs k :: b) m)
-        E0 (State a' x sm f b m)
+      forall a a' k x sm f b p m,
+      let off := Int.unsigned k in
+      off < sizeof_seccomp_data ->
+      off mod 4 = 0 ->
+      Mem.load Mint32 m p off = Some (Vint a') ->
+      step ge (State a x sm f (Sld_w_abs k :: b) p m)
+        E0 (State a' x sm f b p m)
 (*
   | exec_Sld_w_len:
-      forall a x sm f pc m,
-      instruction_at f pc = Some (Sld_w_len) ->
-      let pc' := pc + 1 in
-      step ge (State a x sm f pc m)
-        E0 (State sizeof_seccomp_data x sm f pc' m)
+      forall a x sm f b p m,
+      let a' := Int.repr sizeof_seccomp_data in
+      step ge (State a x sm f (Sld_w_len :: b) p m)
+        E0 (State a' x sm f b p m)
   | exec_Sldx_w_len:
-      forall a x sm f pc m,
-      instruction_at f pc = Some (Sld_w_len) ->
-      let pc' := pc + 1 in
-      step ge (State a x sm f pc m)
-        E0 (State a sizeof_seccomp_data sm f pc' m)
+      forall a x sm f b p m,
+      let x' := Int.repr sizeof_seccomp_data in
+      step ge (State a x sm f (Sld_w_len :: b) p m)
+        E0 (State a x' sm f b p m)
 *)
   | exec_Sret_a:
-      forall a x sm f b m,
-      step ge (State a x sm f (Sret_a :: b) m)
+      forall a x sm f b p m,
+      step ge (State a x sm f (Sret_a :: b) p m)
         E0 (Returnstate a m)
   | exec_Sret_k:
-      forall a x sm f k b m,
-      step ge (State a x sm f (Sret_k k :: b) m)
+      forall a x sm f k b p m,
+      step ge (State a x sm f (Sret_k k :: b) p m)
         E0 (Returnstate k m)
   | exec_call:
-      forall f m,
+      forall f p m m' m'' bytes,
+      list_length_z bytes = sizeof_seccomp_data ->
+      Mem.alloc m 0 sizeof_seccomp_data = (m', p) ->
+      Mem.storebytes m' p 0 bytes = Some m'' ->
       step ge (Callstate (Internal f) m)
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f m)
+        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f p m')
   .
 
 Inductive initial_state (p: program): state -> Prop :=
