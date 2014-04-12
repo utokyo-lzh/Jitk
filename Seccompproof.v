@@ -493,7 +493,7 @@ Proof.
   induction 1; intros R1 MST; inversion MST.
 
   (* State -> State *)
-  (* Salu_add_k *)
+  (* Salu_safe op *)
   - monadInv TC.
     remember a' as a''.
     subst a'.
@@ -524,6 +524,146 @@ Proof.
     rewrite PTree.gso; auto.
     unfold reg_x; unfold reg_a; discriminate.
     apply is_tail_cons_left with (i := Salu_safe op); assumption.
+    exact MFREE.
+    exact MINJ.
+
+  (* Salu_div op *)
+  - monadInv TC.
+    remember a' as a''.
+    subst a'.
+    econstructor; split.
+
+    eapply plus_left; [ constructor | idtac | idtac ].
+
+    destruct op; [ case_eq (Int.eq i Int.zero)
+                 | case_eq (Int.eq i Int.zero)
+                 | case_eq (Int.eq x Int.zero)
+                 | case_eq (Int.eq x Int.zero) ]; simpl; intros.
+
+    Ltac alu_div_0 i tm H :=
+      apply step_ifthenelse with (v:=Val.of_optbool (Val.cmpu_bool (Mem.valid_pointer tm) Ceq (Vint i) (Vzero)));
+      [ apply eval_Ebinop with (v1:=Vint i) (v2:=Vzero); constructor; auto; constructor
+      | unfold Val.cmpu; unfold Val.of_optbool; unfold Val.cmpu_bool; simpl; rewrite H; constructor ].
+    Ltac alu_div_1f :=
+      rewrite Int.eq_false; [ idtac | discriminate ].
+    Ltac alu_div_2 :=
+      eapply star_step; [ repeat constructor | idtac | idtac ].
+    Ltac alu_div_3 :=
+      eapply star_step; [ constructor | idtac | idtac ].
+    Ltac alu_div_4 :=
+      eapply star_step; [ constructor | idtac | idtac ].
+
+    eapply star_step.
+    alu_div_0 i tm H.
+    alu_div_1f.
+    alu_div_2.
+    alu_div_3.
+    alu_div_4.
+    simpl in Heqa''.  unfold Int.divu in Heqa''.
+
+    cut (i = Int.zero); intros;
+    [ rewrite H0 in Heqa''; rewrite Int.unsigned_zero in Heqa'';
+      rewrite Zdiv_0_r in Heqa''; unfold Int.zero at 2; rewrite <- Heqa'';
+      apply star_refl
+    | replace (i = Int.zero) with (if Int.eq i Int.zero then i=Int.zero else i<>Int.zero);
+      [ apply Int.eq_spec | rewrite H; reflexivity ] ].
+    auto.  auto.  auto.  auto.
+
+    Ltac alu_div_1t :=
+      rewrite Int.eq_true.
+    Ltac alu_div_2t a i H Heqa'' :=
+      apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i); try constructor; auto;
+      simpl; rewrite H; simpl in Heqa''; rewrite <- Heqa''; auto.
+
+    eapply star_step.
+    alu_div_0 i tm H.
+    alu_div_1t.
+    alu_div_2.  alu_div_2t a i H Heqa''.
+    alu_div_3.
+    alu_div_4.
+    apply star_refl.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 i tm H.
+    alu_div_1f.
+    alu_div_2.
+    alu_div_3.
+    alu_div_4.
+
+    simpl in Heqa''.  unfold Int.modu in Heqa''.
+    cut (i = Int.zero); intros;
+    [ rewrite H0 in Heqa''; rewrite Int.unsigned_zero in Heqa'';
+      rewrite Zmod_0_r in Heqa''; unfold Int.zero at 2; rewrite <- Heqa'';
+      apply star_refl
+    | replace (i = Int.zero) with (if Int.eq i Int.zero then i=Int.zero else i<>Int.zero);
+      [ apply Int.eq_spec | rewrite H; reflexivity ] ].
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 i tm H.
+    alu_div_1t.
+    alu_div_2.  alu_div_2t a i H Heqa''.
+    alu_div_3.
+    alu_div_4.
+    apply star_refl.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 x tm H.
+    alu_div_1f.
+    alu_div_2.
+    alu_div_3.
+    alu_div_4.
+
+    simpl in Heqa''.  unfold Int.divu in Heqa''.
+    cut (x = Int.zero); intros;
+    [ rewrite H0 in Heqa''; rewrite Int.unsigned_zero in Heqa'';
+      rewrite Zdiv_0_r in Heqa''; unfold Int.zero at 2; rewrite <- Heqa'';
+      apply star_refl
+    | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
+      [ apply Int.eq_spec | rewrite H; reflexivity ] ].
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 x tm H.
+    alu_div_1t.
+    alu_div_2.  alu_div_2t a x H Heqa''.
+    alu_div_3.
+    alu_div_4.
+    apply star_refl.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 x tm H.
+    alu_div_1f.
+    alu_div_2.
+    alu_div_3.
+    alu_div_4.
+
+    simpl in Heqa''.  unfold Int.modu in Heqa''.
+    cut (x = Int.zero); intros;
+    [ rewrite H0 in Heqa''; rewrite Int.unsigned_zero in Heqa'';
+      rewrite Zmod_0_r in Heqa''; unfold Int.zero at 2; rewrite <- Heqa'';
+      apply star_refl
+    | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
+      [ apply Int.eq_spec | rewrite H; reflexivity ] ].
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_div_0 x tm H.
+    alu_div_1t.
+    alu_div_2.  alu_div_2t a x H Heqa''.
+    alu_div_3.
+    alu_div_4.
+    apply star_refl.
+    auto.  auto.  auto.  auto.
+
+    auto.
+    econstructor; auto.
+    rewrite PTree.gss; auto.
+    rewrite PTree.gso; auto; discriminate.
+    apply is_tail_cons_left with (i := Salu_div op); assumption.
     exact MFREE.
     exact MINJ.
 

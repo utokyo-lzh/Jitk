@@ -31,12 +31,20 @@ Definition transl_alu_safe (op: Seccomp.alu_safe) : Cminor.expr :=
   | Aneg => Eunop Onegint (Evar reg_a)
   end.
 
-Definition transl_alu_div (op: Seccomp.alu_div) : Cminor.expr * Cminor.expr :=
+Definition transl_alu_div (op: Seccomp.alu_div) : Cminor.expr :=
   match op with
-  | Adivimm k => (Ebinop Odivu (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
-  | Amodimm k => (Ebinop Omodu (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
-  | Adiv      => (Ebinop Odivu (Evar reg_a) (Evar reg_x), (Evar reg_x))
-  | Amod      => (Ebinop Omodu (Evar reg_a) (Evar reg_x), (Evar reg_x))
+  | Adivimm k => Ebinop Odivu (Evar reg_a) (Econst (Ointconst k))
+  | Amodimm k => Ebinop Omodu (Evar reg_a) (Econst (Ointconst k))
+  | Adiv      => Ebinop Odivu (Evar reg_a) (Evar reg_x)
+  | Amod      => Ebinop Omodu (Evar reg_a) (Evar reg_x)
+  end.
+
+Definition transl_alu_div_guard (op: Seccomp.alu_div) : Cminor.expr :=
+  match op with
+  | Adivimm k => Econst (Ointconst k)
+  | Amodimm k => Econst (Ointconst k)
+  | Adiv      => Evar reg_x
+  | Amod      => Evar reg_x
   end.
 
 Definition transl_alu_shift (op: Seccomp.alu_shift) : Cminor.expr * Cminor.expr :=
@@ -73,10 +81,10 @@ Definition transl_instr (instr: Seccomp.instruction)
   | Salu_safe op =>
     OK (Sassign reg_a (transl_alu_safe op))
   | Salu_div op =>
-    let (resultexp, divexp) := transl_alu_div op in
-    OK (Sifthenelse (Ebinop (Ocmpu Ceq) divexp (Econst (Ointconst Int.zero)))
+    OK (Sifthenelse (Ebinop (Ocmpu Ceq) (transl_alu_div_guard op)
+                                        (Econst (Ointconst Int.zero)))
                     (Sassign reg_a (Econst (Ointconst Int.zero)))
-                    (Sassign reg_a resultexp))
+                    (Sassign reg_a (transl_alu_div op)))
   | Salu_shift op =>
     let (resultexp, shiftexp) := transl_alu_shift op in
     OK (Sifthenelse (Ebinop (Ocmpu Clt) shiftexp (Econst (Ointconst Int.iwordsize)))
