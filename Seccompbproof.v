@@ -12,7 +12,6 @@ Require Import Op.
 Require Import Seccomp.
 Require Import Seccompspec.
 Require Import Seccompfilter.
-Require Import Seccompjit.
 Require Import CpdtTactics.
 
 Theorem seccomp_terminates:
@@ -43,13 +42,15 @@ Admitted.
 
 Theorem transl_terminates:
   forall prog tprog,
-  seccomp_filter prog = true ->
-  Seccompjit.transl_program prog = OK tprog ->
+  Seccompfilter.transl_program_filter prog = OK tprog ->
   exists t r,
   program_behaves (Cminor.semantics tprog) (Terminates t r).
 Proof.
   intros.
+  unfold transl_program_filter in H.
+  case_eq (seccomp_filter prog); intros; rewrite H0 in H; [ idtac | crush ].
   destruct (seccomp_terminates prog); [ auto | destruct H1 ].
+
   econstructor.
   econstructor.
 

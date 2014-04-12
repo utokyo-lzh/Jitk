@@ -1,8 +1,12 @@
-Require Import compcert.backend.Cminor.  Require Import
-compcert.common.AST.  Require Import compcert.common.Errors.  Require
-Import compcert.lib.Coqlib.  Require Import compcert.lib.Integers.
-Require Import compcert.lib.Maps.  Require Import Seccomp.  Import
-ListNotations.
+Require Import compcert.backend.Cminor.
+Require Import compcert.common.AST.
+Require Import compcert.common.Errors.
+Require Import compcert.lib.Coqlib.
+Require Import compcert.lib.Integers.
+Require Import compcert.lib.Maps.
+Require Import Seccomp.
+Require Import Seccompjit.
+Import ListNotations.
 
 Definition seccomp_ends_with_ret (f: Seccomp.code) : bool :=
   match f with
@@ -44,5 +48,11 @@ Definition seccomp_filter (p: Seccomp.program) : bool :=
     (id =? main)%positive &&
     seccomp_func_filter f
   | _ => false
+  end.
+
+Definition transl_program_filter (p: Seccomp.program) : res Cminor.program :=
+  match seccomp_filter p with
+  | true  => transl_program p
+  | false => Error (msg "filter reject")
   end.
 
