@@ -181,12 +181,12 @@ Lemma transl_instr_no_labels:
   find_label l c k = None.
 Proof.
   destruct i; crush;
+    try destruct (transl_alu_shift a);
     try destruct (n - Int.unsigned i);
     try destruct (n - Byte.unsigned i);
     try destruct (n - Byte.unsigned i0);
     crush.
-Admitted.
-(* Qed. *)
+Qed.
 
 Lemma psucc_ne:
   forall a b,
