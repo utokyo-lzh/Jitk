@@ -5,12 +5,16 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 Require Import Seccomp.
+Import ListNotations.
+
+Definition Tpointer := Tint. (* assume 32-bit pointers *)
 
 Parameter seccomp_memwords: Z.
 
-Definition reg_a:   ident := 1%positive.
-Definition reg_x:   ident := 2%positive.
-Definition reg_mem: ident := 3%positive.
+Definition reg_pkt: ident := 1%positive.
+Definition reg_a:   ident := 2%positive.
+Definition reg_x:   ident := 3%positive.
+Definition reg_mem: ident := 4%positive.
 
 Open Local Scope error_monad_scope.
 
@@ -97,7 +101,9 @@ Definition transl_instr (instr: Seccomp.instruction)
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jt))))
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jf)))))
   | Sld_w_abs k =>
-    OK (Sassign reg_a (Econst (Ointconst Int.one)))
+    (* TODO: reject if k >= sizeof_seccomp_data or k mod 4 != 0, in a separate checker? *)
+    let addr := Ebinop Oadd (Evar reg_pkt) (Econst (Ointconst k)) in
+    OK (Sassign reg_a (Eload Mint32 addr))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>
@@ -125,12 +131,11 @@ Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=
 
 Definition transl_function (f: Seccomp.function) : res Cminor.function :=
   do body <- transl_funbody f;
-  let sig := mksignature nil (Some Tint) cc_default in
-  let vars := reg_a::reg_x::reg_mem::nil in
+  let sig := mksignature [ Tpointer ] (Some Tint) cc_default in
+  let params := [ reg_pkt ] in
+  let vars := [ reg_a; reg_x; reg_mem ] in
   let stackspace := (Zmult seccomp_memwords 4) in
-  OK (Cminor.mkfunction sig nil vars stackspace body).
-
-Local Open Scope string_scope.
+  OK (Cminor.mkfunction sig params vars stackspace body).
 
 Definition transl_fundef (fd: fundef) :=
   match fd with

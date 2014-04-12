@@ -14,7 +14,8 @@ OCAMLINC   = \
 
 FILES = CpdtTactics.v \
 	Seccomp.v Seccompjit.v Seccompspec.v Seccompenc.v \
-	Seccompencproof.v Seccompproof.v
+	Seccompencproof.v \
+	#Seccompproof.v
 
 all:	test_seccomp.native test_enc.native \
 	test_gen.native test_gencminor.native \
