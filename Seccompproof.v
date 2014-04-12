@@ -117,7 +117,6 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (MK: call_cont tk = Kstop)
         (TAIL: is_tail c f)
         (MSP: tsp = Vptr b Int.zero)
-(*        (MPERM: Mem.range_perm tm b 0 tf.(fn_stackspace) Cur Freeable) *)
         (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
         (MINJ: mem_inj m tm'),
       match_states (Seccomp.State a x sm f c m)

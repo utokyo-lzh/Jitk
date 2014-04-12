@@ -133,19 +133,49 @@ Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=
   let init_mem := (Sassign reg_mem (Econst (Oaddrstack Int.zero))) in
   OK (Sseq init_a (Sseq init_x (Sseq init_mem b))).
 
+Definition sig_populate := mksignature [ Tpointer ] None cc_default.
+Definition sig_filter   := mksignature [ Tpointer ] (Some Tint) cc_default.
+
 Definition transl_function (f: Seccomp.function) : res Cminor.function :=
   do body <- transl_funbody f;
-  let sig := mksignature [ Tpointer ] (Some Tint) cc_default in
   let params := [ reg_pkt ] in
   let vars := [ reg_a; reg_x; reg_mem ] in
   let stackspace := (Zmult seccomp_memwords 4) in
-  OK (Cminor.mkfunction sig params vars stackspace body).
+  OK (Cminor.mkfunction sig_filter params vars stackspace body).
 
-Definition transl_fundef (fd: fundef) :=
+Definition transl_fundef (fd: Seccomp.fundef) :=
   match fd with
   | Internal f => do f' <- transl_function f; OK (Internal f')
   | External ef => Error (msg "no external function allowed")
   end.
 
+Definition transl_main (id_populate id_filter: ident) : Cminor.fundef :=
+  let sig := mksignature nil (Some Tint) cc_default in
+  let vars := [ reg_pkt; reg_a ] in
+  let stackspace := sizeof_seccomp_data in
+  let init_pkt := Sassign reg_pkt (Econst (Oaddrstack Int.zero)) in
+  let addr_populate := Econst (Oaddrsymbol id_populate (Int.zero)) in
+  let call_populate := Scall None sig_populate addr_populate [ Evar reg_pkt ] in
+  let addr_filter := Econst (Oaddrsymbol id_filter (Int.zero)) in
+  let call_filter := Scall (Some reg_a) sig_filter addr_filter [ Evar reg_pkt ] in
+  let body := Sseq
+    (Sassign reg_pkt (Econst (Oaddrstack Int.zero)))
+    (Sseq
+      call_populate
+      (Sseq
+        call_filter
+        (Sreturn (Some (Evar reg_a)))
+      )
+    ) in
+  Internal (mkfunction sig nil vars stackspace body).
+
+Definition transl_populate (name: ident) : Cminor.fundef :=
+  External (EF_external name sig_populate).
+
 Definition transl_program (p: Seccomp.program) : res Cminor.program :=
-  transform_partial_program transl_fundef p.
+  do gl <- transf_globdefs transl_fundef (fun v => OK v) p.(prog_defs);
+  let id_populate := Psucc p.(prog_main) in
+  let def_populate := (id_populate, Gfun (transl_populate id_populate)) in
+  let id_main := Psucc id_populate in
+  let def_main := (id_main, Gfun (transl_main id_populate p.(prog_main))) in
+  OK (AST.mkprogram (def_main :: def_populate :: gl) id_main).
