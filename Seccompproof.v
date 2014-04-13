@@ -13,6 +13,7 @@ Require Import Seccompjit.
 Require Import Seccompspec.
 Require Import CpdtTactics.
 Require Import Cminorp.
+Import ListNotations.
 
 (* Section TRANSLATION. *)
 
@@ -29,7 +30,7 @@ Proof.
 Qed.
 
 Lemma function_ptr_translated:
-  forall (b: block) (fd: fundef),
+  forall (b: block) (fd: Seccomp.fundef),
   Genv.find_funct_ptr ge b = Some fd ->
   exists tfd, Genv.find_funct_ptr tge b = Some tfd /\ transl_fundef fd = OK tfd.
 Proof.
@@ -48,7 +49,7 @@ Qed.
 Lemma sig_transl_function:
   forall fd tfd,
   transl_fundef fd = OK tfd ->
-  Cminor.funsig tfd = mksignature nil (Some Tint) cc_default.
+  Cminor.funsig tfd = signature_main.
 Proof.
   intros.
   destruct fd; monadInv H; auto.
@@ -109,7 +110,8 @@ Qed.
 
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
-      forall a x sm f c m tf ts tk tsp te tm b tm'
+      forall a x sm f c p m tf ts tk tsp te tm b tm'
+        (MP: Some (Vptr p Int.zero) = te!reg_pkt)
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
         (TF: transl_function f = OK tf)
@@ -119,15 +121,15 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (MSP: tsp = Vptr b Int.zero)
         (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
         (MINJ: mem_inj m tm'),
-      match_states (Seccomp.State a x sm f c m)
+      match_states (Seccomp.State a x sm f c p m)
                    (Cminor.State tf ts tk tsp te tm)
   | match_callstate:
-      forall fd m tfd targs tk tm
+      forall fd p m tfd targs tk tm
         (TF: transl_fundef fd = OK tfd)
         (MINJ: mem_inj m tm)
-        (MARGS: targs = nil)
+        (MARGS: targs = [ Vptr p Int.zero ])
         (MK: call_cont tk = Kstop),
-      match_states (Seccomp.Callstate fd m)
+      match_states (Seccomp.Callstate fd p m)
                    (Cminor.Callstate tfd targs tk tm)
   | match_returnstate:
       forall v m tv tk tm
@@ -158,6 +160,9 @@ Proof.
     + eexact A.
     + eapply sig_transl_function.
       eexact B.
+    + eexact H2.
+    + eexact H3.
+    + eexact H4.
 
   (* match states S R *)
   - constructor; auto.
@@ -456,9 +461,9 @@ Ltac cond_match_binop H a i :=
 
 Lemma cond_match:
   forall cond,
-  forall a x sm f op m,
+  forall a x sm f op p m,
   forall tf ts tk tsp te tm,
-  match_states (State a x sm f op m) (Cminor.State tf ts tk tsp te tm) ->
+  match_states (Seccomp.State a x sm f op p m) (Cminor.State tf ts tk tsp te tm) ->
   exists v, eval_expr tge tsp te tm (transl_cond cond) v /\ Val.bool_of_val v (eval_cond cond a x).
 Proof.
   intros.

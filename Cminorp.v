@@ -6,7 +6,7 @@ Require Import compcert.common.Smallstep.
 Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
-Require Import Seccompconf.
+Require Export Seccompconf.
 Import ListNotations.
 
 Inductive initial_state (p: Cminor.program): Cminor.state -> Prop :=
