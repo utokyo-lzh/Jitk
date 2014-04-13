@@ -23,6 +23,13 @@ let jit_and_print f =
     (* using stdout instead of stderr to fully order diagnostic output *)
 in List.map jit_and_print [
   [
+    Seccomp.Sld_w_abs Integers.Int.zero;
+    Seccomp.Sjmp_jc ((Seccomp.Jeqimm (Camlcoq.coqint_of_camlint 42l)), Integers.Byte.zero, Integers.Byte.one);
+    Seccomp.Sret_k (Camlcoq.coqint_of_camlint 0x7fff0000l);
+    Seccomp.Sret_k Integers.Int.zero;
+  ];
+(*
+  [
     Seccomp.Salu_safe (Aaddimm Integers.Int.one);
     Seccomp.Sret_a;
   ];
@@ -39,4 +46,5 @@ in List.map jit_and_print [
     Seccomp.Sjmp_ja Integers.Int.one;
     Seccomp.Salu_safe (Aaddimm Integers.Int.one);
   ];
+*)
 ];;
