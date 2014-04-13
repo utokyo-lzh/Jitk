@@ -1,4 +1,3 @@
-Require Import compcert.backend.Cminor.
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.common.Globalenvs.
@@ -13,6 +12,7 @@ Require Import Seccomp.
 Require Import Seccompjit.
 Require Import Seccompspec.
 Require Import CpdtTactics.
+Require Import Cminorp.
 
 (* Section TRANSLATION. *)
 
@@ -140,7 +140,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
 
 Lemma transl_initial_states:
   forall S, Seccomp.initial_state prog S ->
-  exists R, Cminor.initial_state tprog R /\ match_states S R.
+  exists R, Cminorp.initial_state tprog R /\ match_states S R.
 Proof.
   induction 1.
   exploit function_ptr_translated; eauto.
@@ -881,7 +881,7 @@ Proof.
 Qed.
 
 Theorem transl_program_correct:
-  forward_simulation (Seccompspec.semantics prog) (Cminor.semantics tprog).
+  forward_simulation (Seccompspec.semantics prog) (Cminorp.semantics tprog).
 Proof.
   eapply forward_simulation_plus.
   eexact symbols_preserved.

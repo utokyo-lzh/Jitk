@@ -6,6 +6,7 @@ Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
+Require Import Seccompconf.
 
 Set Implicit Arguments.
 
@@ -87,9 +88,6 @@ Inductive instruction : Type :=
       (** ret A **)
   .
 
-(** sizeof struct seccomp_data *)
-Parameter sizeof_seccomp_data : Z.
-
 Definition code := list instruction.
 
 Section PROGRAM.
@@ -121,6 +119,7 @@ Inductive state : Type :=
     state
   | Callstate:
     forall (fd: fundef)          (**r calling function *)
+           (p: block)            (**r input packet *)
            (m: mem),             (**r memory state *)
     state
   | Returnstate:
@@ -239,21 +238,21 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       step ge (State a x sm f (Sret_k k :: b) p m)
         E0 (Returnstate k m)
   | exec_call:
-      forall f p m m' m'' bytes,
-      list_length_z bytes = sizeof_seccomp_data ->
-      Mem.alloc m 0 sizeof_seccomp_data = (m', p) ->
-      Mem.storebytes m' p 0 bytes = Some m'' ->
-      step ge (Callstate (Internal f) m)
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f p m')
+      forall f p m,
+      step ge (Callstate (Internal f) p m)
+        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f p m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=
-  | initial_state_intro: forall b fd m0,
+  | initial_state_intro: forall b fd m0 m1 m2 bytes pkt,
     let ge := Genv.globalenv p in
     Genv.init_mem p = Some m0 ->
     Genv.find_symbol ge p.(prog_main) = Some b ->
     Genv.find_funct_ptr ge b = Some fd ->
-    initial_state p (Callstate fd m0).
+    list_length_z bytes = sizeof_seccomp_data ->
+    Mem.alloc m0 0 sizeof_seccomp_data = (m1, pkt) ->
+    Mem.storebytes m1 pkt 0 bytes = Some m2 ->
+    initial_state p (Callstate fd pkt m2).
 
 Inductive final_state: state -> int -> Prop :=
   | final_state_intro: forall v m,
