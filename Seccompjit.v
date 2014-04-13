@@ -101,6 +101,9 @@ Definition transl_instr (instr: Seccomp.instruction)
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jt))))
           (Sgoto (Z.to_pos (nextlbl - (Byte.unsigned jf)))))
   | Sld_w_abs k =>
+    let addr := Ebinop Oadd (Evar reg_pkt) (Econst (Ointconst k)) in
+    OK (Sassign reg_a (Eload Mint32 addr))
+(*
     let off := Int.unsigned k in
     if (off <? sizeof_seccomp_data)
     then if (off mod 4 =? 0)
@@ -108,6 +111,7 @@ Definition transl_instr (instr: Seccomp.instruction)
               OK (Sassign reg_a (Eload Mint32 addr))
          else Error (msg "unaligned offset to seccomp_data")
     else Error (msg "out-of-bounds offset to seccomp_data")
+*)
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>
