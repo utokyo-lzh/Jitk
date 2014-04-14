@@ -47,6 +47,12 @@ c/%.v: c/%.c
 
 .PRECIOUS: c/%.v test_%.native
 
+depend: $(FILES)
+	$(COQDEP) $^ \
+	> .depend
+
 clean:
 	rm -rf _build *.vo *.glob *.native
 	cd codegen && rm -f *.ml *.mli *.mlo *.glob *.vo
+
+include .depend
