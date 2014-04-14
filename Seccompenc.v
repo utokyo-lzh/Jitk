@@ -29,12 +29,42 @@ Record encoding : Type := mkenc {
 (* linux-git/include/uapi/linux/filter.h *)
 Notation BPF_S_RET_K      := 6.
 Notation BPF_S_RET_A      := 22.
-Notation BPF_S_LD_W_ABS   := 32.
 Notation BPF_S_JMP_JA     := 5.
 Notation BPF_S_JMP_JEQ_K  := 21.
+Notation BPF_S_JMP_JEQ_X  := 29.
+Notation BPF_S_JMP_JGE_K  := 53.
+Notation BPF_S_JMP_JGE_X  := 61.
+Notation BPF_S_JMP_JGT_K  := 37.
+Notation BPF_S_JMP_JGT_X  := 45.
 Notation BPF_S_JMP_JSET_K := 69.
+Notation BPF_S_JMP_JSET_X := 77.
 Notation BPF_S_ALU_ADD_K  := 4.
 Notation BPF_S_ALU_ADD_X  := 12.
+Notation BPF_S_ALU_SUB_K  := 20.
+Notation BPF_S_ALU_SUB_X  := 28.
+Notation BPF_S_ALU_MUL_K  := 36.
+Notation BPF_S_ALU_MUL_X  := 44.
+Notation BPF_S_ALU_DIV_K  := 52.
+Notation BPF_S_ALU_DIV_X  := 60.
+Notation BPF_S_ALU_MOD_K  := 148.
+Notation BPF_S_ALU_MOD_X  := 156.
+Notation BPF_S_ALU_AND_K  := 84.
+Notation BPF_S_ALU_AND_X  := 92.
+Notation BPF_S_ALU_OR_K   := 68.
+Notation BPF_S_ALU_OR_X   := 76.
+Notation BPF_S_ALU_XOR_K  := 164.
+Notation BPF_S_ALU_XOR_X  := 172.
+Notation BPF_S_ALU_LSH_K  := 100.
+Notation BPF_S_ALU_LSH_X  := 108.
+Notation BPF_S_ALU_RSH_K  := 116.
+Notation BPF_S_ALU_RSH_X  := 124.
+Notation BPF_S_ALU_NEG    := 132.
+Notation BPF_S_LD_W_ABS   := 32.
+(* TODO: rest of BPF_LD series *)
+(* TODO: BPF_LDX series *)
+(* TODO: BPF_MISC series *)
+(* TODO: BPF_ST series *)
+(* TODO: BPF_STX series *)
 
 Definition mkencx (c:Z) (jt jf:byte) (k:int) :=
   mkenc (Short.repr c) jt jf k.
@@ -53,13 +83,65 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
     OK (mkencx BPF_S_ALU_ADD_K Byte.zero Byte.zero k)
   | Salu_safe Aadd =>
     OK (mkencx BPF_S_ALU_ADD_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe (Asubimm k) =>
+    OK (mkencx BPF_S_ALU_SUB_K Byte.zero Byte.zero k)
+  | Salu_safe Asub =>
+    OK (mkencx BPF_S_ALU_SUB_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe (Amulimm k) =>
+    OK (mkencx BPF_S_ALU_MUL_K Byte.zero Byte.zero k)
+  | Salu_safe Amul =>
+    OK (mkencx BPF_S_ALU_MUL_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe (Aandimm k) =>
+    OK (mkencx BPF_S_ALU_AND_K Byte.zero Byte.zero k)
+  | Salu_safe Aand =>
+    OK (mkencx BPF_S_ALU_AND_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe (Aorimm k) =>
+    OK (mkencx BPF_S_ALU_OR_K Byte.zero Byte.zero k)
+  | Salu_safe Aor =>
+    OK (mkencx BPF_S_ALU_OR_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe (Axorimm k) =>
+    OK (mkencx BPF_S_ALU_XOR_K Byte.zero Byte.zero k)
+  | Salu_safe Axor =>
+    OK (mkencx BPF_S_ALU_XOR_X Byte.zero Byte.zero Int.zero)
+  | Salu_safe Aneg =>
+    OK (mkencx BPF_S_ALU_NEG Byte.zero Byte.zero Int.zero)
+
+  | Salu_div (Adivimm k) =>
+    OK (mkencx BPF_S_ALU_DIV_K Byte.zero Byte.zero k)
+  | Salu_div Adiv =>
+    OK (mkencx BPF_S_ALU_DIV_X Byte.zero Byte.zero Int.zero)
+  | Salu_div (Amodimm k) =>
+    OK (mkencx BPF_S_ALU_MOD_K Byte.zero Byte.zero k)
+  | Salu_div Amod =>
+    OK (mkencx BPF_S_ALU_MOD_X Byte.zero Byte.zero Int.zero)
+
+  | Salu_shift (Alshimm k) =>
+    OK (mkencx BPF_S_ALU_LSH_K Byte.zero Byte.zero k)
+  | Salu_shift Alsh =>
+    OK (mkencx BPF_S_ALU_LSH_X Byte.zero Byte.zero Int.zero)
+  | Salu_shift (Arshimm k) =>
+    OK (mkencx BPF_S_ALU_RSH_K Byte.zero Byte.zero k)
+  | Salu_shift Arsh =>
+    OK (mkencx BPF_S_ALU_RSH_X Byte.zero Byte.zero Int.zero)
 
   | Sjmp_ja k =>
     OK (mkencx BPF_S_JMP_JA Byte.zero Byte.zero k)
   | Sjmp_jc (Jeqimm k) t f =>
     OK (mkencx BPF_S_JMP_JEQ_K t f k)
+  | Sjmp_jc Jeq t f =>
+    OK (mkencx BPF_S_JMP_JEQ_X t f Int.zero)
+  | Sjmp_jc (Jgeimm k) t f =>
+    OK (mkencx BPF_S_JMP_JGE_K t f k)
+  | Sjmp_jc Jge t f =>
+    OK (mkencx BPF_S_JMP_JGE_X t f Int.zero)
+  | Sjmp_jc (Jgtimm k) t f =>
+    OK (mkencx BPF_S_JMP_JGT_K t f k)
+  | Sjmp_jc Jgt t f =>
+    OK (mkencx BPF_S_JMP_JGT_X t f Int.zero)
   | Sjmp_jc (Jsetimm k) t f =>
     OK (mkencx BPF_S_JMP_JSET_K t f k)
+  | Sjmp_jc Jset t f =>
+    OK (mkencx BPF_S_JMP_JSET_X t f Int.zero)
 
   | _ => Error (msg "unknown Seccomp.instruction")
   end.
@@ -76,10 +158,37 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
 
   | BPF_S_ALU_ADD_K  => OK (Salu_safe (Aaddimm k))
   | BPF_S_ALU_ADD_X  => OK (Salu_safe Aadd)
+  | BPF_S_ALU_SUB_K  => OK (Salu_safe (Asubimm k))
+  | BPF_S_ALU_SUB_X  => OK (Salu_safe Asub)
+  | BPF_S_ALU_MUL_K  => OK (Salu_safe (Amulimm k))
+  | BPF_S_ALU_MUL_X  => OK (Salu_safe Amul)
+  | BPF_S_ALU_AND_K  => OK (Salu_safe (Aandimm k))
+  | BPF_S_ALU_AND_X  => OK (Salu_safe Aand)
+  | BPF_S_ALU_OR_K   => OK (Salu_safe (Aorimm k))
+  | BPF_S_ALU_OR_X   => OK (Salu_safe Aor)
+  | BPF_S_ALU_XOR_K  => OK (Salu_safe (Axorimm k))
+  | BPF_S_ALU_XOR_X  => OK (Salu_safe Axor)
+  | BPF_S_ALU_NEG    => OK (Salu_safe Aneg)
+
+  | BPF_S_ALU_DIV_K  => OK (Salu_div (Adivimm k))
+  | BPF_S_ALU_DIV_X  => OK (Salu_div Adiv)
+  | BPF_S_ALU_MOD_K  => OK (Salu_div (Amodimm k))
+  | BPF_S_ALU_MOD_X  => OK (Salu_div Amod)
+
+  | BPF_S_ALU_LSH_K  => OK (Salu_shift (Alshimm k))
+  | BPF_S_ALU_LSH_X  => OK (Salu_shift Alsh)
+  | BPF_S_ALU_RSH_K  => OK (Salu_shift (Arshimm k))
+  | BPF_S_ALU_RSH_X  => OK (Salu_shift Arsh)
 
   | BPF_S_JMP_JA     => OK (Sjmp_ja k)
   | BPF_S_JMP_JEQ_K  => OK (Sjmp_jc (Jeqimm k) t f)
+  | BPF_S_JMP_JEQ_X  => OK (Sjmp_jc Jeq t f)
+  | BPF_S_JMP_JGE_K  => OK (Sjmp_jc (Jgeimm k) t f)
+  | BPF_S_JMP_JGE_X  => OK (Sjmp_jc Jge t f)
+  | BPF_S_JMP_JGT_K  => OK (Sjmp_jc (Jgtimm k) t f)
+  | BPF_S_JMP_JGT_X  => OK (Sjmp_jc Jgt t f)
   | BPF_S_JMP_JSET_K => OK (Sjmp_jc (Jsetimm k) t f)
+  | BPF_S_JMP_JSET_X => OK (Sjmp_jc Jset t f)
 
   | Zpos x => Error (MSG "unknown opcode: " :: POS x :: nil)
   | _ => Error (msg "unknown opcode")
