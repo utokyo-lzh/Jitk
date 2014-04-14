@@ -50,12 +50,20 @@ Definition transl_alu_div_guard (op: Seccomp.alu_div) : Cminor.expr :=
   | Amod      => Evar reg_x
   end.
 
-Definition transl_alu_shift (op: Seccomp.alu_shift) : Cminor.expr * Cminor.expr :=
+Definition transl_alu_shift (op: Seccomp.alu_shift) : Cminor.expr :=
   match op with
-  | Alshimm k => (Ebinop Oshl (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
-  | Arshimm k => (Ebinop Oshru (Evar reg_a) (Econst (Ointconst k)), (Econst (Ointconst k)))
-  | Alsh      => (Ebinop Oshl (Evar reg_a) (Evar reg_x), (Evar reg_x))
-  | Arsh      => (Ebinop Oshru (Evar reg_a) (Evar reg_x), (Evar reg_x))
+  | Alshimm k => Ebinop Oshl (Evar reg_a) (Econst (Ointconst k))
+  | Arshimm k => Ebinop Oshru (Evar reg_a) (Econst (Ointconst k))
+  | Alsh      => Ebinop Oshl (Evar reg_a) (Evar reg_x)
+  | Arsh      => Ebinop Oshru (Evar reg_a) (Evar reg_x)
+  end.
+
+Definition transl_alu_shift_guard (op: Seccomp.alu_shift) : Cminor.expr :=
+  match op with
+  | Alshimm k => Econst (Ointconst k)
+  | Arshimm k => Econst (Ointconst k)
+  | Alsh      => Evar reg_x
+  | Arsh      => Evar reg_x
   end.
 
 Definition transl_cond (cond: Seccomp.condition) :=
@@ -89,9 +97,9 @@ Definition transl_instr (instr: Seccomp.instruction)
                     (Sassign reg_a (Econst (Ointconst Int.zero)))
                     (Sassign reg_a (transl_alu_div op)))
   | Salu_shift op =>
-    let (resultexp, shiftexp) := transl_alu_shift op in
-    OK (Sifthenelse (Ebinop (Ocmpu Clt) shiftexp (Econst (Ointconst Int.iwordsize)))
-                    (Sassign reg_a resultexp)
+    OK (Sifthenelse (Ebinop (Ocmpu Clt) (transl_alu_shift_guard op)
+                                        (Econst (Ointconst Int.iwordsize)))
+                    (Sassign reg_a (transl_alu_shift op))
                     (Sassign reg_a (Econst (Ointconst Int.zero))))
   | Sjmp_ja k =>
     OK (Sgoto (Z.to_pos (nextlbl - (Int.unsigned k))))

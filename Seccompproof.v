@@ -489,6 +489,33 @@ Proof.
     | exists Vzero; cond_match_binop H a x ].
 Qed.
 
+Lemma oversize_shl_zero:
+  forall a i,
+  Int.ltu i Int.iwordsize = false ->
+  Int.shl a i = Int.zero.
+Proof.
+  intros.
+  rewrite Int.shl_mul_two_p.
+  rewrite Int.eqm_repr_eq with (y:=Int.zero).
+  rewrite Int.mul_zero; auto.
+  unfold Int.eqm.
+  cut (two_p (Int.unsigned i) mod Int.modulus = Int.unsigned Int.zero).
+  intros; rewrite <- H0; apply Int.eqmod_mod.
+  crush.
+  unfold Int.modulus.
+  (* XXX *)
+Admitted.
+
+Lemma oversize_shru_zero:
+  forall a i,
+  Int.ltu i Int.iwordsize = false ->
+  Int.shru a i = Int.zero.
+Proof.
+  intros.
+  rewrite Int.shru_div_two_p.
+  (* XXX *)
+Admitted.
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -524,9 +551,9 @@ Proof.
     auto.
 
     econstructor; auto.
+    rewrite PTree.gso; [ auto | discriminate ].
     rewrite PTree.gss; auto.
-    rewrite PTree.gso; auto.
-    unfold reg_x; unfold reg_a; discriminate.
+    rewrite PTree.gso; [ auto | discriminate ].
     apply is_tail_cons_left with (i := Salu_safe op); assumption.
     exact MFREE.
     exact MINJ.
@@ -665,9 +692,164 @@ Proof.
 
     auto.
     econstructor; auto.
+    rewrite PTree.gso; [ auto | discriminate ].
     rewrite PTree.gss; auto.
-    rewrite PTree.gso; auto; discriminate.
+    rewrite PTree.gso; [ auto | discriminate ].
     apply is_tail_cons_left with (i := Salu_div op); assumption.
+    exact MFREE.
+    exact MINJ.
+
+  (* Salu_shift op *)
+  - monadInv TC.
+    remember a' as a''.
+    subst a'.
+    econstructor; split.
+
+    eapply plus_left; [ constructor | idtac | idtac ].
+
+    destruct op; [ case_eq (Int.ltu i Int.iwordsize)
+                 | case_eq (Int.ltu i Int.iwordsize)
+                 | case_eq (Int.ltu x Int.iwordsize)
+                 | case_eq (Int.ltu x Int.iwordsize) ]; simpl; intros.
+
+    Ltac alu_shift_0 i tm H :=
+      apply step_ifthenelse with (v:=Val.of_optbool (Val.cmpu_bool (Mem.valid_pointer tm)
+                                                                   Clt
+                                                                   (Vint i) (Vint Int.iwordsize)));
+      [ apply eval_Ebinop with (v1:=Vint i) (v2:=Vint Int.iwordsize); constructor; auto; constructor
+      | unfold Val.cmpu; unfold Val.of_optbool; unfold Val.cmpu_bool; simpl; rewrite H; constructor ].
+    Ltac alu_shift_1f :=
+      rewrite Int.eq_false; [ idtac | discriminate ].
+    Ltac alu_shift_2 a i :=
+      eapply star_step; [ repeat constructor; apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i);
+                          constructor; auto
+                        | idtac | idtac ].
+    Ltac alu_shift_3 :=
+      eapply star_step; [ constructor | idtac | idtac ].
+    Ltac alu_shift_4 :=
+      eapply star_step; [ constructor | idtac | idtac ].
+
+    eapply star_step.
+    alu_shift_0 i tm H.
+    alu_shift_1f.
+    alu_shift_2 a i.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Val.shl (Vint a) (Vint i)).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''.  simpl.  rewrite H.  auto.
+    auto.  auto.  auto.  auto.
+
+    Ltac alu_shift_1t :=
+      rewrite Int.eq_true.
+
+    eapply star_step.
+    alu_shift_0 i tm H.
+    alu_shift_1t.
+    alu_shift_2 a i.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Vint Int.zero).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''; rewrite oversize_shl_zero; auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 i tm H.
+    alu_shift_1f.
+    alu_shift_2 a i.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Val.shru (Vint a) (Vint i)).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''.  simpl.  rewrite H.  auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 i tm H.
+    alu_shift_1t.
+    alu_shift_2 a i.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Vint Int.zero).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''; rewrite oversize_shru_zero; auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 x tm H.
+    alu_shift_1f.
+    alu_shift_2 a x.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Val.shl (Vint a) (Vint x)).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''.  simpl.  rewrite H.  auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 x tm H.
+    alu_shift_1t.
+    alu_shift_2 a x.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Vint Int.zero).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''; rewrite oversize_shl_zero; auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 x tm H.
+    alu_shift_1f.
+    alu_shift_2 a x.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Val.shru (Vint a) (Vint x)).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''.  simpl.  rewrite H.  auto.
+    auto.  auto.  auto.  auto.
+
+    eapply star_step.
+    alu_shift_0 x tm H.
+    alu_shift_1t.
+    alu_shift_2 a x.
+    alu_shift_3.
+    alu_shift_4.
+    simpl in Heqa''.
+
+    cut (Vint a'' = Vint Int.zero).
+    intros; rewrite <- H0; apply star_refl.
+
+    rewrite Heqa''; rewrite oversize_shru_zero; auto.
+    auto.  auto.  auto.  auto.
+
+    auto.
+    econstructor; auto.
+    rewrite PTree.gso; [ auto | discriminate ].
+    rewrite PTree.gss; auto.
+    rewrite PTree.gso; [ auto | discriminate ].
+    apply is_tail_cons_left with (i := Salu_shift op); assumption.
     exact MFREE.
     exact MINJ.
 
@@ -724,7 +906,7 @@ Proof.
     eapply plus_left; [ constructor | idtac | idtac ].
 
     eapply star_step.
-    destruct (cond_match cond a x sm f (Sjmp_jc cond jt jf :: b) m
+    destruct (cond_match cond a x sm f (Sjmp_jc cond jt jf :: b) p m
                               tf_orig ts_orig tk (Vptr b0 Int.zero) te tm); crush.
     apply step_ifthenelse with (v:=x3); [ auto | exact H3 ].
 
@@ -775,6 +957,8 @@ Proof.
     econstructor; split.
     eapply plus_left; [ constructor | idtac | idtac ].
     eapply star_step; [ constructor | idtac | idtac ].
+    apply eval_Eload with (vaddr:=Vint k).
+    (* XXX *)
     constructor.  simpl.  auto.
     eapply star_step; [ constructor | idtac | idtac ].
     eapply star_step; [ constructor | idtac | idtac ].
