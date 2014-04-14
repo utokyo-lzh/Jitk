@@ -12,11 +12,21 @@ Require Import Op.
 Require Import Seccomp.
 Require Import Seccompspec.
 Require Import Seccompfilter.
+Require Import MiscLemmas.
 Require Import CpdtTactics.
+
+Lemma list_length_z_exists:
+  forall A:Type,
+  forall z,
+  exists l:list A,
+  list_length_z l = z.
+Proof.
+  (* XXX *)
+Admitted.
 
 Theorem seccomp_terminates:
   forall prog,
-  seccomp_filter prog = true ->
+  true = seccomp_filter prog ->
   exists t r,
   program_behaves (Seccompspec.semantics prog) (Terminates t r).
 Proof.
@@ -28,16 +38,55 @@ Proof.
   destruct f; crush.
   destruct prog_defs ; [ idtac | crush ].
 
+  unfold seccomp_filter in H.  simpl in H.
+  destruct (Bool.andb_true_eq _ _ H); auto.
+  clear H.
+  cut (i=prog_main); [ intros; inv H | apply Peqb_true_eq; auto ].
+  clear H0.
+
   econstructor.
   econstructor.
+
+  (* introduce some symbols early on, to help with existential variables *)
+  case_eq (Mem.alloc Mem.empty 0 1); intros.
+  destruct (Mem.range_perm_drop_2 m b 0 1 Nonempty); unfold Mem.range_perm; intros.
+  apply (Mem.perm_alloc_2 Mem.empty 0 1); auto.
+
+  destruct (list_length_z_exists memval Seccompconf.sizeof_seccomp_data).
+  case_eq (Mem.alloc x 0 Seccompconf.sizeof_seccomp_data); intros.
+  destruct (Mem.range_perm_storebytes m0 b0 0 x0).
+  rewrite <- list_length_nat_z; rewrite H0; simpl.
+  unfold Mem.range_perm; intros.
+  destruct (Mem.valid_access_freeable_any m0 Mint8unsigned b0 ofs Writable).
+  unfold Mem.valid_access.  split.
+  unfold Mem.range_perm; intros.
+  apply (Mem.perm_alloc_2 x 0 Seccompconf.sizeof_seccomp_data); auto.
+  crush.  crush.  unfold Mem.range_perm in H4.  apply H4.  crush.
+
+  (* split program_behaves into initial_state and state_behaves *)
   econstructor.
 
   (* initial_state *)
   - econstructor.
-    (* XXX *)
+    + unfold Genv.init_mem.
+      simpl.  rewrite H.  rewrite e.  auto.
+    + unfold Genv.find_symbol.  simpl.  apply PTree.gss.
+    + unfold Genv.find_funct_ptr.  simpl.  auto.
+    + exact H0.
+    + exact H2.
+    + exact e0.
 
   (* state_behaves *)
-  (* XXX *)
+  - econstructor; simpl; [ idtac | constructor ].
+    eapply star_step.
+    constructor.
+
+(*
+    unfold seccomp_func_filter in H1.
+    destruct (Bool.andb_true_eq _ _ H1); clear H1.
+*)
+
+    (* XXX *)
 Admitted.
 
 Theorem transl_terminates:
