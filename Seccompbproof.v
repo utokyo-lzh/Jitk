@@ -64,30 +64,30 @@ Proof.
 Qed.
 
 Theorem step_terminates:
-  forall ge f x sm p m c a,
+  forall ge f sm p m c x a,
   true = seccomp_func_filter c ->
   exists r,
   star step ge (State a x sm f c p m) Events.E0 (Returnstate r m).
 Proof.
   induction c using (well_founded_ind (length_order_wf instruction)).
-  destruct x0.
+  destruct x.
   crush.
   intros.
   destruct i; simpl in H0;
     repeat (case (Bool.andb_true_eq _ _ H0); clear H0; intros);
     crush.
 
-  - destruct H with (y:=x0) (a:=(eval_alu_safe a0 a x)); unfold length_order; crush.
+  - destruct H with (y:=x) (a:=(eval_alu_safe a0 a x0)) (x:=x0); unfold length_order; crush.
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
 
-  - destruct H with (y:=x0) (a:=(eval_alu_div a0 a x)); unfold length_order; crush.
+  - destruct H with (y:=x) (a:=(eval_alu_div a0 a x0)) (x:=x0); unfold length_order; crush.
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
 
-  - destruct H with (y:=x0) (a:=(eval_alu_shift a0 a x)); unfold length_order; crush.
+  - destruct H with (y:=x) (a:=(eval_alu_shift a0 a x0)) (x:=x0); unfold length_order; crush.
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
@@ -103,7 +103,17 @@ Proof.
   *)
     admit.
 
-  - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x0)) (a:=a).
+  - destruct H with (y:=x) (a:=(Int.repr Seccompconf.sizeof_seccomp_data)) (x:=x0); unfold length_order; crush.
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply H1.
+
+  - destruct H with (y:=x) (a:=a) (x:=(Int.repr Seccompconf.sizeof_seccomp_data)); unfold length_order; crush.
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply H1.
+
+  - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
     econstructor.
@@ -111,13 +121,13 @@ Proof.
     apply Zlt_is_lt_bool; auto.
     apply H2.
 
-  - destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i)) x0)) (a:=a).
+  - destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
-    destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i0)) x0)) (a:=a).
+    destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i0)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
-    case_eq (eval_cond c a x); intros.
+    case_eq (eval_cond c a x0); intros.
     + econstructor.
       eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
       apply Zlt_is_lt_bool; crush.
@@ -177,7 +187,7 @@ Proof.
     (Genv.globalenv {|
        prog_defs := (prog_main, Gfun (Internal f)) :: nil;
        prog_main := prog_main |})
-    f Int.zero (ZMap.init Int.zero) b0 x1 f Int.zero); auto.
+    f (ZMap.init Int.zero) b0 x1 f Int.zero Int.zero); auto.
 
   (* split program_behaves into initial_state and state_behaves *)
   econstructor.
