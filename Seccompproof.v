@@ -954,12 +954,25 @@ Proof.
 
   (* Sld_w_abs k *)
   - monadInv TC.
+    remember a' as a''.
+    subst a'.  subst off.
     econstructor; split.
     eapply plus_left; [ constructor | idtac | idtac ].
     eapply star_step; [ constructor | idtac | idtac ].
-    apply eval_Eload with (vaddr:=Vint k).
-    (* XXX *)
-    constructor.  simpl.  auto.
+    apply eval_Eload with (vaddr:=Vptr p k).
+    apply eval_Ebinop with (v1:=Vptr p Int.zero) (v2:=Vint k).
+    constructor.  auto.
+    constructor.  auto.
+    simpl.  rewrite Int.add_zero_l.  auto.
+    unfold Mem.loadv.
+
+    destruct (Mem.load_inj inject_id m tm' Mint32 p (Int.unsigned k) p 0 (Vint a'')).
+    exact MINJ.  exact H1.  crush. 
+    destruct H2; rewrite Z.add_0_r in H2.
+
+    rewrite Mem.load_free_2 with (m2:=tm') (bf:=b0) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x0).
+    inversion H3.  auto.  auto.  auto.
+
     eapply star_step; [ constructor | idtac | idtac ].
     eapply star_step; [ constructor | idtac | idtac ].
     apply star_refl.
@@ -967,8 +980,7 @@ Proof.
     auto.
     auto.
     auto.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto.
-    unfold reg_x; unfold reg_a; discriminate.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
     apply is_tail_cons_left with (i:=Sld_w_abs k); assumption.
     exact MFREE.
     exact MINJ.
