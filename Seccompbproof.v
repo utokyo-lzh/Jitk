@@ -34,24 +34,55 @@ Proof.
   crush.
   intros.
   destruct a; simpl in H;
-    repeat (case (Bool.andb_true_eq _ _ H); clear H; intros).
+    repeat (case (Bool.andb_true_eq _ _ H); clear H; intros);
+    crush.
 
   destruct IHc with (a:=(eval_alu_safe a a0 x)); auto.
-  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply H0.
 
   destruct IHc with (a:=(eval_alu_div a a0 x)); auto.
-  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply H0.
 
   destruct IHc with (a:=(eval_alu_shift a a0 x)); auto.
-  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply H0.
 
+  (* XXX
+  destruct (Mem.valid_access_load m Mint32 p (Int.unsigned i)).
+  admit.  (*XXX*)
   econstructor.  eapply star_step.  constructor.
   apply Zlt_is_lt_bool; auto.
   apply Z.eqb_eq; auto.
+  apply H2.
+  *)
+  admit.
 
+(*
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply Zlt_is_lt_bool; auto.
+*)
+  admit.
 
-  (* XXX *)  
-Admitted.
+(*
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+*)
+  admit.
+
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply star_refl.
+
+  econstructor.
+  eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+  apply star_refl.
+Qed.
 
 Theorem seccomp_terminates:
   forall prog,
@@ -110,7 +141,7 @@ Proof.
     instantiate (1:=x1).
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0);
       [ constructor | idtac | auto ].
-    
+    (* XXX how to apply step_terminates *)
 
 
 (*
