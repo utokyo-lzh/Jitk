@@ -26,7 +26,10 @@ Record encoding : Type := mkenc {
   enc_k: int
 }.
 
-(* linux-git/include/uapi/linux/filter.h *)
+(* Reference:
+    linux-git/include/uapi/linux/filter.h
+    linux-git/net/core/filter.c
+*)
 Notation BPF_S_RET_K      := 6.
 Notation BPF_S_RET_A      := 22.
 Notation BPF_S_JMP_JA     := 5.
@@ -60,8 +63,10 @@ Notation BPF_S_ALU_RSH_K  := 116.
 Notation BPF_S_ALU_RSH_X  := 124.
 Notation BPF_S_ALU_NEG    := 132.
 Notation BPF_S_LD_W_ABS   := 32.
+Notation BPF_S_LD_W_LEN   := 128.
+Notation BPF_S_LDX_W_LEN  := 129.
 (* TODO: rest of BPF_LD series *)
-(* TODO: BPF_LDX series *)
+(* TODO: rest of BPF_LDX series *)
 (* TODO: BPF_MISC series *)
 (* TODO: BPF_ST series *)
 (* TODO: BPF_STX series *)
@@ -78,6 +83,10 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
 
   | Sld_w_abs k =>
     OK (mkencx BPF_S_LD_W_ABS Byte.zero Byte.zero k)
+  | Sld_w_len =>
+    OK (mkencx BPF_S_LD_W_LEN Byte.zero Byte.zero Int.zero)
+  | Sldx_w_len =>
+    OK (mkencx BPF_S_LDX_W_LEN Byte.zero Byte.zero Int.zero)
 
   | Salu_safe (Aaddimm k) =>
     OK (mkencx BPF_S_ALU_ADD_K Byte.zero Byte.zero k)
@@ -155,6 +164,8 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
   | BPF_S_RET_K      => OK (Sret_k k)
 
   | BPF_S_LD_W_ABS   => OK (Sld_w_abs k)
+  | BPF_S_LD_W_LEN   => OK (Sld_w_len)
+  | BPF_S_LDX_W_LEN  => OK (Sldx_w_len)
 
   | BPF_S_ALU_ADD_K  => OK (Salu_safe (Aaddimm k))
   | BPF_S_ALU_ADD_X  => OK (Salu_safe Aadd)
