@@ -22,13 +22,11 @@ Lemma list_length_z_exists:
   exists l:list A,
   list_length_z l = x.
 Proof.
-  intro A.
+  intros A a.
   apply (natlike_ind (fun x => exists l:list A, list_length_z l = x)).
   - exists nil; crush.
-  - exists 
-
-  (* XXX *)
-Admitted.
+  - intros.  destruct H0.  exists (a::x0).  rewrite list_length_z_cons.  crush.
+Qed.
 
 (* CPDT GeneralRec *)
 Definition length_order (A:Type) (ls1 ls2: list A) :=
@@ -163,7 +161,8 @@ Proof.
   destruct (Mem.range_perm_drop_2 m b 0 1 Nonempty); unfold Mem.range_perm; intros.
   apply (Mem.perm_alloc_2 Mem.empty 0 1); auto.
 
-  destruct (list_length_z_exists memval Seccompconf.sizeof_seccomp_data).
+  destruct (list_length_z_exists memval Undef Seccompconf.sizeof_seccomp_data).
+  apply Seccompconf.sizeof_nonneg.
   case_eq (Mem.alloc x 0 Seccompconf.sizeof_seccomp_data); intros.
   destruct (Mem.range_perm_storebytes m0 b0 0 x0).
   rewrite <- list_length_nat_z; rewrite H0; simpl.

@@ -1,3 +1,6 @@
+Require Import compcert.common.AST.
+Require Import compcert.common.Memory.
+Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import CpdtTactics.
 
@@ -24,3 +27,17 @@ Proof.
   - crush.
   - induction l; crush.
 Qed.
+
+Lemma valid_access_load_int:
+  forall m b ofs,
+  Mem.valid_access m Mint32 b ofs Readable ->
+  exists v, Mem.load Mint32 m b ofs = Some (Vint v).
+Proof.
+(*
+  intros.
+  destruct (Mem.valid_access_load m Mint32 b ofs); auto.
+  cut (Val.has_type x 
+  destruct x.
+  cut (
+*)
+Abort.
