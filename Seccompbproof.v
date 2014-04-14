@@ -16,10 +16,17 @@ Require Import CpdtTactics.
 
 Lemma list_length_z_exists:
   forall A:Type,
-  forall z,
+  forall a:A,
+  forall x,
+  0 <= x ->
   exists l:list A,
-  list_length_z l = z.
+  list_length_z l = x.
 Proof.
+  intro A.
+  apply (natlike_ind (fun x => exists l:list A, list_length_z l = x)).
+  - exists nil; crush.
+  - exists 
+
   (* XXX *)
 Admitted.
 
