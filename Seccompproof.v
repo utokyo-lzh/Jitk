@@ -7,7 +7,6 @@ Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
-Require Import Op.
 Require Import Seccomp.
 Require Import Seccompjit.
 Require Import Seccompspec.

@@ -8,7 +8,6 @@ Require Import compcert.common.Behaviors.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
-Require Import Op.
 Require Import Seccomp.
 Require Import Seccompspec.
 Require Import Seccompfilter.
@@ -62,11 +61,14 @@ Proof.
   *)
   admit.
 
+  destruct IHc with (a:=a0); auto.
 (*
   econstructor.
   eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
   apply Zlt_is_lt_bool; auto.
+  apply H1.
 *)
+  admit.
 
 (*
   econstructor.
