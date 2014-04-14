@@ -52,7 +52,7 @@ Proof.
   eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
   apply H0.
 
-  (* XXX
+(*
   destruct (Mem.valid_access_load m Mint32 p (Int.unsigned i)).
   admit.  (*XXX*)
   econstructor.  eapply star_step.  constructor.
@@ -67,7 +67,6 @@ Proof.
   eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
   apply Zlt_is_lt_bool; auto.
 *)
-  admit.
 
 (*
   econstructor.
@@ -87,8 +86,8 @@ Qed.
 Theorem seccomp_terminates:
   forall prog,
   true = seccomp_filter prog ->
-  exists t r,
-  program_behaves (Seccompspec.semantics prog) (Terminates t r).
+  exists r,
+  program_behaves (Seccompspec.semantics prog) (Terminates Events.E0 r).
 Proof.
   intros.
   destruct prog.
@@ -103,9 +102,6 @@ Proof.
   clear H.
   cut (i=prog_main); [ intros; inv H | apply Peqb_true_eq; auto ].
   clear H0.
-
-  econstructor.
-  econstructor.
 
   (* introduce some symbols early on, to help with existential variables *)
   case_eq (Mem.alloc Mem.empty 0 1); intros.
@@ -123,7 +119,14 @@ Proof.
   apply (Mem.perm_alloc_2 x 0 Seccompconf.sizeof_seccomp_data); auto.
   crush.  crush.  unfold Mem.range_perm in H4.  apply H4.  crush.
 
+  destruct (step_terminates
+    (Genv.globalenv {|
+       prog_defs := (prog_main, Gfun (Internal f)) :: nil;
+       prog_main := prog_main |})
+    f Int.zero (ZMap.init Int.zero) b0 x1 f Int.zero); auto.
+
   (* split program_behaves into initial_state and state_behaves *)
+  econstructor.
   econstructor.
 
   (* initial_state *)
@@ -141,16 +144,8 @@ Proof.
     instantiate (1:=x1).
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0);
       [ constructor | idtac | auto ].
-    (* XXX how to apply step_terminates *)
-
-
-(*
-    unfold seccomp_func_filter in H1.
-    destruct (Bool.andb_true_eq _ _ H1); clear H1.
-*)
-
-    (* XXX *)
-Admitted.
+    apply H3.
+Qed.
 
 Theorem transl_terminates:
   forall prog tprog,
