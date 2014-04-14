@@ -14,3 +14,13 @@ Proof.
     crush.
 Qed.
 
+Lemma length_skipn:
+  forall A:Type,
+  forall x,
+  forall l:list A,
+  (length (skipn x l) <= length l)%nat.
+Proof.
+  induction x.
+  - crush.
+  - induction l; crush.
+Qed.
