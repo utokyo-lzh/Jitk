@@ -8,36 +8,21 @@ Require Import Seccomp.
 Require Import Seccompjit.
 Import ListNotations.
 
-Definition seccomp_ends_with_ret (f: Seccomp.code) : bool :=
+Fixpoint seccomp_func_filter (f: Seccomp.code) : bool :=
   match f with
-  | [] => false
-  | _ => true
-  end &&
-  let lastop := last f Sret_a in
-  match lastop with
-  | Sret_k k => true
-  | Sret_a => true
-  | _ => false
+  | [] => false   (* no return *)
+  | [ Sret_k k ] => true
+  | [ Sret_a ] => true
+  | Sjmp_ja off :: rest =>
+    (Int.unsigned off <? list_length_z rest) &&
+    (seccomp_func_filter rest)
+  | Sjmp_jc cond jt jf :: rest =>
+    (Byte.unsigned jt <? list_length_z rest) &&
+    (Byte.unsigned jf <? list_length_z rest) &&
+    (seccomp_func_filter rest)
+  | _ :: rest =>
+    seccomp_func_filter rest
   end.
-
-Fixpoint seccomp_inbound_jumps (f: Seccomp.code) : bool :=
-  match f with
-  | [] => true
-  | op :: rest =>
-    match op with
-    | Sjmp_ja off =>
-      Int.unsigned off <? list_length_z rest
-    | Sjmp_jc cond jt jf =>
-      (Byte.unsigned jt <? list_length_z rest) &&
-      (Byte.unsigned jf <? list_length_z rest)
-    | _ => true
-    end &&
-    seccomp_inbound_jumps rest
-  end.
-
-Definition seccomp_func_filter (f: Seccomp.code) : bool :=
-  seccomp_ends_with_ret f &&
-  seccomp_inbound_jumps f.
 
 Definition seccomp_filter (p: Seccomp.program) : bool :=
   let defs := p.(prog_defs) in
