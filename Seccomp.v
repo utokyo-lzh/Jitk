@@ -217,7 +217,6 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       Mem.load Mint32 m p off = Some (Vint a') ->
       step ge (State a x sm f (Sld_w_abs k :: b) p m)
         E0 (State a' x sm f b p m)
-(*
   | exec_Sld_w_len:
       forall a x sm f b p m,
       let a' := Int.repr sizeof_seccomp_data in
@@ -226,9 +225,8 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_Sldx_w_len:
       forall a x sm f b p m,
       let x' := Int.repr sizeof_seccomp_data in
-      step ge (State a x sm f (Sld_w_len :: b) p m)
+      step ge (State a x sm f (Sldx_w_len :: b) p m)
         E0 (State a x' sm f b p m)
-*)
   | exec_Sret_a:
       forall a x sm f b p m,
       step ge (State a x sm f (Sret_a :: b) p m)

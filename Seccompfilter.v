@@ -31,6 +31,9 @@ Fixpoint seccomp_func_filter (f: Seccomp.code) : bool :=
     (Int.unsigned k mod 4 =? 0) &&
     (seccomp_func_filter rest)
 
+  | Sld_w_len :: rest => seccomp_func_filter rest
+  | Sldx_w_len :: rest => seccomp_func_filter rest
+
   | Sret_k k :: rest => seccomp_func_filter rest
   | Sret_a :: rest => seccomp_func_filter rest
   | _ => false

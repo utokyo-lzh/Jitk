@@ -110,15 +110,10 @@ Definition transl_instr (instr: Seccomp.instruction)
   | Sld_w_abs k =>
     let addr := Ebinop Oadd (Evar reg_pkt) (Econst (Ointconst k)) in
     OK (Sassign reg_a (Eload Mint32 addr))
-(*
-    let off := Int.unsigned k in
-    if (off <? sizeof_seccomp_data)
-    then if (off mod 4 =? 0)
-         then let addr := Ebinop Oadd (Evar reg_pkt) (Econst (Ointconst k)) in
-              OK (Sassign reg_a (Eload Mint32 addr))
-         else Error (msg "unaligned offset to seccomp_data")
-    else Error (msg "out-of-bounds offset to seccomp_data")
-*)
+  | Sld_w_len =>
+    OK (Sassign reg_a (Econst (Ointconst (Int.repr sizeof_seccomp_data))))
+  | Sldx_w_len =>
+    OK (Sassign reg_x (Econst (Ointconst (Int.repr sizeof_seccomp_data))))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>

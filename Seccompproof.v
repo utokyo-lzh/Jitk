@@ -942,6 +942,38 @@ Proof.
     exact MFREE.
     exact MINJ.
 
+  (* Sld_w_len *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    constructor.
+    constructor.
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Sld_w_len); assumption.
+    exact MFREE.
+    exact MINJ.
+
+  (* Sldx_w_len *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    constructor.
+    constructor.
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Sldx_w_len); assumption.
+    exact MFREE.
+    exact MINJ.
+
   (* Sret_a *)
   - monadInv TC.
     econstructor; split.
