@@ -24,6 +24,35 @@ Proof.
   (* XXX *)
 Admitted.
 
+Theorem step_terminates:
+  forall ge f x sm p m c a,
+  true = seccomp_func_filter c ->
+  exists r,
+  star step ge (State a x sm f c p m) Events.E0 (Returnstate r m).
+Proof.
+  induction c.
+  crush.
+  intros.
+  destruct a; simpl in H;
+    repeat (case (Bool.andb_true_eq _ _ H); clear H; intros).
+
+  destruct IHc with (a:=(eval_alu_safe a a0 x)); auto.
+  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+
+  destruct IHc with (a:=(eval_alu_div a a0 x)); auto.
+  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+
+  destruct IHc with (a:=(eval_alu_shift a a0 x)); auto.
+  econstructor.  eapply star_step.  constructor.  apply H0.  auto.
+
+  econstructor.  eapply star_step.  constructor.
+  apply Zlt_is_lt_bool; auto.
+  apply Z.eqb_eq; auto.
+
+
+  (* XXX *)  
+Admitted.
+
 Theorem seccomp_terminates:
   forall prog,
   true = seccomp_filter prog ->
@@ -78,8 +107,11 @@ Proof.
 
   (* state_behaves *)
   - econstructor; simpl; [ idtac | constructor ].
-    eapply star_step.
-    constructor.
+    instantiate (1:=x1).
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0);
+      [ constructor | idtac | auto ].
+    
+
 
 (*
     unfold seccomp_func_filter in H1.
