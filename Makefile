@@ -20,6 +20,7 @@ FILES = CpdtTactics.v \
 	Seccompspec.v \
 	Seccompfilter.v \
 	Seccompenc.v \
+	HLspec.v \
 	MiscLemmas.v \
 	Seccompencproof.v \
 	#Seccompproof.v \
