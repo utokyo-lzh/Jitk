@@ -67,6 +67,8 @@ handle_sigsys(int sig)
 }
 #endif
 
+struct vsf_session;
+
 static const int kOpenFlags =
     O_CREAT|O_EXCL|O_APPEND|O_NONBLOCK|O_DIRECTORY|O_CLOEXEC|O_LARGEFILE;
 

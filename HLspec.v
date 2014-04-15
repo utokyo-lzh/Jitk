@@ -55,17 +55,6 @@ End PROGRAM.
 
 Section SEMANTICS.
 
-(*
-Fixpoint semantics (l: list hlspec_rule) (sysnum: int) : bool :=
-  match l with
-  | nil => true
-  | Allow num :: rest =>
-    if (Int.eq num sysnum) then true else semantics rest sysnum
-  | Deny num :: rest =>
-    if (Int.eq num sysnum) then false else semantics rest sysnum
-  end.
-*)
-
 Definition genv := Genv.t fundef unit.
 
 Record seccompdata : Type := mkseccompdata {
