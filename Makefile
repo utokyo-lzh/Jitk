@@ -23,8 +23,8 @@ FILES = CpdtTactics.v \
 	HLspec.v \
 	MiscLemmas.v \
 	Seccompencproof.v \
-	#Seccompproof.v \
-	#Seccompbproof.v
+	Seccompproof.v \
+	Seccompbproof.v
 
 all:	test_seccomp.native \
 	test_enc.native \

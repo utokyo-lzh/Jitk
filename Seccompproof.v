@@ -15,7 +15,7 @@ Require Import Cminorp.
 Require Import MiscLemmas.
 Import ListNotations.
 
-(* Section TRANSLATION. *)
+Section TRANSLATION.
 
 Variable prog: Seccomp.program.
 Variable tprog: Cminor.program.
@@ -160,7 +160,9 @@ Proof.
     + eexact A.
     + eapply sig_transl_function.
       eexact B.
-    + eexact H2.
+    + instantiate (1:=(Memdata.inj_bytes bytes)).
+      rewrite list_length_nat_z.  rewrite length_inj_bytes.
+      rewrite <- list_length_nat_z.  eexact H2.
     + eexact H3.
     + eexact H4.
 
@@ -1114,4 +1116,4 @@ Proof.
   eexact transl_step.
 Qed.
 
-(* End TRANSLATION. *)
+End TRANSLATION.

@@ -12,6 +12,7 @@ Require Import Seccomp.
 Require Import Seccompspec.
 Require Import Seccompfilter.
 Require Import Seccompconf.
+Require Import Seccompproof.
 Require Import MiscLemmas.
 Require Import CpdtTactics.
 
@@ -174,14 +175,16 @@ Proof.
       (v:=(Vint (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt)))))).
     simpl; auto.
 
-(* apply Hstore. *)
-    admit.
+    cut ((0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) pkt))) = Int.unsigned i).
+    intro Heq_a; rewrite <- Heq_a at 1.
+    apply Hstore; clear HeqHstore; clear Hstore.
 
+    admit.  (* apply H6. *)
+    admit.  (* some modulo stuff *)
+    admit.  (* length firstn *)
     auto.
     right.  left.
-(* prove some stupid lemmas about firstn/skipn/length *)
-    admit.
-    auto.
+    admit.  (* prove some stupid lemmas about firstn/skipn/length *)
     apply H3.
 
   - destruct H with (y:=x) (a:=(Int.repr Seccompconf.sizeof_seccomp_data)) (x:=x0); unfold length_order; crush.
@@ -231,13 +234,6 @@ Proof.
   - econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply star_refl.
-Qed.
-
-Lemma length_inj_bytes:
-  forall l,
-  length (Memdata.inj_bytes l) = length l.
-Proof.
-  induction l; crush.
 Qed.
 
 Theorem seccomp_terminates:
@@ -312,12 +308,12 @@ Theorem transl_terminates:
   forall prog tprog,
   Seccompfilter.transl_program_filter prog = OK tprog ->
   exists t r,
-  program_behaves (Cminor.semantics tprog) (Terminates t r).
+  program_behaves (Cminorp.semantics tprog) (Terminates t r).
 Proof.
   intros.
   unfold transl_program_filter in H.
   case_eq (seccomp_filter prog); intros; rewrite H0 in H; [ idtac | crush ].
-  destruct (seccomp_terminates prog); [ auto | destruct H1 ].
+  destruct (seccomp_terminates prog); [ auto | idtac ].
 
   econstructor.
   econstructor.
@@ -326,7 +322,7 @@ Proof.
     with (L1:=(Seccompspec.semantics prog)).
 
   (* forward_simulation *)
-  - apply transl_program_correct.
+  - apply transl_program_correct; auto.
 
   (* program_behaves *)
   - exact H1.

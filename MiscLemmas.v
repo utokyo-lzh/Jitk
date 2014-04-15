@@ -28,16 +28,10 @@ Proof.
   - induction l; crush.
 Qed.
 
-Lemma valid_access_load_int:
-  forall m b ofs,
-  Mem.valid_access m Mint32 b ofs Readable ->
-  exists v, Mem.load Mint32 m b ofs = Some (Vint v).
+Lemma length_inj_bytes:
+  forall l,
+  length (Memdata.inj_bytes l) = length l.
 Proof.
-(*
-  intros.
-  destruct (Mem.valid_access_load m Mint32 b ofs); auto.
-  cut (Val.has_type x 
-  destruct x.
-  cut (
-*)
-Abort.
+  induction l; crush.
+Qed.
+
