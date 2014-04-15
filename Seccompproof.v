@@ -483,15 +483,55 @@ Lemma oversize_shl_zero:
 Proof.
   intros.
   rewrite Int.shl_mul_two_p.
-  rewrite Int.eqm_repr_eq with (y:=Int.zero).
-  rewrite Int.mul_zero; auto.
-  unfold Int.eqm.
-  cut (two_p (Int.unsigned i) mod Int.modulus = Int.unsigned Int.zero).
-  intros; rewrite <- H0; apply Int.eqmod_mod.
-  crush.
-  unfold Int.modulus.
-  (* XXX *)
-Admitted.
+  assert (Int.repr (two_p (Int.unsigned i)) = Int.zero).
+   apply Int.eqm_samerepr.
+   unfold Int.eqm.
+   assert (two_p (Int.unsigned i) mod Int.modulus = 0).
+    apply Zmod_divides.
+     assert (Int.modulus > 0).
+      exact Int.wordsize_pos.
+
+      omega.
+
+     exists (two_p (Int.unsigned i - Int.zwordsize)).
+     unfold Int.ltu in H.
+     destruct (zlt (Int.unsigned i) (Int.unsigned Int.iwordsize)).
+      discriminate.
+
+      assert (0 <= Int.zwordsize).
+       apply Zlt_le_weak.
+       apply Zgt_lt.
+       exact Int.wordsize_pos.
+
+       assert (0 <= Int.unsigned i - Int.zwordsize).
+        rewrite Int.unsigned_repr_wordsize in *.
+        apply Zle_minus_le_0.
+        omega.
+
+        assert
+         (two_p (Int.zwordsize + (Int.unsigned i - Int.zwordsize)) =
+          two_p Int.zwordsize * two_p (Int.unsigned i - Int.zwordsize)).
+         apply two_p_is_exp; auto.
+
+         assert
+          (Int.zwordsize + (Int.unsigned i - Int.zwordsize) = Int.unsigned i).
+          omega.
+
+          rewrite H3 in H2.
+          auto.
+
+    assert
+     (Int.eqmod Int.modulus (two_p (Int.unsigned i))
+        (two_p (Int.unsigned i) mod Int.modulus)).
+     apply Int.eqmod_mod.
+     exact Int.modulus_pos.
+
+     rewrite H0 in H1.
+     auto.
+
+   rewrite H0.
+   apply Int.mul_zero.
+Qed.
 
 Lemma oversize_shru_zero:
   forall a i,
