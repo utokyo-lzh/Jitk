@@ -26,8 +26,11 @@ FILES = CpdtTactics.v \
 	#Seccompproof.v \
 	#Seccompbproof.v
 
-all:	test_seccomp.native test_enc.native \
-	test_gen.native test_gencminor.native \
+all:	test_seccomp.native \
+	test_enc.native \
+	test_gen.native \
+	test_gencminor.native \
+	test_hlspec.native \
 	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh)
 
 test_%.native: test_%.ml codegen/extraction.vo

@@ -5,6 +5,7 @@ Require Import Seccompconf.
 Require Import Seccompjit.
 Require Import Seccompenc.
 Require Import Seccompfilter.
+Require Import HLspec.
 Require Import compcert.common.Errors.
 
 Extraction Blacklist List String Int.
@@ -20,9 +21,15 @@ Extract Constant Seccompconf.sizeof_seccomp_data =>
 Extract Constant Seccompjit.seccomp_memwords =>
   "Seccompaux.seccomp_memwords".
 
+Extract Constant HLspec.SECCOMP_RET_ALLOW => "Seccompaux.seccomp_ret_allow".
+Extract Constant HLspec.SECCOMP_RET_ERRNO => "Seccompaux.seccomp_ret_errno".
+Extract Constant HLspec.SECCOMP_RET_TRAP  => "Seccompaux.seccomp_ret_trap".
+Extract Constant HLspec.SECCOMP_RET_KILL  => "Seccompaux.seccomp_ret_kill".
+
 Cd "codegen".
 Extraction Library Seccomp.
 Extraction Library Seccompconf.
 Extraction Library Seccompjit.
 Extraction Library Seccompenc.
 Extraction Library Seccompfilter.
+Extraction Library HLspec.
