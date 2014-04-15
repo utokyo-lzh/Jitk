@@ -500,8 +500,31 @@ Lemma oversize_shru_zero:
 Proof.
   intros.
   rewrite Int.shru_div_two_p.
-  (* XXX *)
-Admitted.
+  assert (Int.modulus <= two_p (Int.unsigned i)).
+
+  - rewrite Int.modulus_power.
+    apply two_p_monotone.
+    crush.
+    apply Zlt_le_weak.
+    apply Zgt_lt.
+    exact Int.wordsize_pos.
+
+    unfold Int.ltu in H.
+    destruct (zlt (Int.unsigned i) (Int.unsigned Int.iwordsize)).
+    crush.
+    apply Zge_le.
+    auto.
+
+  - apply Int.eqm_samerepr.
+    apply Int.eqm_refl2.
+    apply Zdiv_small.
+
+    split.
+    apply Int.unsigned_range.
+    apply (Zlt_le_trans (Int.unsigned a) Int.modulus (two_p (Int.unsigned i))).
+    apply Int.unsigned_range.
+    auto.
+Qed.
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
