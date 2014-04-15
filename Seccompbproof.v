@@ -11,6 +11,7 @@ Require Import compcert.lib.Maps.
 Require Import Seccomp.
 Require Import Seccompspec.
 Require Import Seccompfilter.
+Require Import Seccompconf.
 Require Import MiscLemmas.
 Require Import CpdtTactics.
 
@@ -88,11 +89,16 @@ Proof.
 Qed.
 
 Theorem step_terminates:
-  forall ge f sm p m c x a,
+  forall ge f sm p,
+  forall m0 b0 pkt m,
+  list_length_z pkt = Seccompconf.sizeof_seccomp_data ->
+  Mem.storebytes m0 b0 0 pkt = Some m ->
+  forall c x a,
   true = seccomp_func_filter c ->
   exists r,
   star step ge (State a x sm f c p m) Events.E0 (Returnstate r m).
 Proof.
+  intros ge f sm p m0 b0 pkt m Hpktlen Hstorebytes.
   induction c using (well_founded_ind (length_order_wf instruction)).
   destruct x.
   crush.
@@ -118,12 +124,14 @@ Proof.
 
   -
 (*
-  destruct (Mem.valid_access_load m Mint32 p (Int.unsigned i)).
-  admit.  (*XXX*)
-  econstructor.  eapply star_step.  constructor.
-  apply Zlt_is_lt_bool; auto.
-  apply Z.eqb_eq; auto.
-  apply H2.
+    destruct (Mem.valid_access_load m Mint32 p (Int.unsigned i)).
+    admit. (* XXX *)
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply Zlt_is_lt_bool; auto.
+    apply Z.eqb_eq; auto.
+
+    apply H2.
   *)
     admit.
 
@@ -217,7 +225,9 @@ Proof.
     (Genv.globalenv {|
        prog_defs := (prog_main, Gfun (Internal f)) :: nil;
        prog_main := prog_main |})
-    f (ZMap.init Int.zero) b0 x1 f Int.zero Int.zero); auto.
+    f (ZMap.init Int.zero) b0
+    m0 b0 x0 x1 H0 e0
+    f Int.zero Int.zero); auto.
 
   (* split program_behaves into initial_state and state_behaves *)
   econstructor.
