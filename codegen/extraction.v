@@ -21,10 +21,11 @@ Extract Constant Seccompconf.sizeof_seccomp_data =>
 Extract Constant Seccompjit.seccomp_memwords =>
   "Seccompaux.seccomp_memwords".
 
-Extract Constant HLspec.SECCOMP_RET_ALLOW => "Seccompaux.seccomp_ret_allow".
-Extract Constant HLspec.SECCOMP_RET_ERRNO => "Seccompaux.seccomp_ret_errno".
-Extract Constant HLspec.SECCOMP_RET_TRAP  => "Seccompaux.seccomp_ret_trap".
 Extract Constant HLspec.SECCOMP_RET_KILL  => "Seccompaux.seccomp_ret_kill".
+Extract Constant HLspec.SECCOMP_RET_TRAP  => "Seccompaux.seccomp_ret_trap".
+Extract Constant HLspec.SECCOMP_RET_ERRNO => "Seccompaux.seccomp_ret_errno".
+Extract Constant HLspec.SECCOMP_RET_TRACE => "Seccompaux.seccomp_ret_trace".
+Extract Constant HLspec.SECCOMP_RET_ALLOW => "Seccompaux.seccomp_ret_allow".
 
 Cd "codegen".
 Extraction Library Seccomp.

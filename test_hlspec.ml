@@ -32,10 +32,12 @@ let encode bpf =
 ;;
 
 let compile_and_print rules =
-  print_string (encode (HLspec.hlspec_compile rules))
+  print_string (encode (HLspec.transl_function rules))
 in List.map compile_and_print [
-  [
-    HLspec.Allow (Camlcoq.coqint_of_camlint 0x7l);
-    HLspec.Deny (Camlcoq.coqint_of_camlint 0x8l);
-  ];
+  { fn_default = HLspec.Aallow;
+    fn_body    = [
+      { rl_action = HLspec.Aallow; rl_syscall = Camlcoq.coqint_of_camlint 0x7l; };
+      { rl_action = HLspec.Akill; rl_syscall = Camlcoq.coqint_of_camlint 0x8l; };
+    ];
+  }
 ];;

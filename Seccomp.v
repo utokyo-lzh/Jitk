@@ -98,9 +98,6 @@ Definition fundef := AST.fundef function.
 
 Definition program := AST.program fundef unit.
 
-Definition funsig (fd: fundef) :=
-  mksignature nil (Some Tint).
-
 End PROGRAM.
 
 Section SEMANTICS.
