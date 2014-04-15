@@ -91,7 +91,6 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
     eval_rule r d ->
     step ge (State d f (r :: b) m)
          E0 (Returnstate r.(rl_action) m)
-    (* XXX: continue with allow? *)
   | exec_skip:
     forall d f r b m,
     ~ eval_rule r d ->
