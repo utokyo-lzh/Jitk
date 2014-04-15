@@ -47,20 +47,44 @@ Proof.
   intro; red; intro; eapply length_order_wf'; eauto.
 Qed.
 
-Lemma seccomp_func_filter_skipn:
-  forall c n,
-  true = seccomp_func_filter c ->
-  true = seccomp_func_filter (skipn n c).
+Lemma skipn_more:
+  forall A:Type,
+  forall n c,
+  (n < length c)%nat ->
+  exists x:A, skipn n c = x :: skipn (S n) c.
 Proof.
   admit.
-(*
+Qed.
+
+Lemma skipn_last:
+  forall A:Type,
+  forall c n,
+  forall x:A,
+  skipn n c = x :: nil -> n = (length c - 1)%nat.
+Proof.
+  admit.
+Qed.
+
+Lemma seccomp_func_filter_skipn:
+  forall n c,
+  true = seccomp_func_filter c ->
+  (n < length c)%nat ->
+  true = seccomp_func_filter (skipn n c).
+Proof.
+  intros n c Hbase.
   induction n.
   - crush.
   - intros.
-    cut (true = seccomp_func_filter (skipn n c)); [ idtac | crush ].
-    intros.
-    simpl.
-*)
+    cut (n < length c)%nat; [ intro | crush ].
+    destruct (skipn_more _ n c).  auto.
+    rewrite H1 in IHn.
+    remember (IHn H0) as Hf.
+    destruct x; destruct (skipn (S n) c); inversion Hf; auto;
+      repeat rewrite Bool.andb_false_r in *; auto;
+      try destruct (Bool.andb_true_eq _ _ H3); auto.
+
+    remember (skipn_last _ _ _ _ H1); crush.
+    remember (skipn_last _ _ _ _ H1); crush.
 Qed.
 
 Theorem step_terminates:
@@ -116,6 +140,8 @@ Proof.
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
+    rewrite list_length_nat_z in H0.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
+    apply Zlt_is_lt_bool.  crush.  destruct (Int.unsigned_range i).  crush.
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply Zlt_is_lt_bool; auto.
@@ -124,9 +150,13 @@ Proof.
   - destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
+    rewrite list_length_nat_z in H0.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
+    apply Zlt_is_lt_bool.  crush.  destruct (Byte.unsigned_range i).  crush.
     destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i0)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
     apply seccomp_func_filter_skipn; auto.
+    rewrite list_length_nat_z in H2.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
+    apply Zlt_is_lt_bool.  crush.  destruct (Byte.unsigned_range i0).  crush.
     case_eq (eval_cond c a x0); intros.
     + econstructor.
       eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
