@@ -249,7 +249,7 @@ Inductive initial_state (p: program): state -> Prop :=
     Genv.find_funct_ptr ge b = Some fd ->
     list_length_z bytes = sizeof_seccomp_data ->
     Mem.alloc m0 0 sizeof_seccomp_data = (m1, pkt) ->
-    Mem.storebytes m1 pkt 0 bytes = Some m2 ->
+    Mem.storebytes m1 pkt 0 (Memdata.inj_bytes bytes) = Some m2 ->
     initial_state p (Callstate fd pkt m2).
 
 Inductive final_state: state -> int -> Prop :=

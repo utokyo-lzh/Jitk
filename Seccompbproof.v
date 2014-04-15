@@ -90,15 +90,15 @@ Qed.
 
 Theorem step_terminates:
   forall ge f sm p,
-  forall m0 b0 pkt m,
-  list_length_z pkt = Seccompconf.sizeof_seccomp_data ->
-  Mem.storebytes m0 b0 0 pkt = Some m ->
+  forall m0 bytes m,
+  list_length_z bytes = Seccompconf.sizeof_seccomp_data ->
+  Mem.storebytes m0 p 0 (Memdata.inj_bytes bytes) = Some m ->
   forall c x a,
   true = seccomp_func_filter c ->
   exists r,
   star step ge (State a x sm f c p m) Events.E0 (Returnstate r m).
 Proof.
-  intros ge f sm p m0 b0 pkt m Hpktlen Hstorebytes.
+  intros ge f sm p m0 pkt m Hbyteslen Hstorebytes.
   induction c using (well_founded_ind (length_order_wf instruction)).
   destruct x.
   crush.
@@ -122,18 +122,67 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
 
-  -
-(*
-    destruct (Mem.valid_access_load m Mint32 p (Int.unsigned i)).
-    admit. (* XXX *)
+  - destruct H with (y:=x) (x:=x0)
+      (a:=(Int.repr
+        (decode_int
+           match skipn (nat_of_Z (Int.unsigned i)) pkt with
+           | nil => nil
+           | a0 :: l =>
+               a0
+               :: match l with
+                  | nil => nil
+                  | a1 :: l0 =>
+                      a1
+                      :: match l0 with
+                         | nil => nil
+                         | a2 :: l1 =>
+                             a2
+                             :: match l1 with
+                                | nil => nil
+                                | a3 :: _ => a3 :: nil
+                                end
+                         end
+                  end
+           end))); unfold length_order; crush.
+    rewrite list_length_nat_z in Hbyteslen.
+    destruct (Mem.storebytes_split m0 p 0
+              (firstn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt))
+              (skipn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt)) m);
+    [ rewrite firstn_skipn; auto | destruct H4 ].
+    destruct (Mem.storebytes_split x2 p
+              (0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt))))
+              (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt)))
+              (skipn 4 (skipn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt))) m);
+    [ rewrite firstn_skipn; auto | destruct H6 ].
+
+    remember (Mem.storebytes_store x2 p
+              (0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) pkt)))
+              Mint32
+              (Vint (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt))))) x3)
+    as Hstore.
+
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply Zlt_is_lt_bool; auto.
     apply Z.eqb_eq; auto.
+    rewrite (Mem.load_storebytes_other x3 p
+             (0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))
+                + Z.of_nat (length (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))))
+             (skipn 4 (skipn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))).
+    rewrite Mem.load_store_same with
+      (m1:=x2)
+      (v:=(Vint (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt)))))).
+    simpl; auto.
 
-    apply H2.
-  *)
+(* apply Hstore. *)
     admit.
+
+    auto.
+    right.  left.
+(* prove some stupid lemmas about firstn/skipn/length *)
+    admit.
+    auto.
+    apply H3.
 
   - destruct H with (y:=x) (a:=(Int.repr Seccompconf.sizeof_seccomp_data)) (x:=x0); unfold length_order; crush.
     econstructor.
@@ -184,6 +233,13 @@ Proof.
     apply star_refl.
 Qed.
 
+Lemma length_inj_bytes:
+  forall l,
+  length (Memdata.inj_bytes l) = length l.
+Proof.
+  induction l; crush.
+Qed.
+
 Theorem seccomp_terminates:
   forall prog,
   true = seccomp_filter prog ->
@@ -209,10 +265,11 @@ Proof.
   destruct (Mem.range_perm_drop_2 m b 0 1 Nonempty); unfold Mem.range_perm; intros.
   apply (Mem.perm_alloc_2 Mem.empty 0 1); auto.
 
-  destruct (list_length_z_exists memval Undef Seccompconf.sizeof_seccomp_data).
+  destruct (list_length_z_exists byte Byte.zero Seccompconf.sizeof_seccomp_data).
   apply Seccompconf.sizeof_nonneg.
   case_eq (Mem.alloc x 0 Seccompconf.sizeof_seccomp_data); intros.
-  destruct (Mem.range_perm_storebytes m0 b0 0 x0).
+  destruct (Mem.range_perm_storebytes m0 b0 0 (Memdata.inj_bytes x0)).
+  rewrite length_inj_bytes.
   rewrite <- list_length_nat_z; rewrite H0; simpl.
   unfold Mem.range_perm; intros.
   destruct (Mem.valid_access_freeable_any m0 Mint8unsigned b0 ofs Writable).
@@ -226,7 +283,7 @@ Proof.
        prog_defs := (prog_main, Gfun (Internal f)) :: nil;
        prog_main := prog_main |})
     f (ZMap.init Int.zero) b0
-    m0 b0 x0 x1 H0 e0
+    m0 x0 x1 H0 e0
     f Int.zero Int.zero); auto.
 
   (* split program_behaves into initial_state and state_behaves *)
