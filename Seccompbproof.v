@@ -173,19 +173,27 @@ Proof.
     rewrite length_inj_bytes in H6.
     unfold encode_val.
 
-    admit.  (* apply H6. *)
+    assert ((encode_int 4 (Int.unsigned (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt))))))
+      = (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt))).
+    
+    admit.
+    rewrite H8; auto.
 
-    simpl.  rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
-    rewrite nat_of_Z_max.  rewrite Z.max_l; [ idtac | crush ].
+    rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
+    rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
     apply Zmod_divide; [ discriminate | apply Z.eqb_eq; auto ].
 
     rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
-    rewrite nat_of_Z_max.  rewrite Z.max_l; [ idtac | crush ].  auto.
+    rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
+    auto.
 
     auto.
     right.  left.
     rewrite skipn_inj_bytes; repeat rewrite firstn_inj_bytes; repeat rewrite length_inj_bytes.
     rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
+    rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
+    rewrite firstn_length.  rewrite min_l; [ crush | idtac ].
+    
     admit.  (* prove some stupid lemmas about firstn/skipn/length *)
     apply H3.
 
