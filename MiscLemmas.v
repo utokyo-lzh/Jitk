@@ -219,3 +219,11 @@ Proof.
   apply Z.lt_0_sub.
   apply Z.mul_lt_mono_pos_l with (p:=m); crush.
 Qed.
+
+Lemma decode_encode_int_4:
+  forall l,
+  (length l = 4)%nat ->
+  encode_int 4 (Int.unsigned (Int.repr (decode_int l))) = l.
+Proof.
+  admit.
+Qed.

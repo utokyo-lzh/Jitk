@@ -113,6 +113,16 @@ Proof.
     destruct (Zlt_is_lt_bool (Int.unsigned i) (Z.of_nat (length pkt))).
     rewrite <- H0 in H4.  crush.
 
+    assert (4 <= length (skipn (nat_of_Z (Int.unsigned i)) pkt))%nat as Hlskip.
+    rewrite length_skipn; [ idtac | crush ].
+    apply Nat2Z.inj_le.  rewrite Nat2Z.inj_sub; [ idtac | crush ].
+    apply mod0_lt_le; [ crush | idtac | idtac | crush ].
+    apply Znumtheory.Zmod_divide; [ crush | idtac ].
+    rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
+    apply Z.eqb_eq.  auto.
+    apply Znumtheory.Zmod_divide; [ crush | idtac ].
+    rewrite Hbyteslen.  apply sizeof_mul4.
+
     destruct H with (y:=x) (x:=x0)
       (a:=(Int.repr
         (decode_int
@@ -175,8 +185,9 @@ Proof.
 
     assert ((encode_int 4 (Int.unsigned (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt))))))
       = (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt))).
-    
-    admit.
+    apply decode_encode_int_4.
+    rewrite firstn_length.  rewrite min_l; crush.
+
     rewrite H8; auto.
 
     rewrite firstn_length.  rewrite min_l; [ idtac | crush ].
@@ -192,15 +203,7 @@ Proof.
     rewrite skipn_inj_bytes; repeat rewrite firstn_inj_bytes; repeat rewrite length_inj_bytes.
     rewrite firstn_length.  rewrite min_l; [ idtac | crush ].
     rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
-    rewrite firstn_length.  rewrite min_l; [ crush | idtac ].
-    rewrite length_skipn; [ idtac | crush ].
-    apply Nat2Z.inj_le.  rewrite Nat2Z.inj_sub; [ idtac | crush ].
-    apply mod0_lt_le; [ crush | idtac | idtac | crush ].
-    apply Znumtheory.Zmod_divide; [ crush | idtac ].
-    rewrite nat_of_Z_max; rewrite Z.max_l; [ idtac | crush ].
-    apply Z.eqb_eq.  auto.
-    apply Znumtheory.Zmod_divide; [ crush | idtac ].
-    rewrite Hbyteslen.  apply sizeof_mul4.
+    rewrite firstn_length.  rewrite min_l; crush.
 
     apply H3.
 
