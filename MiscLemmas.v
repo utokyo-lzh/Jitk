@@ -201,3 +201,21 @@ Proof.
       * crush.
 Qed.
 
+Lemma mod0_lt_le:
+  forall a b m,
+  m>0 -> (m|a) -> (m|b) ->
+  a < b -> m <= b - a.
+Proof.
+  intros.
+  assert (a = m*(a/m)).  apply Znumtheory.Zdivide_Zdiv_eq; crush.
+  assert (b = m*(b/m)).  apply Znumtheory.Zdivide_Zdiv_eq; crush.
+  rewrite H3 in *.  rewrite H4 in *.
+  clear H3.  clear H4.
+  clear H0.  clear H1.
+  rewrite <- Z.mul_sub_distr_l.
+  rewrite <- Z.mul_1_r at 1.
+  apply Zmult_le_compat_l; [ idtac | crush ].
+  apply Z.lt_pred_le.
+  apply Z.lt_0_sub.
+  apply Z.mul_lt_mono_pos_l with (p:=m); crush.
+Qed.
