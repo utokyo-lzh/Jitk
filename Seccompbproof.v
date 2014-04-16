@@ -105,7 +105,15 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
 
-  - destruct H with (y:=x) (x:=x0)
+  - rewrite list_length_nat_z in Hbyteslen.
+    assert (Int.unsigned i >= 0) as Hipos; [ destruct (Int.unsigned_range i); crush | idtac ].
+    assert (nat_of_Z (Int.unsigned i) <= length pkt)%nat as Hilen.
+    apply Nat2Z.inj_le.  rewrite nat_of_Z_eq; [ idtac | auto ].
+    rewrite <- Hbyteslen in H0.
+    destruct (Zlt_is_lt_bool (Int.unsigned i) (Z.of_nat (length pkt))).
+    rewrite <- H0 in H4.  crush.
+
+    destruct H with (y:=x) (x:=x0)
       (a:=(Int.repr
         (decode_int
            match skipn (nat_of_Z (Int.unsigned i)) pkt with
@@ -127,7 +135,6 @@ Proof.
                          end
                   end
            end))); unfold length_order; crush.
-    rewrite list_length_nat_z in Hbyteslen.
     destruct (Mem.storebytes_split m0 p 0
               (firstn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt))
               (skipn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt)) m);
@@ -161,11 +168,24 @@ Proof.
     intro Heq_a; rewrite <- Heq_a at 1.
     apply Hstore; clear HeqHstore; clear Hstore.
 
+    rewrite skipn_inj_bytes in H6.
+    repeat rewrite firstn_inj_bytes in H6.
+    rewrite length_inj_bytes in H6.
+    unfold encode_val.
+
     admit.  (* apply H6. *)
-    admit.  (* some modulo stuff *)
-    admit.  (* length firstn *)
+
+    simpl.  rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
+    rewrite nat_of_Z_max.  rewrite Z.max_l; [ idtac | crush ].
+    apply Zmod_divide; [ discriminate | apply Z.eqb_eq; auto ].
+
+    rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
+    rewrite nat_of_Z_max.  rewrite Z.max_l; [ idtac | crush ].  auto.
+
     auto.
     right.  left.
+    rewrite skipn_inj_bytes; repeat rewrite firstn_inj_bytes; repeat rewrite length_inj_bytes.
+    rewrite firstn_length.  rewrite min_l; [ idtac | auto ].
     admit.  (* prove some stupid lemmas about firstn/skipn/length *)
     apply H3.
 

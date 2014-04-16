@@ -36,6 +36,28 @@ Proof.
   induction l; crush.
 Qed.
 
+Lemma firstn_inj_bytes:
+  forall n l,
+  firstn n (Memdata.inj_bytes l) = Memdata.inj_bytes (firstn n l).
+Proof.
+  induction n.
+  - crush.
+  - destruct l.
+    + crush.
+    + crush.
+Qed.
+
+Lemma skipn_inj_bytes:
+  forall n l,
+  skipn n (Memdata.inj_bytes l) = Memdata.inj_bytes (skipn n l).
+Proof.
+  induction n.
+  - crush.
+  - destruct l.
+    + crush.
+    + crush.
+Qed.
+
 Lemma oversize_shl_zero:
   forall a i,
   Int.ltu i Int.iwordsize = false ->
