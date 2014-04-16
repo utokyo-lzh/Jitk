@@ -18,6 +18,20 @@ Proof.
     crush.
 Qed.
 
+Lemma length_skipn:
+  forall A:Type,
+  forall l:list A,
+  forall n,
+  (n <= (length l))%nat ->
+  length (skipn n l) = ((length l) - n)%nat.
+Proof.
+  intros.
+  rewrite <- (firstn_skipn n l) at 2.
+  rewrite app_length.
+  rewrite firstn_length.
+  rewrite min_l; crush.
+Qed.
+
 Lemma length_skipn_lt:
   forall A:Type,
   forall x,
