@@ -49,24 +49,6 @@ Proof.
   intro; red; intro; eapply length_order_wf'; eauto.
 Qed.
 
-Lemma skipn_more:
-  forall A:Type,
-  forall n c,
-  (n < length c)%nat ->
-  exists x:A, skipn n c = x :: skipn (S n) c.
-Proof.
-  admit.
-Qed.
-
-Lemma skipn_last:
-  forall A:Type,
-  forall c n,
-  forall x:A,
-  skipn n c = x :: nil -> n = (length c - 1)%nat.
-Proof.
-  admit.
-Qed.
-
 Lemma seccomp_func_filter_skipn:
   forall n c,
   true = seccomp_func_filter c ->

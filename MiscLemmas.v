@@ -125,3 +125,43 @@ Proof.
     apply Int.unsigned_range.
     auto.
 Qed.
+
+Lemma skipn_more:
+  forall A:Type,
+  forall n c,
+  (n < length c)%nat ->
+  exists x:A, skipn n c = x :: skipn (S n) c.
+Proof.
+  induction n.
+  - destruct c.
+    + crush.
+    + intros.  exists a.  crush.
+  - destruct c.
+    + simpl.  crush.
+    + intros.  apply IHn.  crush.
+Qed.
+
+Lemma skipn_nil:
+  forall A:Type,
+  forall n,
+  skipn n nil = @nil A.
+Proof.
+  induction n; crush.
+Qed.
+
+Lemma skipn_last:
+  forall A:Type,
+  forall n c,
+  forall x:A,
+  skipn n c = x :: nil -> n = (length c - 1)%nat.
+Proof.
+  induction n.
+  - crush.
+  - destruct c.
+    + crush.
+    + simpl.  intros.  remember (IHn c x H).  clear Heqe.  rewrite e.
+      destruct c.
+      * rewrite skipn_nil in H.  discriminate.
+      * crush.
+Qed.
+
