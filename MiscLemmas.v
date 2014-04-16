@@ -18,7 +18,7 @@ Proof.
     crush.
 Qed.
 
-Lemma length_skipn:
+Lemma length_skipn_lt:
   forall A:Type,
   forall x,
   forall l:list A,

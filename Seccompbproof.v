@@ -208,7 +208,7 @@ Proof.
     apply H1.
 
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
-    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
+    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.
     rewrite list_length_nat_z in H0.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
     apply Zlt_is_lt_bool.  crush.  destruct (Int.unsigned_range i).  crush.
@@ -218,12 +218,12 @@ Proof.
     apply H2.
 
   - destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i)) x)) (a:=a) (x:=x0).
-    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
+    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.
     rewrite list_length_nat_z in H0.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
     apply Zlt_is_lt_bool.  crush.  destruct (Byte.unsigned_range i).  crush.
     destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i0)) x)) (a:=a) (x:=x0).
-    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn.
+    unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.
     rewrite list_length_nat_z in H2.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
     apply Zlt_is_lt_bool.  crush.  destruct (Byte.unsigned_range i0).  crush.
