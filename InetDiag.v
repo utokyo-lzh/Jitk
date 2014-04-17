@@ -129,7 +129,7 @@ Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
   end.
 
 Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
-  let cond := Ebinop (Ocmpu cmp) (load_field f) (Econst (Ointconst p)) in
+  let cond := Ebinop (Ocmpu (negate_comparison cmp)) (load_field f) (Econst (Ointconst p)) in
   Sifthenelse cond (transl_jmp loc nextlbl) Sskip.
 
 Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
@@ -145,12 +145,15 @@ Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
 
 Fixpoint transl_code (c: code) (nextlbl: nat) : Cminor.stmt :=
   match c with
-  | nil => Sskip
+  | nil => Sreturn (Some (Econst (Ointconst Int.one)))
   | instr :: rest =>
     let hs := transl_instr instr nextlbl in
     let ts := transl_code rest (nextlbl - 1) in
     Sseq hs (Slabel (P_of_succ_nat nextlbl) ts)
   end.
+
+Definition Tpointer := Tint. (* assume 32-bit pointers *)
+Definition signature_main := mksignature [ Tpointer ] (Some Tint) cc_default.
 
 Definition transl_function (f: function) : Cminor.function :=
   let body := transl_code f (length f) in
@@ -167,3 +170,10 @@ Definition transl_fundef (fd: fundef) : res Cminor.fundef :=
 
 Definition transl_program (p: program) : res Cminor.program :=
   transform_partial_program transl_fundef p.
+
+Definition example1 :=
+  [ Sge (Int.repr 21) Reject
+  ; Sge (Int.repr 1024) (Loc 1)
+  ; Jmp Reject
+  ; Nop
+  ].
