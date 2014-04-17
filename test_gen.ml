@@ -6,14 +6,19 @@ open PrintCminor
 open Errors
 open Printf
 open Camlcoq
+open Buffer
 
 let read_file f =
   let ic = open_in f in
-  let n = in_channel_length ic in
-  let s = String.create n in
-  really_input ic s 0 n;
-  close_in ic;
-  (s)
+  let buf = Buffer.create 128 in
+  try
+    while true; do
+      let byte = input_byte ic in
+      Buffer.add_char buf (char_of_int byte)
+    done; Buffer.contents buf
+  with End_of_file ->
+    close_in ic;
+    Buffer.contents buf
 
 (* convert string to list of chars *)
 let explode s =
