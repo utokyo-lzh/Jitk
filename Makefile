@@ -37,7 +37,7 @@ all:	tests/test_seccomp.native \
 tests/test_%.native: tests/test_%.ml codegen/extraction.vo
 	rm -f $@
 	$(OCAMLBUILD) $(OCAMLINC) -no-links $@
-	ln -s $(realpath _build/$@) $@
+	ln -s $(CURDIR)/_build/$@ $@
 
 examples/%/dump_bytes: examples/%/dump_bytes.c
 	gcc $< -o $@
