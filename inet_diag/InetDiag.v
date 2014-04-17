@@ -1,3 +1,5 @@
+Require Import compcert.backend.Cminor.
+Require Import compcert.common.AST.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 
@@ -94,3 +96,43 @@ Inductive step : state -> state -> Prop :=
     let r' := if checkhc hc e then r else Jmp n :: r in
     step (State (Dcond hc n :: r) e) (State r' e)
   .
+
+Definition reg_entry: ident := 1%positive.
+
+Definition field : Type := (memory_chunk * Z)%type.
+
+Definition e_saddr     : field := (Mint32, 0).
+Definition e_daddr     : field := (Mint32, 4).
+Definition e_sport     : field := (Mint16unsigned, 8).
+Definition e_dport     : field := (Mint16unsigned, 10).
+Definition e_family    : field := (Mint16unsigned, 12).
+Definition e_userlocks : field := (Mint16unsigned, 14).
+
+Definition load_field (f: field) : Cminor.expr :=
+  match f with
+  | (ty, offset) =>
+    let addr := Ebinop Oadd (Evar reg_entry) (Econst (Ointconst (Int.repr offset))) in
+    Eload ty addr
+  end.
+
+Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
+  match loc with
+  | Reject => Sreturn (Some (Econst (Ointconst Int.zero)))
+  | Loc n => Sgoto (P_of_succ_nat (nextlbl - n))
+  end.
+
+Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
+  let cond := Ebinop (Ocmpu cmp) (load_field f) (Econst (Ointconst p)) in
+  Sifthenelse cond (transl_jmp loc nextlbl) Sskip
+  .
+
+Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
+  match instr with
+  | Nop => Sskip
+  | Jmp loc => transl_jmp loc nextlbl
+  | Sge p loc => transl_cmp Cge e_sport p loc nextlbl
+  | Sle p loc => transl_cmp Cle e_sport p loc nextlbl
+  | Dge p loc => transl_cmp Cge e_dport p loc nextlbl
+  | Dle p loc => transl_cmp Cle e_dport p loc nextlbl
+  | _ => Sskip (* TODO *)
+  end.
