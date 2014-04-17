@@ -23,26 +23,53 @@ struct umh_params {
 
 static int umh_pipe_setup(struct subprocess_info *info, struct cred *cred)
 {
-	struct file *outs[2];
+	struct file *ins[2], *outs[2];
 	int err, fd;
 	struct umh_params *up = (struct umh_params *)info->data;
 
-	err = create_pipe_files(outs, 0);
+	err = create_pipe_files(ins, 0);
 	if (err) {
 		pr_info("%s: create_pipe_files failed %d\n", __func__, err);
 		return err;
 	}
 
-	up->stdout = outs[0];
+	err = create_pipe_files(outs, 0);
+	if (err) {
+		pr_info("%s: create_pipe_files failed %d\n", __func__, err);
+		goto put_ins;
+	}
 
-	fd = replace_fd(1, outs[1], 0);
-	fput(outs[1]);
-
+	/* replace stdin */
+	fd = replace_fd(0, ins[0], 0);
 	if (fd < 0) {
 		pr_info("%s: replace_fd failed %d\n", __func__, err);
 		err = fd;
+		goto put_outs;
 	}
 
+	/* replace stdout */
+	fd = replace_fd(1, outs[1], 0);
+	if (fd < 0) {
+		pr_info("%s: replace_fd failed %d\n", __func__, err);
+		err = fd;
+		goto put_outs;
+	}
+
+	fput(ins[0]);
+	up->stdin = ins[1];
+
+	fput(outs[1]);
+	up->stdout = outs[0];
+
+	return 0;
+
+put_outs:
+	fput(outs[0]);
+	fput(outs[1]);
+
+put_ins:
+	fput(ins[0]);
+	fput(ins[1]);
 	return err;
 }
 
@@ -51,7 +78,7 @@ static void test_upcall(void)
 	char *argv[] = {
 		"/bin/bash",
 		"-c",
-		"/bin/date",
+		"/bin/sed 's/abc/123/g'",
 		NULL,
 	};
 	char *envp[] = {
@@ -75,6 +102,12 @@ static void test_upcall(void)
 		return;
 	}
 
+	//file_start_write(up.stdin);
+	ret = kernel_write(up.stdin, "abcdef\n", 7, 0);
+	pr_info("kernel_write: %d\n", ret);
+	//file_end_write(up.stdin);
+	fput(up.stdin);
+
 	for (;;) {
 		char buf[256];
 
@@ -86,6 +119,8 @@ static void test_upcall(void)
 		buf[ret] = 0;
 		pr_info("userspace: %s", buf);
 	}
+
+	fput(up.stdout);
 }
 
 static int __init bseccomp_init(void)
