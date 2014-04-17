@@ -10,6 +10,7 @@
 #include <linux/fs.h>
 #include <linux/kmod.h>
 #include <linux/pipe_fs_i.h>
+#include <linux/kallsyms.h>
 
 #define replace_fd		m_replace_fd
 #define create_pipe_files	m_create_pipe_files
@@ -125,8 +126,11 @@ static void test_upcall(void)
 
 static int __init bseccomp_init(void)
 {
-	m_replace_fd = (void *)0xc1190510;
-	m_create_pipe_files = (void *)0xc117e240;
+	m_replace_fd = (void *) kallsyms_lookup_name("replace_fd");
+	m_create_pipe_files = (void *) kallsyms_lookup_name("create_pipe_files");
+
+	printk(KERN_ERR "replace_fd: %p\n", m_replace_fd);
+	printk(KERN_ERR "create_pipe_files: %p\n", m_create_pipe_files);
 
 	test_upcall();
 
