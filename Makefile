@@ -32,6 +32,7 @@ all:	tests/test_seccomp.native \
 	tests/test_gen.native \
 	tests/test_gencminor.native \
 	tests/test_hlspec.native \
+	tests/test_inetdiag.native \
 	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh)
 
 tests/test_%.native: tests/test_%.ml codegen/extraction.vo
