@@ -24,7 +24,8 @@ FILES = CpdtTactics.v \
 	MiscLemmas.v \
 	Seccompencproof.v \
 	Seccompproof.v \
-	Seccompbproof.v
+	Seccompbproof.v \
+	InetDiag.v
 
 all:	test_seccomp.native \
 	test_enc.native \

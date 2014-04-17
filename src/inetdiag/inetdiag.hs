@@ -6,7 +6,7 @@ data Loc = Loc Int | Reject
 
 data Instruction
     = Nop
-    | Jmp Loc 
+    | Jmp Loc
     | Sge Port Loc
     | Sle Port Loc
     | Dge Port Loc

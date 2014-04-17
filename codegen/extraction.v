@@ -6,6 +6,7 @@ Require Import Seccompjit.
 Require Import Seccompenc.
 Require Import Seccompfilter.
 Require Import HLspec.
+Require Import InetDiag.
 Require Import compcert.common.Errors.
 
 Extraction Blacklist List String Int.
@@ -34,3 +35,4 @@ Extraction Library Seccompjit.
 Extraction Library Seccompenc.
 Extraction Library Seccompfilter.
 Extraction Library HLspec.
+Extraction Library InetDiag.
