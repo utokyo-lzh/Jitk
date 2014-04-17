@@ -27,17 +27,17 @@ FILES = CpdtTactics.v \
 	Seccompbproof.v \
 	InetDiag.v
 
-all:	test_seccomp.native \
-	test_enc.native \
-	test_gen.native \
-	test_gencminor.native \
-	test_hlspec.native \
+all:	tests/test_seccomp.native \
+	tests/test_enc.native \
+	tests/test_gen.native \
+	tests/test_gencminor.native \
+	tests/test_hlspec.native \
 	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh)
 
-test_%.native: test_%.ml codegen/extraction.vo
+tests/test_%.native: tests/test_%.ml codegen/extraction.vo
 	rm -f $@
 	$(OCAMLBUILD) $(OCAMLINC) -no-links $@
-	ln -s _build/$@ .
+	ln -s $(realpath _build/$@) $@
 
 examples/%/dump_bytes: examples/%/dump_bytes.c
 	gcc $< -o $@
@@ -50,7 +50,7 @@ codegen/extraction.vo: $(FILES:.v=.vo)
 c/%.v: c/%.c
 	./compcert/clightgen $<
 
-.PRECIOUS: c/%.v test_%.native
+.PRECIOUS: c/%.v tests/test_%.native
 
 depend: $(FILES)
 	$(COQDEP) $^ \
