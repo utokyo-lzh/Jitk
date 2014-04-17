@@ -1,7 +1,9 @@
 Require Import compcert.backend.Cminor.
 Require Import compcert.common.AST.
+Require Import compcert.common.Errors.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
+Import ListNotations.
 
 Definition port := int.
 
@@ -37,11 +39,16 @@ Inductive instruction : Type :=
   | Dcond : hostcond -> location -> instruction
   .
 
-Definition program := list instruction.
+Definition code := list instruction.
+
+Definition function := code.
+Definition fundef := AST.fundef function.
+Definition program := AST.program fundef unit.
+
 
 (*
 (* this probably needs something like GeneralRec in CPDT *)
-Fixpoint eval (pgm: program) (e: entry) {struct pgm} : bool :=
+Fixpoint eval (pgm: code) (e: entry) {struct pgm} : bool :=
   match pgm with
   | nil => true
   | Nop :: is => eval is e
@@ -53,7 +60,7 @@ Fixpoint eval (pgm: program) (e: entry) {struct pgm} : bool :=
   | Scond hc loc :: is => false (* XXX TODO *)
   | Dcond hc loc :: is => false
   end
-with jmp (loc: location) (p: program) (e: entry) {struct p} : bool :=
+with jmp (loc: location) (p: code) (e: entry) {struct p} : bool :=
   match loc with
   | Reject => false
   | Loc n => eval (skipn n p) e
@@ -63,7 +70,7 @@ with jmp (loc: location) (p: program) (e: entry) {struct p} : bool :=
 Definition checkhc (hc: hostcond) (e: entry) := false. (* XXX TODO *)
 
 Inductive state : Type :=
-  | State : program -> entry -> state
+  | State : code -> entry -> state
   | RejectState : state
   | AcceptState : state
   .
@@ -123,8 +130,7 @@ Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
 
 Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
   let cond := Ebinop (Ocmpu cmp) (load_field f) (Econst (Ointconst p)) in
-  Sifthenelse cond (transl_jmp loc nextlbl) Sskip
-  .
+  Sifthenelse cond (transl_jmp loc nextlbl) Sskip.
 
 Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
   match instr with
@@ -136,3 +142,28 @@ Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
   | Dle p loc => transl_cmp Cle e_dport p loc nextlbl
   | _ => Sskip (* TODO *)
   end.
+
+Fixpoint transl_code (c: code) (nextlbl: nat) : Cminor.stmt :=
+  match c with
+  | nil => Sskip
+  | instr :: rest =>
+    let hs := transl_instr instr nextlbl in
+    let ts := transl_code rest (nextlbl - 1) in
+    Sseq hs (Slabel (P_of_succ_nat nextlbl) ts)
+  end.
+
+Definition transl_function (f: function) : Cminor.function :=
+  let body := transl_code f (length f) in
+  let params := [ reg_entry ] in
+  let vars := [] in
+  let stackspace := 0 in
+  Cminor.mkfunction signature_main params vars stackspace body.
+
+Definition transl_fundef (fd: fundef) : res Cminor.fundef :=
+  match fd with
+  | Internal f => let f' :=  transl_function f in OK (Internal f')
+  | External f => Error (msg "no external function allowed")
+  end.
+
+Definition transl_program (p: program) : res Cminor.program :=
+  transform_partial_program transl_fundef p.
