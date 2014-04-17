@@ -11,11 +11,14 @@
 #include <linux/kmod.h>
 #include <linux/pipe_fs_i.h>
 #include <linux/kallsyms.h>
+#include <linux/kthread.h>
 
 #define replace_fd		m_replace_fd
 #define create_pipe_files	m_create_pipe_files
+#define flush_delayed_fput	m_flush_delayed_fput
 static int (*m_replace_fd)(unsigned fd, struct file *file, unsigned flags);
 static int (*m_create_pipe_files)(struct file **, int);
+static void (*m_flush_delayed_fput)(void);
 
 struct umh_params {
 	struct file *stdin;
@@ -108,6 +111,7 @@ static void test_upcall(void)
 	pr_info("kernel_write: %d\n", ret);
 	//file_end_write(up.stdin);
 	fput(up.stdin);
+	flush_delayed_fput();
 
 	for (;;) {
 		char buf[256];
@@ -124,15 +128,23 @@ static void test_upcall(void)
 	fput(up.stdout);
 }
 
+static int tester_thread(void *data)
+{
+	test_upcall();
+	do_exit(0);
+}
+
 static int __init bseccomp_init(void)
 {
 	m_replace_fd = (void *) kallsyms_lookup_name("replace_fd");
 	m_create_pipe_files = (void *) kallsyms_lookup_name("create_pipe_files");
+	m_flush_delayed_fput = (void *) kallsyms_lookup_name("flush_delayed_fput");
 
 	printk(KERN_ERR "replace_fd: %p\n", m_replace_fd);
 	printk(KERN_ERR "create_pipe_files: %p\n", m_create_pipe_files);
+	printk(KERN_ERR "flush_delayed_fput: %p\n", m_flush_delayed_fput);
 
-	test_upcall();
+	kthread_run(&tester_thread, NULL, "bseccomp_test");
 
 	return 0;
 }
