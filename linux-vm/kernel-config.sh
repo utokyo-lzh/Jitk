@@ -1,7 +1,10 @@
 #!/bin/sh
 #
 # Run this script in the top-level directory in the jitk-linux repo,
-# then run "make".
+# then run "make" in jitk-linux, and then build the bseccomp module
+# using:
+#
+#   ( cd ../src/bseccomp && make -C ../../../jitk-linux M=$(pwd) modules )
 #
 
 make defconfig
