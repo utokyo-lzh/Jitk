@@ -220,10 +220,98 @@ Proof.
   apply Z.mul_lt_mono_pos_l with (p:=m); crush.
 Qed.
 
+Lemma list_eq:
+  forall A:Type,
+  forall l l' (x x':A),
+  l = l' -> x = x' ->
+  x :: l = x' :: l'.
+Proof.
+  crush.
+Qed.
+
+Lemma byte_div_zero:
+  forall b,
+  Byte.unsigned b / 256 = 0.
+Proof.
+  intros.
+  rewrite Zdiv_small; auto; apply Byte.unsigned_range.
+Qed.
+
+Lemma le_pow_pos:
+  forall a b x y,
+  (x < y)%positive ->
+  0 <= a -> 0 <= b ->
+  a < Z.pow_pos 2 x ->
+  b < Z.pow_pos 2 (y-x) ->
+  a + b * (Z.pow_pos 2 x) < Z.pow_pos 2 y.
+Proof.
+  admit.
+Qed.
+
+Lemma wtf_32_8:
+  (32 - 8 - 8 - 8 = 8)%positive.
+Proof.
+  crush.
+Qed.
+
+Lemma quad_byte_range:
+  forall b0 b1 b2 b3,
+  0 <= Byte.unsigned b0 +
+      (Byte.unsigned b1 +
+      (Byte.unsigned b2 +
+      (Byte.unsigned b3 + 0) * 256) * 256) * 256 < Int.modulus.
+Proof.
+  intros.
+  destruct (Byte.unsigned_range b0).
+  destruct (Byte.unsigned_range b1).
+  destruct (Byte.unsigned_range b2).
+  destruct (Byte.unsigned_range b3).
+
+  split; [ crush | idtac ].
+  assert (256 = Byte.modulus); [ crush | idtac ].
+  unfold Byte.modulus in *; unfold Byte.wordsize in *; unfold Wordsize_8.wordsize in *.
+  rewrite two_power_nat_equiv in *; simpl in *.
+  rewrite H7.
+
+  unfold Int.modulus; unfold Int.wordsize; unfold Wordsize_32.wordsize.
+  rewrite two_power_nat_equiv; simpl.
+  repeat apply le_pow_pos; zify; try rewrite wtf_32_8; try omega;
+    try apply Z.add_nonneg_nonneg; try rewrite H7; crush.
+Qed.
+
 Lemma decode_encode_int_4:
   forall l,
   (length l = 4)%nat ->
   encode_int 4 (Int.unsigned (Int.repr (decode_int l))) = l.
 Proof.
-  admit.
+  destruct l; [ crush | idtac ].
+  destruct l; [ crush | idtac ].
+  destruct l; [ crush | idtac ].
+  destruct l; [ crush | idtac ].
+  destruct l; [ idtac | crush ].
+  intros Hxx; clear Hxx.
+  assert (Byte.modulus = 256); crush.
+  unfold decode_int; unfold encode_int.
+  unfold rev_if_be.
+  destruct Archi.big_endian.
+  - simpl.  rewrite Int.unsigned_repr_eq.  rewrite Zmod_small; [ idtac | apply quad_byte_range ].
+    repeat apply list_eq; auto; apply Byte.eqm_repr_eq;
+      unfold Byte.eqm; unfold Byte.eqmod; rewrite H;
+      repeat ( rewrite Z_div_plus_full; [ rewrite byte_div_zero; simpl | discriminate ] );
+      rewrite Z.add_comm;
+      [ exists (Byte.unsigned i1 + (Byte.unsigned i0 + (Byte.unsigned i + 0) * 256) * 256)
+      | exists (Byte.unsigned i0 + (Byte.unsigned i + 0) * 256)
+      | exists (Byte.unsigned i + 0)
+      | exists 0 ];
+      crush.
+  - simpl.  rewrite Int.unsigned_repr_eq.  rewrite Zmod_small; [ idtac | apply quad_byte_range ].
+    repeat apply list_eq; auto; apply Byte.eqm_repr_eq;
+      unfold Byte.eqm; unfold Byte.eqmod; rewrite H;
+      repeat ( rewrite Z_div_plus_full; [ rewrite byte_div_zero; simpl | discriminate ] );
+      rewrite Z.add_comm;
+      [ exists 0
+      | exists (Byte.unsigned i2 + 0)
+      | exists (Byte.unsigned i1 + (Byte.unsigned i2 + 0) * 256)
+      | exists (Byte.unsigned i0 + (Byte.unsigned i1 + (Byte.unsigned i2 + 0) * 256) * 256) ];
+      crush.
 Qed.
