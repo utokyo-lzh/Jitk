@@ -51,7 +51,8 @@ let decode s =
 let gen_file f =
   let s = read_file f in
   let bpf = decode s in
-  let p = { prog_defs = [(P.one, Gfun (Internal bpf))]; prog_main = P.one } in
+  let main = Seccompconf.main_id in
+  let p = { prog_defs = [(main, Gfun (Internal bpf))]; prog_main = main } in
   match Seccompfilter.transl_program_filter p with
   | Errors.OK x ->
     ( print_program (Format.formatter_of_out_channel stdout) x; exit 0 )

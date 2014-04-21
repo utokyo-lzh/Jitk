@@ -17,3 +17,7 @@ Axiom length_seccomp_data : list_length_z seccomp_data = sizeof_seccomp_data.
 Definition Tpointer := Tint. (* assume 32-bit pointers *)
 
 Definition signature_main := mksignature [ Tpointer ] (Some Tint) cc_default.
+
+Local Open Scope string_scope.
+
+Definition main_id := ident_of_string "seccomp_main".
