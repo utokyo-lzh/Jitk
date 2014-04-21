@@ -281,25 +281,23 @@ Proof.
   destruct (Mem.range_perm_drop_2 m b 0 1 Nonempty); unfold Mem.range_perm; intros.
   apply (Mem.perm_alloc_2 Mem.empty 0 1); auto.
 
-  destruct (list_length_z_exists byte Byte.zero Seccompconf.sizeof_seccomp_data).
-  apply Seccompconf.sizeof_nonneg.
   case_eq (Mem.alloc x 0 Seccompconf.sizeof_seccomp_data); intros.
-  destruct (Mem.range_perm_storebytes m0 b0 0 (Memdata.inj_bytes x0)).
+  destruct (Mem.range_perm_storebytes m0 b0 0 (Memdata.inj_bytes seccomp_data)).
   rewrite length_inj_bytes.
-  rewrite <- list_length_nat_z; rewrite H0; simpl.
+  rewrite <- list_length_nat_z; rewrite length_seccomp_data; simpl.
   unfold Mem.range_perm; intros.
   destruct (Mem.valid_access_freeable_any m0 Mint8unsigned b0 ofs Writable).
   unfold Mem.valid_access.  split.
   unfold Mem.range_perm; intros.
   apply (Mem.perm_alloc_2 x 0 Seccompconf.sizeof_seccomp_data); auto.
-  crush.  crush.  unfold Mem.range_perm in H4.  apply H4.  crush.
+  crush.  crush.  unfold Mem.range_perm in H3.  apply H3.  crush.
 
   destruct (step_terminates
     (Genv.globalenv {|
        prog_defs := (prog_main, Gfun (Internal f)) :: nil;
        prog_main := prog_main |})
     f (ZMap.init Int.zero) b0
-    m0 x0 x1 H0 e0
+    m0 seccomp_data x0 length_seccomp_data e0
     f Int.zero Int.zero); auto.
 
   (* split program_behaves into initial_state and state_behaves *)
@@ -313,15 +311,14 @@ Proof.
     + unfold Genv.find_symbol.  simpl.  apply PTree.gss.
     + unfold Genv.find_funct_ptr.  simpl.  auto.
     + exact H0.
-    + exact H2.
     + exact e0.
 
   (* state_behaves *)
   - econstructor; simpl; [ idtac | constructor ].
-    instantiate (1:=x1).
+    instantiate (1:=x0).
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0);
       [ constructor | idtac | auto ].
-    apply H3.
+    apply H2.
 Qed.
 
 Theorem transl_terminates:

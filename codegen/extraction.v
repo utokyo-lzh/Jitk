@@ -19,6 +19,9 @@ Extract Constant AST.ident_of_string =>
 Extract Constant Seccompconf.sizeof_seccomp_data =>
   "Seccompaux.sizeof_seccomp_data".
 
+Extract Constant Seccompconf.seccomp_data =>
+  "[]".  (* hopefully unused *)
+
 Extract Constant Seccompjit.seccomp_memwords =>
   "Seccompaux.seccomp_memwords".
 
