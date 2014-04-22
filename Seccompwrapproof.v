@@ -21,6 +21,8 @@ Section CMINORX.
 Let getype := Genv.t Cminor.fundef unit.
 
 (* An intermediate semantics for tracking execution of the prefix added by wrap_cminor.. *)
+(* General plan: Cminorp p -> Cminorx (wrap p) -> Cminor (wrap p) *)
+
 Inductive xstate: Type :=
   | Xinit: forall (s: Cminor.state), xstate
   | Xdone: forall (s: Cminor.state), xstate.
@@ -31,7 +33,7 @@ Inductive xinitial_state (p: Cminor.program): xstate -> Prop :=
 
 Inductive xstep: getype -> xstate -> trace -> xstate -> Prop :=
   | Xstep_init_to_done:
-    forall ge s t s', Cminor.step ge s t s' -> xstep ge (Xinit s) t (Xdone s)
+    forall ge s t s', Cminor.step ge s t s' -> xstep ge (Xinit s) t (Xdone s')
   | Xstep_done:
     forall ge s t s', Cminor.step ge s t s' -> xstep ge (Xdone s) t (Xdone s').
 
@@ -63,17 +65,18 @@ Proof.
   - crush.
   - intros.  destruct H.  exists s.  crush.  constructor.
   - crush.  inversion H0.  rewrite <- H2 in H.  inversion H.  crush.
-  - intros.
-    destruct s1.
-    inversion H.
- inversion H0.
-    + exists s.  split.
-      * econstructor.  
+  - simpl.  intros.
+    inversion H; inversion H0; crush.
+    + exists s'.  split.  econstructor.  apply H1.  apply star_refl.  rewrite E0_right.  auto.
+      constructor.
+    + exists s'.  split.  econstructor.  apply H1.  apply star_refl.  rewrite E0_right.  auto.
+      constructor.
 Qed.
 
 End TRANSLATION_CMINORX_TO_CMINOR.
 
-Section TRANSLATION.
+
+Section TRANSLATION_CMINORP_TO_CMINORX.
 
 Variable prog: Cminor.program.
 Variable tprog: Cminor.program.
@@ -81,22 +84,16 @@ Hypothesis TRANSL: Seccompjit.wrap_cminorp prog = tprog.
 Let ge := Genv.globalenv prog.
 Let tge := Genv.globalenv tprog.
 
-Lemma symbols_preserved:
-  forall (s: ident), Genv.find_symbol tge s = Genv.find_symbol ge s.
-Proof.
-  subst ge.  subst tge.  subst tprog.
-  apply Genv.find_symbol_transf.
-Qed.
-
-Inductive match_states : Cminor.state -> Cminor.state -> Prop :=
-  | match_state:
-    forall 
-  | match_returnstate:
-    forall v k m,
-    match_states (Cminor.Returnstate v k m) (Cminor.Returnstate v k m).
+Inductive match_states2 : Cminor.state -> xstate -> Prop :=
+  | match_init2:
+    forall s, match_states2 s (Xinit s)
+  | match_done2:
+    forall s, match_states2 s (Xdone s).
 
 Theorem transl_program_correct:
-  forward_simulation (Cminorp.semantics prog) (Cminor.semantics tprog).
+  forward_simulation (Cminorp.semantics prog) (xsemantics tprog).
 Proof.
-  eapply forward_simulation_plus.
-  eexact symbols_preserved.
+  eapply forward_simulation_plus with (match_states:=match_states2).
+  - subst tprog.  apply Genv.find_symbol_transf.
+  - simpl.  intros.  exists (Xinit s1).  split; constructor.
+    subst tprog.  (* XXX *)
