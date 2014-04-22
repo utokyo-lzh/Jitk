@@ -29,7 +29,7 @@ Inductive initial_state (p: program): state -> Prop :=
 Definition semantics (p: program) :=
   Semantics step (initial_state p) final_state (Genv.globalenv p).
 
-Section TRANSL.
+Section TRANSLATION.
 
 Variable prog: Cminor.program.
 Variable tprog: program.
@@ -41,4 +41,4 @@ Theorem transf_cminorp_program_correct:
 Proof.
 Admitted.
 
-End TRANSL.
+End TRANSLATION.

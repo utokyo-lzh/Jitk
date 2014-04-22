@@ -22,6 +22,7 @@ FILES = CpdtTactics.v \
 	Seccompfilter.v \
 	Seccompenc.v \
 	HLspec.v \
+	HLproof.v \
 	MiscLemmas.v \
 	Seccompencproof.v \
 	Seccompproof.v \
