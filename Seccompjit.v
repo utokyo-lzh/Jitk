@@ -149,8 +149,31 @@ Definition transl_function (f: Seccomp.function) : res Cminor.function :=
 Definition transl_fundef (fd: Seccomp.fundef) :=
   match fd with
   | Internal f => do f' <- transl_function f; OK (Internal f')
-  | External ef => Error (msg "no external function allowed")
+  | External ef => OK (External ef)
   end.
 
 Definition transl_program (p: Seccomp.program) : res Cminor.program :=
   transform_partial_program transl_fundef p.
+
+(* Transforming from Cminorp to Cminor.. *)
+
+Definition wrap_funbody (b: Cminor.stmt) : Cminor.stmt :=
+  (Sseq (Scall (Some reg_pkt) signature_populate
+               (Econst (Oaddrsymbol populate_id Int.zero)) nil)
+        b).
+
+Definition wrap_function (f: Cminor.function) : Cminor.function :=
+  let sig := mksignature nil (Some Tint) cc_default in
+  let vars := [ reg_a; reg_x; reg_mem; reg_pkt ] in
+  let stackspace := (Zmult seccomp_memwords 4) in
+  let body := wrap_funbody f.(fn_body) in
+  Cminor.mkfunction sig nil vars stackspace body.
+
+Definition wrap_fundef (fd: Cminor.fundef) :=
+  match fd with
+  | Internal f => Internal (wrap_function f)
+  | External e => External e
+  end.
+
+Definition wrap_cminorp (p: Cminor.program) : Cminor.program :=
+  transform_program wrap_fundef p.
