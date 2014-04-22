@@ -1,6 +1,6 @@
 include compcert/Makefile.config
 
-COQINC = -I . -R compcert compcert -R c ''
+COQINC = -I $(ARCH) -R compcert compcert -R c ''
 COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
 COQDEP = coqdep $(COQINC)
@@ -16,6 +16,7 @@ FILES = CpdtTactics.v \
 	Seccompconf.v \
 	Seccomp.v \
 	Cminorp.v \
+	$(ARCH)/Asmp.v \
 	Seccompjit.v \
 	Seccompspec.v \
 	Seccompfilter.v \
