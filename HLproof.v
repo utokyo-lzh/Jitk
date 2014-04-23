@@ -8,6 +8,7 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import CpdtTactics.
 Require Import HLspec.
+Require Import MiscLemmas.
 Require Import Seccompconf.
 Require Seccomp.
 Require Seccompspec.
@@ -38,8 +39,6 @@ Qed.
 Definition match_packet (m1: mem) (b1: block) (m2: mem) (b2: block) : Prop :=
   Mem.loadbytes m1 b1 0 sizeof_seccomp_data = Mem.loadbytes m2 b2 0 sizeof_seccomp_data.
 
-Definition mem_inj := Mem.mem_inj inject_id.
-
 Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_state:
     forall f c p m ta tx tsm tf tc tp tm
@@ -68,7 +67,28 @@ Lemma transl_initial_states:
   forall S, HLspec.initial_state prog S ->
   exists R, Seccomp.initial_state tprog R /\ match_states S R.
 Proof.
-Admitted.
+  induction 1.
+  exploit function_ptr_translated; eauto.
+  intros (tf, (A, B)).
+
+  econstructor; split.
+
+  (* initial_state tprog R *)
+  - econstructor.
+    + apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto.
+    + rewrite (transform_partial_program_main _ _ TRANSL).
+      fold tge.
+      rewrite symbols_preserved.
+      eauto.
+    + eexact A.
+    + eexact H2.
+    + eexact H3.
+
+  (* match states S R *)
+  - constructor; auto.
+    constructor.
+    apply inj_refl.
+Qed.
 
 Lemma transl_final_states:
   forall S R r,
