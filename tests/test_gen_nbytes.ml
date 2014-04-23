@@ -16,7 +16,7 @@ let read_file_with_nbytes f =
     let byte = input_byte ic in
     nbytes := Int32.logor !nbytes (Int32.shift_left (Int32.of_int byte) (8*i))
   done;
-  for i = 0 to (Int32.to_int !nbytes) do
+  for i = 1 to (Int32.to_int !nbytes) do
     let byte = input_byte ic in
     Buffer.add_char buf (char_of_int byte)
   done;
