@@ -32,6 +32,7 @@ FILES = CpdtTactics.v \
 all:	tests/test_seccomp.native \
 	tests/test_enc.native \
 	tests/test_gen.native \
+	tests/test_gen_nbytes.native \
 	tests/test_gencminor.native \
 	tests/test_hlspec.native \
 	tests/test_inetdiag.native \
