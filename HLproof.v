@@ -8,6 +8,7 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import CpdtTactics.
 Require Import HLspec.
+Require Import Seccompconf.
 Require Seccomp.
 Require Seccompspec.
 
@@ -24,6 +25,7 @@ Lemma symbols_preserved:
   forall (s: ident), Genv.find_symbol tge s = Genv.find_symbol ge s.
 Proof.
   exact (Genv.find_symbol_transf_partial _ _ TRANSL).
+Qed.
 
 Lemma function_ptr_translated:
   forall (b: block) (fd: HLspec.fundef),
@@ -33,26 +35,26 @@ Proof.
   exact (Genv.find_funct_ptr_transf_partial _ _ TRANSL).
 Qed.
 
-Definition match_packet (d: HLspec.seccompdata) (m: mem) (b: block) : Prop :=
-  Some (Vint d.(sd_syscall)) = Mem.load Mint32 m b 0.
+Definition match_packet (m1: mem) (b1: block) (m2: mem) (b2: block) : Prop :=
+  Mem.loadbytes m1 b1 0 sizeof_seccomp_data = Mem.loadbytes m2 b2 0 sizeof_seccomp_data.
 
 Definition mem_inj := Mem.mem_inj inject_id.
 
 Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_state:
-    forall d f c m ta tx tsm tf tc tp tm
-      (MP: match_packet d tm tp)
+    forall f c p m ta tx tsm tf tc tp tm
+      (MP: match_packet m p tm tp)
       (TF: HLspec.transl_function f = tf)
       (TC: HLspec.transl_code c = tc)
       (MINJ: mem_inj m tm),
-      match_states (HLspec.State d f c m)
+      match_states (HLspec.State f c p m)
                    (Seccomp.State ta tx tsm tf tc tp tm)
   | match_callstate:
-    forall d fd m tfd tp tm
-      (MP: match_packet d tm tp)
+    forall fd p m tfd tp tm
+      (MP: match_packet m p tm tp)
       (TF: HLspec.transl_fundef fd = OK tfd)
       (MINJ: mem_inj m tm),
-      match_states (HLspec.Callstate d fd m)
+      match_states (HLspec.Callstate fd p m)
                    (Seccomp.Callstate tfd tp tm)
   | match_returnstate:
     forall a m tv tm
