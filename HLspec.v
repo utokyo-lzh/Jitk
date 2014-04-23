@@ -139,14 +139,14 @@ Definition transl_rule (r: rule) : Seccomp.code :=
     Sret_k (action_enc r.(rl_action))
   ].
 
-Fixpoint transl_code (c: code) : Seccomp.code :=
+Fixpoint transl_code (c: code) (f: function) : Seccomp.code :=
   match c with
-  | nil => nil
-  | hd :: tl => (transl_rule hd) ++ (transl_code tl)
+  | nil => [ Sret_k (action_enc f.(fn_default)) ]
+  | hd :: tl => (transl_rule hd) ++ (transl_code tl f)
   end.
 
 Definition transl_function (f: function) : Seccomp.function :=
-  transl_code f.(fn_body) ++ [ Sret_k (action_enc f.(fn_default)) ].
+  transl_code f.(fn_body) f.
 
 Definition transl_fundef (fd: fundef) :=
   match fd with

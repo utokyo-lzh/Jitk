@@ -37,14 +37,15 @@ Proof.
 Qed.
 
 Definition match_packet (m1: mem) (b1: block) (m2: mem) (b2: block) : Prop :=
-  Mem.loadbytes m1 b1 0 sizeof_seccomp_data = Mem.loadbytes m2 b2 0 sizeof_seccomp_data.
+  Mem.load Mint32 m1 b1 0 = Mem.load Mint32 m2 b2 0.
 
 Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_state:
     forall f c p m ta tx tsm tf tc tp tm
       (MP: match_packet m p tm tp)
       (TF: HLspec.transl_function f = tf)
-      (TC: HLspec.transl_code c = tc)
+      (TC: HLspec.transl_code c f = tc)
+      (TAIL: is_tail c f.(fn_body))
       (MINJ: mem_inj m tm),
       match_states (HLspec.State f c p m)
                    (Seccomp.State ta tx tsm tf tc tp tm)
@@ -100,11 +101,30 @@ inv H.
 constructor.
 Qed.
 
+Lemma transl_code_pos:
+  forall c f,
+  0 < list_length_z (transl_code c f).
+Proof.
+Admitted.
+
 Lemma transl_step:
   forall S1 t S2, HLspec.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
   exists R2, plus Seccomp.step tge R1 t R2 /\ match_states S2 R2.
 Proof.
+  induction 1; intros R1 MST; inversion MST.
+
+  (* exec_rule *)
+  - inv TC.
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ];
+    try rewrite Int.unsigned_repr_eq ; try rewrite Zmod_0_l; auto.
+
+    exact sizeof_seccomp_data_pos.
+    crush.
+
+(*
 Admitted.
 
 Theorem transl_program_correct:
@@ -116,3 +136,4 @@ Proof.
   eexact transl_final_states.
   eexact transl_step.
 Qed.
+*)

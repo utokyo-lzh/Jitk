@@ -360,3 +360,9 @@ Proof.
   inv H1.
   auto.
 Qed.
+
+Lemma list_length_z_strict_pos:
+  forall (A: Type) (hd: A) (tl: list A),
+  0 < list_length_z (hd :: tl).
+Proof.
+Admitted.

@@ -8,7 +8,7 @@ Require Import compcert.lib.Integers.
 Import ListNotations.
 
 Parameter sizeof_seccomp_data : Z. (**r sizeof struct seccomp_data *)
-Axiom sizeof_nonneg: 0 <= sizeof_seccomp_data.
+Axiom sizeof_seccomp_data_pos: 0 < sizeof_seccomp_data.
 Axiom sizeof_mul4: sizeof_seccomp_data mod 4 = 0.
 
 Parameter seccomp_data : list byte.
