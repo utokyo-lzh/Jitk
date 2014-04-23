@@ -315,3 +315,48 @@ Proof.
       | exists (Byte.unsigned i0 + (Byte.unsigned i1 + (Byte.unsigned i2 + 0) * 256) * 256) ];
       crush.
 Qed.
+
+Definition mem_inj := Mem.mem_inj inject_id.
+
+Lemma inj_refl:
+  forall m, mem_inj m m.
+Proof.
+  intros.
+  constructor; intros; unfold inject_id in H; inv H.
+
+  replace (ofs + 0) with ofs by omega.
+  auto.
+
+  apply Z.divide_0_r.
+
+  replace (ofs + 0) with ofs by omega.
+  apply memval_lessdef_refl.
+Qed.
+
+Lemma inj_trans:
+  forall m1 m2 m3,
+  mem_inj m1 m2 -> mem_inj m2 m3 -> mem_inj m1 m3.
+Proof.
+  unfold mem_inj.
+  apply Mem.mem_inj_compose.
+Qed.
+
+Lemma free_alloc_inj:
+  forall m1 m2 b lo hi m2',
+  Mem.alloc m1 lo hi = (m2, b) ->
+  Mem.free m2 b lo hi = Some m2' ->
+  mem_inj m1 m2'.
+Proof.
+  intros.
+  apply (Mem.free_right_inj inject_id m1 m2 b lo hi m2').
+  apply (Mem.alloc_right_inj inject_id m1 m1 lo hi b m2).
+  exact (inj_refl m1). auto. auto.
+
+  intros.
+  apply (Mem.fresh_block_alloc m1 lo hi m2 b).
+  auto.
+  apply (Mem.perm_valid_block m1 b') in H2.
+  unfold inject_id in H1.
+  inv H1.
+  auto.
+Qed.
