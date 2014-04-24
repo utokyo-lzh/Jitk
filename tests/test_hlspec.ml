@@ -34,10 +34,44 @@ let encode bpf =
 let compile_and_print rules =
   print_string (encode (HLspec.transl_function rules))
 in List.map compile_and_print [
-  { fn_default = HLspec.Aallow;
+  (* the OpenSSH 6.6p1 seccomp policy *)
+  { fn_default = HLspec.Akill;
     fn_body    = [
-      { rl_action = HLspec.Aallow; rl_syscall = Camlcoq.coqint_of_camlint 0x7l; };
-      { rl_action = HLspec.Akill; rl_syscall = Camlcoq.coqint_of_camlint 0x8l; };
+      { rl_action  = HLspec.Aerrno (Camlcoq.coqint_of_camlint 13l);
+                                                        (* EACCES *)
+        rl_syscall = Camlcoq.coqint_of_camlint 5l; };   (* open *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 20l; };  (* getpid *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 78l; };  (* gettimeofday *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 265l; }; (* clock_gettime *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 13l; };  (* time *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 3l; };   (* read *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 4l; };   (* write *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 6l; };   (* close *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 45l; };  (* brk *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 168l; }; (* poll *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 142l; }; (* _newselect *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 219l; }; (* madvise *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 192l; }; (* mmap2 *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 90l; };  (* mmap *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 91l; };  (* munmap *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 252l; }; (* exit_group *)
+      { rl_action  = HLspec.Aallow;
+        rl_syscall = Camlcoq.coqint_of_camlint 175l; }; (* rt_sigprocmask *)
     ];
   }
 ];;
