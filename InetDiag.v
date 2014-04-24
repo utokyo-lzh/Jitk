@@ -201,9 +201,19 @@ Definition example1 :=
 
 Variable prog: program.
 Variable tprog: Cminor.program.
+Hypothesis TRANSL: transl_program prog = OK tprog.
+Let ge := Genv.globalenv prog.
+Let tge := Genv.globalenv tprog.
+
+Lemma symbols_preserved:
+  forall (s: ident), Genv.find_symbol tge s = Genv.find_symbol ge s.
+Proof.
+  exact (Genv.find_symbol_transf_partial _ _ TRANSL).
+Qed.
 
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (Cminorp.semantics tprog).
 Proof.
   eapply forward_simulation_plus.
+  eexact symbols_preserved.
 Admitted.
