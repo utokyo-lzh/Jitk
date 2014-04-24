@@ -3,8 +3,10 @@ Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
+Require Import compcert.common.Smallstep.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
+Require Import Cminorp.
 Import ListNotations.
 
 Definition port := int.
@@ -74,17 +76,16 @@ Definition checkhc (hc: hostcond) (e: entry) := false. (* XXX TODO *)
 
 Inductive state : Type :=
   | State : code -> entry -> state
-  | RejectState : state
-  | AcceptState : state
+  | Returnstate : int -> state
   .
 
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | ST_Accept : forall e,
-    step ge (State nil e) E0 AcceptState
+    step ge (State nil e) E0 (Returnstate Int.one)
   | ST_Nop : forall r e,
     step ge (State (Nop :: r) e) E0 (State r e)
   | ST_Jmp_Reject : forall r e,
-    step ge (State (Jmp Reject :: r) e) E0 RejectState
+    step ge (State (Jmp Reject :: r) e) E0 (Returnstate Int.zero)
   | ST_Jmp_Loc : forall r e n,
     step ge (State (Jmp (Loc n) :: r) e) E0 (State (skipn n r) e)
   | ST_Sge : forall r e p n,
@@ -106,6 +107,23 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
     let r' := if checkhc hc e then r else Jmp n :: r in
     step ge (State (Dcond hc n :: r) e) E0 (State r' e)
   .
+
+Parameter entry_input : entry.
+
+Inductive initial_state (p: program): state -> Prop :=
+  | initial_state_intro: forall b code m0,
+    let ge := Genv.globalenv p in
+    Genv.init_mem p = Some m0 ->
+    Genv.find_symbol ge p.(prog_main) = Some b ->
+    Genv.find_funct_ptr ge b = Some (Internal code) ->
+    initial_state p (State code entry_input).
+
+Inductive final_state: state -> int -> Prop :=
+  | final_state_intro: forall v,
+      final_state (Returnstate v) v.
+
+Definition semantics (p: program) :=
+  Semantics step (initial_state p) final_state (Genv.globalenv p).
 
 Definition reg_entry: ident := 1%positive.
 
@@ -180,3 +198,12 @@ Definition example1 :=
   ; Jmp Reject
   ; Nop
   ].
+
+Variable prog: program.
+Variable tprog: Cminor.program.
+
+Theorem transl_program_correct:
+  forward_simulation (semantics prog) (Cminorp.semantics tprog).
+Proof.
+  eapply forward_simulation_plus.
+Admitted.
