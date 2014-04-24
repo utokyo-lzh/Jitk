@@ -1,0 +1,4 @@
+./tests/test_hlspec.native > /tmp/openssh-6.6p1/openssh-policy.gen
+cp ./src/openssh/sandbox-seccomp-filter.c /tmp/openssh-6.6p1
+
+build openssh
