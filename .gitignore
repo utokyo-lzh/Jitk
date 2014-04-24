@@ -6,3 +6,4 @@
 *.native
 /c/*.v
 /examples/*/dump_bytes
+/examples/*/bpf-direct
