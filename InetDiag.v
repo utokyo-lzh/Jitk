@@ -1,6 +1,8 @@
 Require Import compcert.backend.Cminor.
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
+Require Import compcert.common.Events.
+Require Import compcert.common.Globalenvs.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Import ListNotations.
@@ -44,6 +46,7 @@ Definition code := list instruction.
 Definition function := code.
 Definition fundef := AST.fundef function.
 Definition program := AST.program fundef unit.
+Definition genv := Genv.t fundef unit.
 
 
 (*
@@ -75,33 +78,33 @@ Inductive state : Type :=
   | AcceptState : state
   .
 
-Inductive step : state -> state -> Prop :=
+Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | ST_Accept : forall e,
-    step (State nil e) AcceptState
+    step ge (State nil e) E0 AcceptState
   | ST_Nop : forall r e,
-    step (State (Nop :: r) e) (State r e)
+    step ge (State (Nop :: r) e) E0 (State r e)
   | ST_Jmp_Reject : forall r e,
-    step (State (Jmp Reject :: r) e) RejectState
+    step ge (State (Jmp Reject :: r) e) E0 RejectState
   | ST_Jmp_Loc : forall r e n,
-    step (State (Jmp (Loc n) :: r) e) (State (skipn n r) e)
+    step ge (State (Jmp (Loc n) :: r) e) E0 (State (skipn n r) e)
   | ST_Sge : forall r e p n,
     let r' := if Int.cmpu Cge e.(sport) p then r else Jmp n :: r in
-    step (State (Sge p n :: r) e) (State r' e)
+    step ge (State (Sge p n :: r) e) E0 (State r' e)
   | ST_Sle : forall r e p n,
     let r' := if Int.cmpu Cle e.(sport) p then r else Jmp n :: r in
-    step (State (Sle p n :: r) e) (State r' e)
+    step ge (State (Sle p n :: r) e) E0 (State r' e)
   | ST_Dge : forall r e p n,
     let r' := if Int.cmpu Cge e.(dport) p then r else Jmp n :: r in
-    step (State (Dge p n :: r) e) (State r' e)
+    step ge (State (Dge p n :: r) e) E0 (State r' e)
   | ST_Dle : forall r e p n,
     let r' := if Int.cmpu Cle e.(dport) p then r else Jmp n :: r in
-    step (State (Dle p n :: r) e) (State r' e)
+    step ge (State (Dle p n :: r) e) E0 (State r' e)
   | ST_Scond : forall r e hc n,
     let r' := if checkhc hc e then r else Jmp n :: r in
-    step (State (Scond hc n :: r) e) (State r' e)
+    step ge (State (Scond hc n :: r) e) E0 (State r' e)
   | ST_Dcond : forall r e hc n,
     let r' := if checkhc hc e then r else Jmp n :: r in
-    step (State (Dcond hc n :: r) e) (State r' e)
+    step ge (State (Dcond hc n :: r) e) E0 (State r' e)
   .
 
 Definition reg_entry: ident := 1%positive.
