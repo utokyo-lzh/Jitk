@@ -72,62 +72,48 @@ Proof.
     + crush.
 Qed.
 
+Lemma iwordsize_zwordsize:
+  Int.unsigned Int.iwordsize = Int.zwordsize.
+Proof.
+  unfold Int.iwordsize.
+  rewrite Int.unsigned_repr. reflexivity.
+  split; compute; discriminate.
+Qed.
+
+Ltac break_if :=
+  match goal with
+    | [ H : context [ if ?X then _ else _ ] |- _ ] =>
+      match type of X with
+        | sumbool _ _ => destruct X
+        | _ => destruct X eqn:?
+      end
+    | [ |- context [ if ?X then _ else _ ] ] =>
+      match type of X with
+        | sumbool _ _ => destruct X
+        | _ => destruct X eqn:?
+      end
+  end.
+
 Lemma oversize_shl_zero:
   forall a i,
   Int.ltu i Int.iwordsize = false ->
   Int.shl a i = Int.zero.
 Proof.
   intros.
-  rewrite Int.shl_mul_two_p.
-  assert (Int.repr (two_p (Int.unsigned i)) = Int.zero).
-   apply Int.eqm_samerepr.
-   unfold Int.eqm.
-   assert (two_p (Int.unsigned i) mod Int.modulus = 0).
-    apply Zmod_divides.
-     assert (Int.modulus > 0).
-      exact Int.wordsize_pos.
-
+  apply Int.same_bits_eq.
+  intros.
+  rewrite Int.bits_zero.
+  rewrite Int.bits_shl by auto.
+  break_if.
+  - reflexivity.
+  - (* i0 >= i, i0 < Int.zwordsize, i < iwordsize, thus contra *)
+    unfold Int.ltu in *.
+    break_if.
+    + discriminate.
+    + rewrite iwordsize_zwordsize in *.
       omega.
-
-     exists (two_p (Int.unsigned i - Int.zwordsize)).
-     unfold Int.ltu in H.
-     destruct (zlt (Int.unsigned i) (Int.unsigned Int.iwordsize)).
-      discriminate.
-
-      assert (0 <= Int.zwordsize).
-       apply Zlt_le_weak.
-       apply Zgt_lt.
-       exact Int.wordsize_pos.
-
-       assert (0 <= Int.unsigned i - Int.zwordsize).
-        rewrite Int.unsigned_repr_wordsize in *.
-        apply Zle_minus_le_0.
-        omega.
-
-        assert
-         (two_p (Int.zwordsize + (Int.unsigned i - Int.zwordsize)) =
-          two_p Int.zwordsize * two_p (Int.unsigned i - Int.zwordsize)).
-         apply two_p_is_exp; auto.
-
-         assert
-          (Int.zwordsize + (Int.unsigned i - Int.zwordsize) = Int.unsigned i).
-          omega.
-
-          rewrite H3 in H2.
-          auto.
-
-    assert
-     (Int.eqmod Int.modulus (two_p (Int.unsigned i))
-        (two_p (Int.unsigned i) mod Int.modulus)).
-     apply Int.eqmod_mod.
-     exact Int.modulus_pos.
-
-     rewrite H0 in H1.
-     auto.
-
-   rewrite H0.
-   apply Int.mul_zero.
 Qed.
+
 
 Lemma oversize_shru_zero:
   forall a i,
@@ -135,31 +121,17 @@ Lemma oversize_shru_zero:
   Int.shru a i = Int.zero.
 Proof.
   intros.
-  rewrite Int.shru_div_two_p.
-  assert (Int.modulus <= two_p (Int.unsigned i)).
-
-  - rewrite Int.modulus_power.
-    apply two_p_monotone.
-    crush.
-    apply Zlt_le_weak.
-    apply Zgt_lt.
-    exact Int.wordsize_pos.
-
-    unfold Int.ltu in H.
-    destruct (zlt (Int.unsigned i) (Int.unsigned Int.iwordsize)).
-    crush.
-    apply Zge_le.
-    auto.
-
-  - apply Int.eqm_samerepr.
-    apply Int.eqm_refl2.
-    apply Zdiv_small.
-
-    split.
-    apply Int.unsigned_range.
-    apply (Zlt_le_trans (Int.unsigned a) Int.modulus (two_p (Int.unsigned i))).
-    apply Int.unsigned_range.
-    auto.
+  apply Int.same_bits_eq.
+  intros.
+  rewrite Int.bits_zero.
+  rewrite Int.bits_shru by auto.
+  break_if.
+  - unfold Int.ltu in *.
+    break_if.
+    + discriminate.
+    + rewrite iwordsize_zwordsize in *.
+      omega.
+  - reflexivity.
 Qed.
 
 Lemma skipn_more:
