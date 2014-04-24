@@ -36,7 +36,8 @@ all:	tests/test_seccomp.native \
 	tests/test_gencminor.native \
 	tests/test_hlspec.native \
 	tests/test_inetdiag.native \
-	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh)
+	$(patsubst %,examples/%/dump_bytes,direct vsftpd openssh) \
+	examples/direct/bpf-direct
 
 tests/test_%.native: tests/test_%.ml codegen/extraction.vo
 	rm -f $@
@@ -44,6 +45,9 @@ tests/test_%.native: tests/test_%.ml codegen/extraction.vo
 	ln -s $(CURDIR)/_build/$@ $@
 
 examples/%/dump_bytes: examples/%/dump_bytes.c
+	gcc $< -o $@
+
+examples/%/bpf-direct: examples/%/bpf-direct.c
 	gcc $< -o $@
 
 codegen/extraction.vo: $(FILES:.v=.vo)
