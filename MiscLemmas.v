@@ -245,7 +245,19 @@ Lemma le_pow_pos:
   b < Z.pow_pos 2 (y-x) ->
   a + b * (Z.pow_pos 2 x) < Z.pow_pos 2 y.
 Proof.
-  admit.
+  intros.
+  assert (Z.pow_pos 2 y = (Z.pow_pos 2 x) + (Z.pow_pos 2 y - Z.pow_pos 2 x)); [ crush | idtac ].
+  rewrite H4.
+  apply Z.add_lt_le_mono; [ auto | idtac ].
+  assert (Z.pow_pos 2 y = (Z.pow_pos 2 (y - x)) * (Z.pow_pos 2 x)).
+  rewrite <- Zpower_pos_is_exp.
+  rewrite Pos.sub_add; crush.
+  rewrite H5.
+  rewrite <- (Z.mul_1_l (Z.pow_pos 2 x)) at 3.
+  rewrite <- Z.mul_sub_distr_r.
+  apply Zmult_lt_0_le_compat_r.
+  crush.
+  crush.
 Qed.
 
 Lemma wtf_32_8:
