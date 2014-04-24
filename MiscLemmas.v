@@ -365,4 +365,7 @@ Lemma list_length_z_strict_pos:
   forall (A: Type) (hd: A) (tl: list A),
   0 < list_length_z (hd :: tl).
 Proof.
-Admitted.
+  intros.
+  rewrite list_length_nat_z.
+  crush.
+Qed.
