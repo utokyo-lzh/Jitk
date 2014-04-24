@@ -124,6 +124,36 @@ Proof.
     exact sizeof_seccomp_data_pos.
     crush.
 
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    destruct b;
+    destruct (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (rl_syscall r) tx);
+    rewrite list_length_nat_z; unfold Byte.zero; unfold Byte.one;
+    auto; admit.
+
+    case_eq (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (rl_syscall r) tx); intros.
+    rewrite Byte.unsigned_zero; simpl.
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_refl.
+
+    unfold Seccomp.eval_cond in H0.
+    rewrite Int.eq_true in H0.
+    crush.
+
+    constructor.  auto.  auto.
+
+  (* exec_skip *)
+  - inv TC.
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ];
+    try rewrite Int.unsigned_repr_eq ; try rewrite Zmod_0_l; auto.
+
+    exact sizeof_seccomp_data_pos.
+    (* XXX *)
+
+
+
 (*
 Admitted.
 
