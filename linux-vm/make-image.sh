@@ -6,7 +6,7 @@ mount -o loop ./fs.img /mnt/fsx
 trap 'umount /mnt/fsx' 0
 debootstrap --variant=minbase --components=main,universe \
 	--arch=i386 \
-	--include=apt,openssh-server,python,vim-tiny,pciutils,isc-dhcp-client,strace,lvm2,sudo,nfs-common,netbase,ocaml-nox,wget,make \
+	--include=apt,openssh-server,python,vim-tiny,pciutils,isc-dhcp-client,strace,lvm2,sudo,nfs-common,netbase,ocaml-nox,wget,make,zlib1g-dev,libssl-dev \
 	trusty /mnt/fsx \
 	http://mirrors.mit.edu/ubuntu/
 
