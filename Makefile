@@ -22,12 +22,14 @@ FILES = CpdtTactics.v \
 	Seccompfilter.v \
 	Seccompenc.v \
 	HLspec.v \
-	HLproof.v \
 	MiscLemmas.v \
+	InetDiag.v
+
+PROOFFILES = \
+	HLproof.v \
 	Seccompencproof.v \
 	Seccompproof.v \
 	Seccompbproof.v \
-	InetDiag.v
 
 all:	tests/test_seccomp.native \
 	tests/test_enc.native \
@@ -51,6 +53,8 @@ examples/%/bpf-direct: examples/%/bpf-direct.c
 	gcc $< -o $@
 
 codegen/extraction.vo: $(FILES:.v=.vo)
+
+proof: $(PROOFFILES:.v=.vo)
 
 %.vo: %.v
 	$(COQC) $*.v
