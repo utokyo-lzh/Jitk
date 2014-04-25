@@ -123,8 +123,14 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     destruct b;
     destruct (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (rl_syscall r) tx);
-    rewrite list_length_nat_z; unfold Byte.zero; unfold Byte.one;
-    auto; admit.
+    rewrite list_length_nat_z; try rewrite Byte.unsigned_zero; try rewrite Byte.unsigned_one;
+    crush.
+
+    rewrite Pos2Z.inj_succ.
+    rewrite <- Z.add_1_l.
+    rewrite <- Z.add_0_r at 1.
+    apply Z.add_lt_mono_l.
+    apply Pos2Z.is_pos.
 
     case_eq (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (rl_syscall r) tx); intros.
     rewrite Byte.unsigned_zero; simpl.
@@ -142,13 +148,15 @@ Proof.
   - inv TC.
     econstructor; split.
 
-    assert (Mem.load Mint32 m p 0 = Some (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
+    assert (Mem.load Mint32 m p 0 =
+            Some (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
 
     destruct (Mem.storebytes_split m1 p 0 (firstn 4 (inj_bytes seccomp_data))
                                           (skipn 4 (inj_bytes seccomp_data)) m);
     [ rewrite firstn_skipn; auto | destruct H0 ].
     rewrite (Mem.load_storebytes_other x p _ _ _ H1).
-    rewrite (Mem.load_store_same Mint32 m1 _ _ (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
+    rewrite (Mem.load_store_same Mint32 m1 _ _
+                                 (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
     crush.
     apply Mem.storebytes_store.
     unfold encode_val.
@@ -166,7 +174,8 @@ Proof.
 
     unfold eval_rule in H.
     rewrite H0 in H.
-    case_eq (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (Int.repr (decode_int (firstn 4 seccomp_data))) tx);
+    case_eq (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r))
+                               (Int.repr (decode_int (firstn 4 seccomp_data))) tx);
     intros.
     unfold Seccomp.eval_cond in H1.
     generalize (Int.eq_spec (Int.repr (decode_int (firstn 4 seccomp_data))) (rl_syscall r)).
