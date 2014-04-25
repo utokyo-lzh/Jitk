@@ -185,19 +185,6 @@ Proof.
     + apply IHprefix with (x:=x); auto.
 Qed.
 
-Lemma is_tail_exists_prefix:
-  forall A:Type,
-  forall a b:list A,
-  is_tail a b ->
-  exists p,
-  b = p ++ a.
-Proof.
-  intros.
-  induction H.
-  - exists nil; auto.
-  - destruct IHis_tail; exists (i :: x); crush.
-Qed.
-
 Lemma is_tail_strict_prefix:
   forall A:Type,
   forall b' b:list A,

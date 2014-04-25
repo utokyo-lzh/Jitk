@@ -353,3 +353,34 @@ Proof.
   rewrite list_length_nat_z.
   crush.
 Qed.
+
+Lemma is_tail_exists_prefix:
+  forall A:Type,
+  forall a b:list A,
+  is_tail a b ->
+  exists p,
+  b = p ++ a.
+Proof.
+  intros.
+  induction H.
+  - exists nil; auto.
+  - destruct IHis_tail; exists (i :: x); crush.
+Qed.
+
+Lemma is_tail_prefix:
+  forall A:Type,
+  forall p a b:list A,
+  b = p ++ a -> is_tail a b.
+Proof.
+  induction p; crush.
+Qed.
+
+Lemma is_tail_suffix:
+  forall (A:Type) (a:A) b c,
+  is_tail (a::b) c -> is_tail b c.
+Proof.
+  intros.
+  destruct (is_tail_exists_prefix _ _ _ H).
+  apply is_tail_prefix with (p:=(x ++ (a :: nil))).
+  crush.
+Qed.
