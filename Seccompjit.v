@@ -149,7 +149,7 @@ Definition transl_function (f: Seccomp.function) : res Cminor.function :=
 Definition transl_fundef (fd: Seccomp.fundef) :=
   match fd with
   | Internal f => do f' <- transl_function f; OK (Internal f')
-  | External ef => OK (External ef)
+  | External ef => Error (msg "no external function allowed")
   end.
 
 Definition transl_program (p: Seccomp.program) : res Cminor.program :=
