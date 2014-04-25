@@ -112,7 +112,6 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   .
 
 Parameter entry_input : entry.
-Parameter entry_input_bytes : list byte.
 Definition sizeof_entry := 16.
 
 Inductive initial_state (p: program): state -> Prop :=
@@ -268,7 +267,7 @@ Proof.
 Qed.
 
 Inductive cminorp_initial_state (p: Cminor.program): Cminor.state -> Prop :=
-  | cminorp_initial_state_intro: forall b f m0 m1 m2 pkt,
+  | cminorp_initial_state_intro: forall b f m0 m1 m2 pkt entry_input_bytes,
       let ge := Genv.globalenv p in
       Genv.init_mem p = Some m0 ->
       Genv.find_symbol ge p.(prog_main) = Some b ->
@@ -276,6 +275,7 @@ Inductive cminorp_initial_state (p: Cminor.program): Cminor.state -> Prop :=
       funsig f = signature_main ->
       Mem.alloc m0 0 sizeof_entry = (m1, pkt) ->
       Mem.storebytes m1 pkt 0 (Memdata.inj_bytes entry_input_bytes) = Some m2 ->
+      match_entry entry_input m2 pkt ->
       cminorp_initial_state p (Callstate f [ Vptr pkt Int.zero ] Kstop m2).
 
 Lemma transl_initial_states:
