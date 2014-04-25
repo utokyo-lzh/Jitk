@@ -3,9 +3,12 @@ Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
+Require Import compcert.common.Memory.
 Require Import compcert.common.Smallstep.
+Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
+Require Import compcert.lib.Maps.
 Require Import Cminorp.
 Import ListNotations.
 
@@ -109,6 +112,8 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   .
 
 Parameter entry_input : entry.
+Parameter entry_input_bytes : list byte.
+Definition sizeof_entry := 16.
 
 Inductive initial_state (p: program): state -> Prop :=
   | initial_state_intro: forall b code m0,
@@ -210,6 +215,92 @@ Lemma symbols_preserved:
 Proof.
   exact (Genv.find_symbol_transf_partial _ _ TRANSL).
 Qed.
+
+Definition loadf (f: field) (m: mem) (b: block) : option val :=
+  match f with
+  | (mc, ofs) => Mem.load mc m b ofs
+  end.
+
+Inductive match_entry: entry -> mem -> block -> Prop :=
+  | match_entry_intro: forall e m b
+      (MSADDR: loadf e_saddr m b = Some (Vint e.(saddr)))
+      (MDADDR: loadf e_daddr m b = Some (Vint e.(daddr)))
+      (MSPORT: loadf e_sport m b = Some (Vint e.(sport)))
+      (MDPORT: loadf e_dport m b = Some (Vint e.(dport)))
+      (MFAMILY: loadf e_family m b = Some (Vint e.(family)))
+      (MUSERLOCKS: loadf e_userlocks m b = Some (Vint e.(userlocks))),
+    match_entry e m b
+  .
+
+Inductive match_states: state -> Cminor.state -> Prop :=
+  | match_state:
+      forall c e eb f tf ts tk tsp te tm b
+        (ME: Some (Vptr eb Int.zero) = te!reg_entry)
+        (EM: match_entry e tm eb)
+        (TF: transl_function f = tf)
+        (TC: transl_code c (length c) = ts)
+        (MK: call_cont tk = Kstop)
+        (TAIL: is_tail c f)
+        (MSP: tsp = Vptr b Int.zero),
+      match_states (State c e) (Cminor.State tf ts tk tsp te tm)
+  | match_returnstate:
+      forall v tv tk tm
+        (MV: Vint v = tv)
+        (MK: tk = Kstop),
+      match_states (Returnstate v) (Cminor.Returnstate tv tk tm)
+  .
+
+Lemma function_ptr_translated:
+  forall (b: block) (fd: fundef),
+  Genv.find_funct_ptr ge b = Some fd ->
+  exists tfd, Genv.find_funct_ptr tge b = Some tfd /\ transl_fundef fd = OK tfd.
+Proof.
+  exact (Genv.find_funct_ptr_transf_partial _ _ TRANSL).
+Qed.
+
+Lemma sig_transl_function:
+  forall fd tfd,
+  transl_fundef fd = OK tfd ->
+  Cminor.funsig tfd = signature_main.
+Proof.
+  intros.
+  destruct fd; monadInv H; auto.
+Qed.
+
+Inductive cminorp_initial_state (p: Cminor.program): Cminor.state -> Prop :=
+  | cminorp_initial_state_intro: forall b f m0 m1 m2 pkt,
+      let ge := Genv.globalenv p in
+      Genv.init_mem p = Some m0 ->
+      Genv.find_symbol ge p.(prog_main) = Some b ->
+      Genv.find_funct_ptr ge b = Some f ->
+      funsig f = signature_main ->
+      Mem.alloc m0 0 sizeof_entry = (m1, pkt) ->
+      Mem.storebytes m1 pkt 0 (Memdata.inj_bytes entry_input_bytes) = Some m2 ->
+      cminorp_initial_state p (Callstate f [ Vptr pkt Int.zero ] Kstop m2).
+
+Lemma transl_initial_states:
+  forall S, initial_state prog S ->
+  exists R, cminorp_initial_state tprog R /\ match_states S R.
+Proof.
+  induction 1.
+  exploit function_ptr_translated; eauto.
+  intros (tf, (A, B)).
+
+  econstructor; split.
+
+  (* Cminor.initial_state tprog R *)
+  - econstructor.
+    + apply (Genv.init_mem_transf_partial _ _ TRANSL); eauto.
+    + rewrite (transform_partial_program_main _ _ TRANSL).
+      fold tge.
+      rewrite symbols_preserved.
+      eauto.
+    + eexact A.
+    + eapply sig_transl_function.
+      eexact B.
+    +
+Admitted.
+
 
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (Cminorp.semantics tprog).
