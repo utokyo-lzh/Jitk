@@ -184,8 +184,14 @@ Proof.
     crush.
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    rewrite H1.
-    admit.
+    rewrite H1; rewrite Byte.unsigned_one; rewrite list_length_nat_z; destruct b; crush.
+
+    rewrite Pos2Z.inj_succ.
+    rewrite <- Z.add_1_l.
+    rewrite <- Z.add_0_r at 1.
+    apply Z.add_lt_mono_l.
+    apply Pos2Z.is_pos.
+
     rewrite H1.
     apply star_refl.
 
