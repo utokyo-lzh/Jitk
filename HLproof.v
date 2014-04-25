@@ -41,19 +41,21 @@ Definition match_packet (m1: mem) (b1: block) (m2: mem) (b2: block) : Prop :=
 
 Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_state:
-    forall f c p m ta tx tsm tf tc tp tm
+    forall f c p m ta tx tsm tf tc tp tm m1
       (MP: match_packet m p tm tp)
       (TF: HLspec.transl_function f = tf)
       (TC: HLspec.transl_code c f = tc)
       (TAIL: is_tail c f.(fn_body))
-      (MINJ: mem_inj m tm),
+      (MINJ: mem_inj m tm)
+      (MSTORE: Mem.storebytes m1 p 0 (Memdata.inj_bytes seccomp_data) = Some m),
       match_states (HLspec.State f c p m)
                    (Seccomp.State ta tx tsm tf tc tp tm)
   | match_callstate:
-    forall fd p m tfd tp tm
+    forall fd p m tfd tp tm m1
       (MP: match_packet m p tm tp)
       (TF: HLspec.transl_fundef fd = OK tfd)
-      (MINJ: mem_inj m tm),
+      (MINJ: mem_inj m tm)
+      (MSTORE: Mem.storebytes m1 p 0 (Memdata.inj_bytes seccomp_data) = Some m),
       match_states (HLspec.Callstate fd p m)
                    (Seccomp.Callstate tfd tp tm)
   | match_returnstate:
@@ -86,7 +88,7 @@ Proof.
     + eexact H3.
 
   (* match states S R *)
-  - constructor; auto.
+  - apply match_callstate with (m1:=m1); auto.
     constructor.
     apply inj_refl.
 Qed.
@@ -95,17 +97,11 @@ Lemma transl_final_states:
   forall S R r,
   match_states S R -> HLspec.final_state S r -> Seccomp.final_state R r.
 Proof.
-intros.
-inv H0.
-inv H.
-constructor.
+  intros.
+  inv H0.
+  inv H.
+  constructor.
 Qed.
-
-Lemma transl_code_pos:
-  forall c f,
-  0 < list_length_z (transl_code c f).
-Proof.
-Admitted.
 
 Lemma transl_step:
   forall S1 t S2, HLspec.step ge S1 t S2 ->
@@ -146,16 +142,64 @@ Proof.
   - inv TC.
     econstructor; split.
 
+    assert (Mem.load Mint32 m p 0 = Some (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
+
+    destruct (Mem.storebytes_split m1 p 0 (firstn 4 (inj_bytes seccomp_data))
+                                          (skipn 4 (inj_bytes seccomp_data)) m);
+    [ rewrite firstn_skipn; auto | destruct H0 ].
+    rewrite (Mem.load_storebytes_other x p _ _ _ H1).
+    rewrite (Mem.load_store_same Mint32 m1 _ _ (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
+    crush.
+    apply Mem.storebytes_store.
+    unfold encode_val.
+    rewrite decode_encode_int_4.  rewrite <- firstn_inj_bytes.  auto.
+    admit.
+    crush.
+    right.  left.  admit.
+
     eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ];
     try rewrite Int.unsigned_repr_eq ; try rewrite Zmod_0_l; auto.
 
     exact sizeof_seccomp_data_pos.
-    (* XXX *)
+    rewrite <- MP.
+    exact H0.
 
+    unfold eval_rule in H.
+    rewrite H0 in H.
+    case_eq (Seccomp.eval_cond (Seccomp.Jeqimm (rl_syscall r)) (Int.repr (decode_int (firstn 4 seccomp_data))) tx);
+    intros.
+    unfold Seccomp.eval_cond in H1.
+    generalize (Int.eq_spec (Int.repr (decode_int (firstn 4 seccomp_data))) (rl_syscall r)).
+    rewrite H1.
+    intros.
+    crush.
 
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    rewrite H1.
+    admit.
+    rewrite H1.
+    apply star_refl.
 
-(*
-Admitted.
+    apply match_state with (m1:=m1); auto.
+    admit.
+
+  (* exec_default *)
+  - inv TC.
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    apply match_returnstate; auto.
+
+  (* exec_call *)
+  - inv TF.
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    apply match_state with (m1:=m1); auto.
+    crush.
+Qed.
 
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (Seccompspec.semantics tprog).
@@ -166,4 +210,3 @@ Proof.
   eexact transl_final_states.
   eexact transl_step.
 Qed.
-*)
