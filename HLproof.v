@@ -148,6 +148,10 @@ Proof.
   - inv TC.
     econstructor; split.
 
+    assert (length (firstn 4 seccomp_data) = 4%nat) as Hlen.
+    rewrite firstn_length.  rewrite min_l.  crush.
+    admit.
+
     assert (Mem.load Mint32 m p 0 =
             Some (Vint (Int.repr (decode_int (firstn 4 seccomp_data))))).
 
@@ -160,10 +164,10 @@ Proof.
     crush.
     apply Mem.storebytes_store.
     unfold encode_val.
-    rewrite decode_encode_int_4.  rewrite <- firstn_inj_bytes.  auto.
-    admit.
+    rewrite decode_encode_int_4.  rewrite <- firstn_inj_bytes.  auto.  auto.
     crush.
-    right.  left.  admit.
+    right.  left.  rewrite firstn_inj_bytes.  rewrite length_inj_bytes.
+    rewrite Hlen.  crush.
 
     eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ];
     try rewrite Int.unsigned_repr_eq ; try rewrite Zmod_0_l; auto.
