@@ -19,15 +19,6 @@ Inductive location : Type :=
   | Loc : nat -> location
   .
 
-Record entry : Type := mkentry {
-  saddr : int;
-  daddr : int;
-  sport : port;
-  dport : port;
-  family : int;
-  userlocks : int
-}.
-
 Record hostcond : Type := mkhostcond {
   hcfamily : int;
   hcprefixlen : int;
@@ -52,28 +43,6 @@ Definition function := code.
 Definition fundef := AST.fundef function.
 Definition program := AST.program fundef unit.
 Definition genv := Genv.t fundef unit.
-
-
-(*
-(* this probably needs something like GeneralRec in CPDT *)
-Fixpoint eval (pgm: code) (e: entry) {struct pgm} : bool :=
-  match pgm with
-  | nil => true
-  | Nop :: is => eval is e
-  | Jmp loc :: is => jmp loc is e
-  | Sge p loc :: is => if Int.cmpu Cge e.(sport) p then eval is e else jmp loc is e
-  | Sle p loc :: is => if Int.cmpu Cle e.(sport) p then eval is e else jmp loc is e
-  | Dge p loc :: is => if Int.cmpu Cge e.(dport) p then eval is e else jmp loc is e
-  | Dle p loc :: is => if Int.cmpu Cle e.(dport) p then eval is e else jmp loc is e
-  | Scond hc loc :: is => false (* XXX TODO *)
-  | Dcond hc loc :: is => false
-  end
-with jmp (loc: location) (p: code) (e: entry) {struct p} : bool :=
-  match loc with
-  | Reject => false
-  | Loc n => eval (skipn n p) e
-  end.
-*)
 
 Definition checkhc (hc: hostcond) (e: block) := false. (* XXX TODO *)
 
