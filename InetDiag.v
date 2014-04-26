@@ -295,10 +295,21 @@ Proof.
     apply inj_refl.
 Qed.
 
+Lemma transl_final_states:
+  forall S R r,
+  match_states S R -> final_state S r -> Cminor.final_state R r.
+Proof.
+  intros.
+  inv H0.
+  inv H.
+  constructor.
+Qed.
+
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (cminorp_semantics tprog).
 Proof.
   eapply forward_simulation_plus.
   eexact symbols_preserved.
   eexact transl_initial_states.
+  eexact transl_final_states.
 Admitted.
