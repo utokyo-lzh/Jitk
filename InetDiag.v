@@ -9,7 +9,7 @@ Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
-Require Import Cminorp.
+Require Import MiscLemmas.
 Import ListNotations.
 
 Definition port := int.
@@ -75,61 +75,25 @@ with jmp (loc: location) (p: code) (e: entry) {struct p} : bool :=
   end.
 *)
 
-Definition checkhc (hc: hostcond) (e: entry) := false. (* XXX TODO *)
+Definition checkhc (hc: hostcond) (e: block) := false. (* XXX TODO *)
 
 Inductive state : Type :=
-  | State : code -> entry -> state
-  | Returnstate : int -> state
+  | State:
+    forall (c: code)             (**r current program point *)
+           (f: function)         (**r current function *)
+           (e: block)            (**r input entry *)
+           (m: mem),             (**r memory state *)
+    state
+  | Callstate:
+    forall (fd: fundef)          (**r calling function *)
+           (e: block)            (**r input entry *)
+           (m: mem),             (**r memory state *)
+    state
+  | Returnstate:
+    forall (v: int)              (**r local return value *)
+           (m: mem),             (**r memory state *)
+    state
   .
-
-Inductive step (ge: genv) : state -> trace -> state -> Prop :=
-  | ST_Accept : forall e,
-    step ge (State nil e) E0 (Returnstate Int.one)
-  | ST_Nop : forall r e,
-    step ge (State (Nop :: r) e) E0 (State r e)
-  | ST_Jmp_Reject : forall r e,
-    step ge (State (Jmp Reject :: r) e) E0 (Returnstate Int.zero)
-  | ST_Jmp_Loc : forall r e n,
-    step ge (State (Jmp (Loc n) :: r) e) E0 (State (skipn n r) e)
-  | ST_Sge : forall r e p n,
-    let r' := if Int.cmpu Cge e.(sport) p then r else Jmp n :: r in
-    step ge (State (Sge p n :: r) e) E0 (State r' e)
-  | ST_Sle : forall r e p n,
-    let r' := if Int.cmpu Cle e.(sport) p then r else Jmp n :: r in
-    step ge (State (Sle p n :: r) e) E0 (State r' e)
-  | ST_Dge : forall r e p n,
-    let r' := if Int.cmpu Cge e.(dport) p then r else Jmp n :: r in
-    step ge (State (Dge p n :: r) e) E0 (State r' e)
-  | ST_Dle : forall r e p n,
-    let r' := if Int.cmpu Cle e.(dport) p then r else Jmp n :: r in
-    step ge (State (Dle p n :: r) e) E0 (State r' e)
-  | ST_Scond : forall r e hc n,
-    let r' := if checkhc hc e then r else Jmp n :: r in
-    step ge (State (Scond hc n :: r) e) E0 (State r' e)
-  | ST_Dcond : forall r e hc n,
-    let r' := if checkhc hc e then r else Jmp n :: r in
-    step ge (State (Dcond hc n :: r) e) E0 (State r' e)
-  .
-
-Parameter entry_input : entry.
-Definition sizeof_entry := 16.
-
-Inductive initial_state (p: program): state -> Prop :=
-  | initial_state_intro: forall b code m0,
-    let ge := Genv.globalenv p in
-    Genv.init_mem p = Some m0 ->
-    Genv.find_symbol ge p.(prog_main) = Some b ->
-    Genv.find_funct_ptr ge b = Some (Internal code) ->
-    initial_state p (State code entry_input).
-
-Inductive final_state: state -> int -> Prop :=
-  | final_state_intro: forall v,
-      final_state (Returnstate v) v.
-
-Definition semantics (p: program) :=
-  Semantics step (initial_state p) final_state (Genv.globalenv p).
-
-Definition reg_entry: ident := 1%positive.
 
 Definition field : Type := (memory_chunk * Z)%type.
 
@@ -140,7 +104,68 @@ Definition e_dport     : field := (Mint16unsigned, 10).
 Definition e_family    : field := (Mint16unsigned, 12).
 Definition e_userlocks : field := (Mint16unsigned, 14).
 
-Definition load_field (f: field) : Cminor.expr :=
+Definition load_field (f: field) (e: block) (m: mem) : option val :=
+  match f with
+  | (mc, ofs) => Mem.load mc m e ofs
+  end.
+
+Inductive step (ge: genv) : state -> trace -> state -> Prop :=
+  | ST_Accept : forall f e m,
+    step ge (State nil f e m) E0 (Returnstate Int.one m)
+  | ST_Nop : forall r f e m,
+    step ge (State (Nop :: r) f e m) E0 (State r f e m)
+  | ST_Jmp_Reject : forall r f e m,
+    step ge (State (Jmp Reject :: r) f e m) E0 (Returnstate Int.zero m)
+  | ST_Jmp_Loc : forall r f e m n,
+    step ge (State (Jmp (Loc n) :: r) f e m) E0 (State (skipn n r) f e m)
+  | ST_Sge : forall r f e m p sp n,
+    load_field e_sport e m = Some (Vint sp) ->
+    let r' := if Int.cmpu Cge sp p then r else Jmp n :: r in
+    step ge (State (Sge p n :: r) f e m) E0 (State r' f e m)
+  | ST_Sle : forall r f e m p sp n,
+    load_field e_sport e m = Some (Vint sp) ->
+    let r' := if Int.cmpu Cle sp p then r else Jmp n :: r in
+    step ge (State (Sle p n :: r) f e m) E0 (State r' f e m)
+  | ST_Dge : forall r f e m p dp n,
+    load_field e_dport e m = Some (Vint dp) ->
+    let r' := if Int.cmpu Cge dp p then r else Jmp n :: r in
+    step ge (State (Dge p n :: r) f e m) E0 (State r' f e m)
+  | ST_Dle : forall r f e m p dp n,
+    load_field e_dport e m = Some (Vint dp) ->
+    let r' := if Int.cmpu Cle dp p then r else Jmp n :: r in
+    step ge (State (Dle p n :: r) f e m) E0 (State r' f e m)
+  | ST_Scond : forall r f e m hc n,
+    let r' := if checkhc hc e then r else Jmp n :: r in
+    step ge (State (Scond hc n :: r) f e m) E0 (State r' f e m)
+  | ST_Dcond : forall r f e m hc n,
+    let r' := if checkhc hc e then r else Jmp n :: r in
+    step ge (State (Dcond hc n :: r) f e m) E0 (State r' f e m)
+  .
+
+Parameter entry_input : list byte.
+Definition sizeof_entry := 16.
+
+Inductive initial_state (p: program): state -> Prop :=
+  | initial_state_intro: forall b fd m0 m1 m2 pkt,
+    let ge := Genv.globalenv p in
+    Genv.init_mem p = Some m0 ->
+    Genv.find_symbol ge p.(prog_main) = Some b ->
+    Genv.find_funct_ptr ge b = Some fd ->
+    Mem.alloc m0 0 sizeof_entry = (m1, pkt) ->
+    Mem.storebytes m1 pkt 0 (Memdata.inj_bytes entry_input) = Some m2 ->
+    initial_state p (Callstate fd pkt m2).
+
+Inductive final_state: state -> int -> Prop :=
+  | final_state_intro: forall v m,
+      final_state (Returnstate v m) v.
+
+Definition semantics (p: program) :=
+  Semantics step (initial_state p) final_state (Genv.globalenv p).
+
+
+Definition reg_entry: ident := 1%positive.
+
+Definition transl_load_field (f: field) : Cminor.expr :=
   match f with
   | (ty, offset) =>
     let addr := Ebinop Oadd (Evar reg_entry) (Econst (Ointconst (Int.repr offset))) in
@@ -154,7 +179,7 @@ Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
   end.
 
 Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
-  let cond := Ebinop (Ocmpu (negate_comparison cmp)) (load_field f) (Econst (Ointconst p)) in
+  let cond := Ebinop (Ocmpu (negate_comparison cmp)) (transl_load_field f) (Econst (Ointconst p)) in
   Sifthenelse cond (transl_jmp loc nextlbl) Sskip.
 
 Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
@@ -215,38 +240,31 @@ Proof.
   exact (Genv.find_symbol_transf_partial _ _ TRANSL).
 Qed.
 
-Definition loadf (f: field) (m: mem) (b: block) : option val :=
-  match f with
-  | (mc, ofs) => Mem.load mc m b ofs
-  end.
-
-Inductive match_entry: entry -> mem -> block -> Prop :=
-  | match_entry_intro: forall e m b
-      (MSADDR: loadf e_saddr m b = Some (Vint e.(saddr)))
-      (MDADDR: loadf e_daddr m b = Some (Vint e.(daddr)))
-      (MSPORT: loadf e_sport m b = Some (Vint e.(sport)))
-      (MDPORT: loadf e_dport m b = Some (Vint e.(dport)))
-      (MFAMILY: loadf e_family m b = Some (Vint e.(family)))
-      (MUSERLOCKS: loadf e_userlocks m b = Some (Vint e.(userlocks))),
-    match_entry e m b
-  .
-
 Inductive match_states: state -> Cminor.state -> Prop :=
   | match_state:
-      forall c e eb f tf ts tk tsp te tm b
-        (ME: Some (Vptr eb Int.zero) = te!reg_entry)
-        (EM: match_entry e tm eb)
+      forall c f e m tf ts tk tsp te tm b tm'
+        (ME: Some (Vptr e Int.zero) = te!reg_entry)
         (TF: transl_function f = tf)
         (TC: transl_code c (length c) = ts)
         (MK: call_cont tk = Kstop)
         (TAIL: is_tail c f)
-        (MSP: tsp = Vptr b Int.zero),
-      match_states (State c e) (Cminor.State tf ts tk tsp te tm)
+        (MSP: tsp = Vptr b Int.zero)
+        (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
+        (MINJ: mem_inj m tm'),
+      match_states (State c f e m) (Cminor.State tf ts tk tsp te tm)
+  | match_callstate:
+      forall fd e m tfd targs tk tm
+        (TF: transl_fundef fd = OK tfd)
+        (MINJ: mem_inj m tm)
+        (MARGS: targs = [ Vptr e Int.zero ])
+        (MK: call_cont tk = Kstop),
+      match_states (Callstate fd e m) (Cminor.Callstate tfd targs tk tm)
   | match_returnstate:
-      forall v tv tk tm
+      forall v m tv tk tm
         (MV: Vint v = tv)
+        (MINJ: mem_inj m tm)
         (MK: tk = Kstop),
-      match_states (Returnstate v) (Cminor.Returnstate tv tk tm)
+      match_states (Returnstate v m) (Cminor.Returnstate tv tk tm)
   .
 
 Lemma function_ptr_translated:
@@ -267,16 +285,18 @@ Proof.
 Qed.
 
 Inductive cminorp_initial_state (p: Cminor.program): Cminor.state -> Prop :=
-  | cminorp_initial_state_intro: forall b f m0 m1 m2 pkt entry_input_bytes,
+  | cminorp_initial_state_intro: forall b f m0 m1 m2 pkt,
       let ge := Genv.globalenv p in
       Genv.init_mem p = Some m0 ->
       Genv.find_symbol ge p.(prog_main) = Some b ->
       Genv.find_funct_ptr ge b = Some f ->
       funsig f = signature_main ->
       Mem.alloc m0 0 sizeof_entry = (m1, pkt) ->
-      Mem.storebytes m1 pkt 0 (Memdata.inj_bytes entry_input_bytes) = Some m2 ->
-      match_entry entry_input m2 pkt ->
-      cminorp_initial_state p (Callstate f [ Vptr pkt Int.zero ] Kstop m2).
+      Mem.storebytes m1 pkt 0 (Memdata.inj_bytes entry_input) = Some m2 ->
+      cminorp_initial_state p (Cminor.Callstate f [ Vptr pkt Int.zero ] Kstop m2).
+
+Definition cminorp_semantics (p: Cminor.program) :=
+  Semantics Cminor.step (cminorp_initial_state p) Cminor.final_state (Genv.globalenv p).
 
 Lemma transl_initial_states:
   forall S, initial_state prog S ->
@@ -298,13 +318,18 @@ Proof.
     + eexact A.
     + eapply sig_transl_function.
       eexact B.
-    +
-Admitted.
+    + eexact H2.
+    + eexact H3.
 
+  (* match states S R *)
+  - constructor; auto.
+    apply inj_refl.
+Qed.
 
 Theorem transl_program_correct:
-  forward_simulation (semantics prog) (Cminorp.semantics tprog).
+  forward_simulation (semantics prog) (cminorp_semantics tprog).
 Proof.
   eapply forward_simulation_plus.
   eexact symbols_preserved.
+  eexact transl_initial_states.
 Admitted.
