@@ -1,0 +1,44 @@
+; https://github.com/torvalds/linux/blob/master/net/core/ptp_classifier.c
+l0:	ldh [12]
+l1:	jeq #0x800, l2, l14
+l2:	ldb [23]
+l3:	jeq #0x11, l4, l13
+l4:	ldh [20]
+l5:	jset #0x1fff, l13, l6
+l6:	ldxb 4*([14]&0xf)
+l7:	ldh [x+16]
+l8:	jeq #0x13f, l9, l13
+l9:	ldh [x+22]
+l10:	and #0xf
+l11:	or #0x10
+l12:	ret a
+l13:	ret #0
+l14:	jeq #0x86dd, l15, l24
+l15:	ldb [20]
+l16:	jeq #0x11, l17, l23
+l17:	ldh [56]
+l18:	jeq #0x13f, l19, l23
+l19:	ldh [62]
+l20:	and #0xf
+l21:	or #0x20
+l22:	ret a
+l23:	ret #0
+l24:	jeq #0x8100, l25, l34
+l25:	ldh [16]
+l26:	jeq #0x88f7, l27, l42
+l27:	ldb [18]
+l28:	and #0x8
+l29:	jeq #0, l30, l42
+l30:	ldh [18]
+l31:	and #0xf
+l32:	or #0x40
+l33:	ret a
+l34:	jeq #0x88f7, l35, l42
+l35:	ldb [14]
+l36:	and #0x8
+l37:	jeq #0, l38, l42
+l38:	ldh [14]
+l39:	and #0xf
+l40:	or #0x30
+l41:	ret a
+l42:	ret #0
