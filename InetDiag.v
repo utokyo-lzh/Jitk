@@ -162,20 +162,21 @@ Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
   | _ => Sskip (* TODO *)
   end.
 
-Fixpoint transl_code (c: code) (nextlbl: nat) : Cminor.stmt :=
+Fixpoint transl_code (c: code) : Cminor.stmt :=
   match c with
   | nil => Sreturn (Some (Econst (Ointconst Int.one)))
   | instr :: rest =>
-    let hs := transl_instr instr nextlbl in
-    let ts := transl_code rest (nextlbl - 1) in
-    Sseq hs (Slabel (P_of_succ_nat nextlbl) ts)
+    let n := length rest in
+    let hs := transl_instr instr (S n) in
+    let ts := transl_code rest in
+    Sseq hs (Slabel (P_of_succ_nat n) ts)
   end.
 
 Definition Tpointer := Tint. (* assume 32-bit pointers *)
 Definition signature_main := mksignature [ Tpointer ] (Some Tint) cc_default.
 
 Definition transl_function (f: function) : Cminor.function :=
-  let body := transl_code f (length f) in
+  let body := transl_code f in
   let params := [ reg_entry ] in
   let vars := [] in
   let stackspace := 0 in
@@ -214,7 +215,7 @@ Inductive match_states: state -> Cminor.state -> Prop :=
       forall c f e m tf ts tk tsp te tm b tm'
         (ME: Some (Vptr e Int.zero) = te!reg_entry)
         (TF: transl_function f = tf)
-        (TC: transl_code c (length c) = ts)
+        (TC: transl_code c = ts)
         (MK: call_cont tk = Kstop)
         (TAIL: is_tail c f)
         (MSP: tsp = Vptr b Int.zero)
