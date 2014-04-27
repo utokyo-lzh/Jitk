@@ -348,6 +348,19 @@ Proof.
     exact MFREE.
     exact MINJ.
 
+  (* Jmp Reject *)
+  - monadInv TC.
+    exists (Cminor.Returnstate (Vint Int.zero) (call_cont tk) tm').
+    split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    constructor.
+    constructor.
+    exact MFREE.
+    unfold call_cont.
+    apply star_refl.
+    constructor; auto.
+
 Admitted.
 
 Theorem transl_program_correct:
