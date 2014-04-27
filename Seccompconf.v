@@ -7,6 +7,8 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Import ListNotations.
 
+Parameter ident_of_string : String.string -> ident.
+
 Parameter sizeof_seccomp_data : Z. (**r sizeof struct seccomp_data *)
 Axiom sizeof_seccomp_data_pos: 0 < sizeof_seccomp_data.
 Axiom sizeof_mul4: sizeof_seccomp_data mod 4 = 0.
