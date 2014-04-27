@@ -9,6 +9,7 @@ Require Import compcert.common.Values.
 Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
+Require Import CpdtTactics.
 Require Import MiscLemmas.
 Import ListNotations.
 
@@ -318,6 +319,25 @@ Proof.
   inv H.
   constructor.
 Qed.
+
+Lemma transl_step:
+  forall S1 t S2, step ge S1 t S2 ->
+  forall R1, match_states S1 R1 ->
+  exists R2, plus Cminor.step tge R1 t R2 /\ match_states S2 R2.
+Proof.
+  induction 1; intros R1 MST; inversion MST.
+
+  (* accept *)
+  - monadInv TC.
+    exists (Cminor.Returnstate (Vint Int.one) (call_cont tk) tm').
+    split.
+    eapply plus_one with (t:=Events.E0).
+    eapply step_return_1.
+    constructor; constructor.
+    exact MFREE.
+    constructor; auto.
+
+Admitted.
 
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (cminorp_semantics tprog).
