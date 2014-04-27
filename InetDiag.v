@@ -39,6 +39,8 @@ Inductive instruction : Type :=
 
 Definition code := list instruction.
 
+Section SEMANTICS.
+
 Definition function := code.
 Definition fundef := AST.fundef function.
 Definition program := AST.program fundef unit.
@@ -131,6 +133,11 @@ Inductive final_state: state -> int -> Prop :=
 Definition semantics (p: program) :=
   Semantics step (initial_state p) final_state (Genv.globalenv p).
 
+End SEMANTICS.
+
+(* jit translator *)
+
+Open Local Scope error_monad_scope.
 
 Definition reg_entry: ident := 1%positive.
 
@@ -162,29 +169,29 @@ Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
   | _ => Sskip (* TODO *)
   end.
 
-Fixpoint transl_code (c: code) : Cminor.stmt :=
+Fixpoint transl_code (c: code) : res Cminor.stmt :=
   match c with
-  | nil => Sreturn (Some (Econst (Ointconst Int.one)))
+  | nil => OK (Sreturn (Some (Econst (Ointconst Int.one))))
   | instr :: rest =>
     let n := length rest in
+    do ts <- transl_code rest;
     let hs := transl_instr instr (S n) in
-    let ts := transl_code rest in
-    Sseq hs (Slabel (P_of_succ_nat n) ts)
+    OK (Sseq hs (Slabel (P_of_succ_nat n) ts))
   end.
 
 Definition Tpointer := Tint. (* assume 32-bit pointers *)
 Definition signature_main := mksignature [ Tpointer ] (Some Tint) cc_default.
 
-Definition transl_function (f: function) : Cminor.function :=
-  let body := transl_code f in
+Definition transl_function (f: function) : res Cminor.function :=
+  do body <- transl_code f;
   let params := [ reg_entry ] in
   let vars := [] in
   let stackspace := 0 in
-  Cminor.mkfunction signature_main params vars stackspace body.
+  OK (Cminor.mkfunction signature_main params vars stackspace body).
 
 Definition transl_fundef (fd: fundef) : res Cminor.fundef :=
   match fd with
-  | Internal f => let f' :=  transl_function f in OK (Internal f')
+  | Internal f => do f' <- transl_function f; OK (Internal f')
   | External f => Error (msg "no external function allowed")
   end.
 
@@ -197,6 +204,10 @@ Definition example1 :=
   ; Jmp Reject
   ; Nop
   ].
+
+(* equivalence proof *)
+
+Section TRANSLATION.
 
 Variable prog: program.
 Variable tprog: Cminor.program.
@@ -214,8 +225,8 @@ Inductive match_states: state -> Cminor.state -> Prop :=
   | match_state:
       forall c f e m tf ts tk tsp te tm b tm'
         (ME: Some (Vptr e Int.zero) = te!reg_entry)
-        (TF: transl_function f = tf)
-        (TC: transl_code c = ts)
+        (TF: transl_function f = OK tf)
+        (TC: transl_code c = OK ts)
         (MK: call_cont tk = Kstop)
         (TAIL: is_tail c f)
         (MSP: tsp = Vptr b Int.zero)
@@ -252,6 +263,8 @@ Lemma sig_transl_function:
 Proof.
   intros.
   destruct fd; monadInv H; auto.
+  monadInv EQ.
+  auto.
 Qed.
 
 Inductive cminorp_initial_state (p: Cminor.program): Cminor.state -> Prop :=
@@ -314,3 +327,5 @@ Proof.
   eexact transl_initial_states.
   eexact transl_final_states.
 Admitted.
+
+End TRANSLATION.
