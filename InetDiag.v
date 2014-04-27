@@ -331,8 +331,8 @@ Proof.
   - monadInv TC.
     exists (Cminor.Returnstate (Vint Int.one) (call_cont tk) tm').
     split.
-    eapply plus_one with (t:=Events.E0).
-    eapply step_return_1.
+    apply plus_one with (t:=Events.E0).
+    apply step_return_1.
     constructor; constructor.
     exact MFREE.
     constructor; auto.
