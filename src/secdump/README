@@ -1,0 +1,32 @@
+secdump.so is useful for extracting dynamic seccomp filters that depend
+on configurations at run time.
+
+$ LD_PRELOAD=./secdump.so ./bpf-direct
+
+=== SECCOMP ===
+l0:	ld [0]
+l1:	jeq #0xf, l2, l3
+l2:	ret #0x7fff0000
+l3:	jeq #0xe7, l4, l5
+l4:	ret #0x7fff0000
+l5:	jeq #0x3c, l6, l7
+l6:	ret #0x7fff0000
+l7:	jeq #0, l9, l8
+l8:	jeq #0x1, l12, l11
+l9:	ld [16]
+l10:	jeq #0, l15, l11
+l11:	ret #0
+l12:	ld [16]
+l13:	jeq #0x1, l15, l14
+l14:	jeq #0x2, l16, l17
+l15:	ret #0x7fff0000
+l16:	ret #0x30000
+l17:	ret #0
+=== SECCOMP ===
+
+bpf-as is modified from bpf_asm in the kernel tree, to get bytecode from
+the bpf format:
+
+$ bpf-as t.bpf > t.bin
+
+Then pass t.bin to jitk.
