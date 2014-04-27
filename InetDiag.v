@@ -346,6 +346,7 @@ Proof.
   eexact symbols_preserved.
   eexact transl_initial_states.
   eexact transl_final_states.
-Admitted.
+  eexact transl_step.
+Qed.
 
 End TRANSLATION.
