@@ -23,13 +23,16 @@ FILES = CpdtTactics.v \
 	Seccompenc.v \
 	HLspec.v \
 	MiscLemmas.v \
-	InetDiag.v
+	InetDiagConf.v \
+	InetDiag.v \
+	InetDiagJit.v
 
 PROOFFILES = \
 	HLproof.v \
 	Seccompencproof.v \
 	Seccompproof.v \
 	Seccompbproof.v \
+	InetDiagProof.v
 
 all:	tests/test_seccomp.native \
 	tests/test_enc.native \

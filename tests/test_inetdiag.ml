@@ -1,4 +1,4 @@
-open InetDiag
+open InetDiagJit
 open AST
 open PrintCminor
 open Errors
@@ -54,7 +54,7 @@ let print_cminor code =
   let bpf = decode s in
 *)
   let p = { prog_defs = [(P.one, Gfun (Internal code))]; prog_main = P.one } in
-  match InetDiag.transl_program p with
+  match InetDiagJit.transl_program p with
   | Errors.OK x ->
     ( print_program (Format.formatter_of_out_channel stdout) x; exit 0 )
   | Errors.Error msg ->
