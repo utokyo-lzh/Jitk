@@ -337,6 +337,17 @@ Proof.
     exact MFREE.
     constructor; auto.
 
+  - monadInv TC.
+    exists (Cminor.State tf x tk (Vptr b Int.zero) te tm); split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    econstructor; constructor.
+    econstructor; auto.
+    apply is_tail_cons_left with (i := Nop).
+    exact TAIL.
+    exact MFREE.
+    exact MINJ.
+
 Admitted.
 
 Theorem transl_program_correct:
