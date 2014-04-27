@@ -184,6 +184,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let a' := eval_alu_safe op a x in
       step ge (State a x sm f (Salu_safe op :: b) p m)
         E0 (State a' x sm f b p m)
+  (* FIXME: should return 0 for div by zero *)
   | exec_Salu_div:
       forall op a x sm f b p m,
       let a' := eval_alu_div op a x in
