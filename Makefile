@@ -69,7 +69,7 @@ depend: $(FILES)
 	> .depend
 
 clean:
-	rm -rf _build *.vo *.glob *.native
+	rm -rf _build *.vo *.glob tests/*.native
 	cd codegen && rm -f *.ml *.mli *.mlo *.glob *.vo
 
 include .depend
