@@ -10,6 +10,7 @@ Require Import CpdtTactics.
 Require Import HLspec.
 Require Import MiscLemmas.
 Require Import Seccompconf.
+Require Import HLtrans.
 Require Seccomp.
 Require Seccompspec.
 
@@ -18,7 +19,7 @@ Definition semantics (p: HLspec.program) :=
 
 Variable prog: HLspec.program.
 Variable tprog: Seccomp.program.
-Hypothesis TRANSL: HLspec.transl_program prog = OK tprog.
+Hypothesis TRANSL: HLtrans.transl_program prog = OK tprog.
 Let ge := Genv.globalenv prog.
 Let tge := Genv.globalenv tprog.
 
@@ -43,8 +44,8 @@ Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_state:
     forall f c p m ta tx tsm tf tc tp tm m1
       (MP: match_packet m p tm tp)
-      (TF: HLspec.transl_function f = tf)
-      (TC: HLspec.transl_code c f = tc)
+      (TF: HLtrans.transl_function f = tf)
+      (TC: HLtrans.transl_code c f = tc)
       (TAIL: is_tail c f.(fn_body))
       (MINJ: mem_inj m tm)
       (MSTORE: Mem.storebytes m1 p 0 (Memdata.inj_bytes seccomp_data) = Some m),
@@ -53,7 +54,7 @@ Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
   | match_callstate:
     forall fd p m tfd tp tm m1
       (MP: match_packet m p tm tp)
-      (TF: HLspec.transl_fundef fd = OK tfd)
+      (TF: HLtrans.transl_fundef fd = OK tfd)
       (MINJ: mem_inj m tm)
       (MSTORE: Mem.storebytes m1 p 0 (Memdata.inj_bytes seccomp_data) = Some m),
       match_states (HLspec.Callstate fd p m)

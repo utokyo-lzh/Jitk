@@ -22,6 +22,7 @@ FILES = CpdtTactics.v \
 	Seccompfilter.v \
 	Seccompenc.v \
 	HLspec.v \
+	HLtrans.v \
 	MiscLemmas.v \
 	InetDiagConf.v \
 	InetDiag.v \

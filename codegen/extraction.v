@@ -7,6 +7,7 @@ Require Import Seccompenc.
 Require Import Seccompfilter.
 Require Import HLspec.
 Require Import InetDiagConf.
+Require Import HLtrans.
 Require Import InetDiag.
 Require Import InetDiagJit.
 Require Import compcert.common.Errors.
@@ -43,6 +44,7 @@ Extraction Library Seccompjit.
 Extraction Library Seccompenc.
 Extraction Library Seccompfilter.
 Extraction Library HLspec.
+Extraction Library HLtrans.
 Extraction Library InetDiag.
 Extraction Library InetDiagConf.
 Extraction Library InetDiagJit.

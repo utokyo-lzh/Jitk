@@ -1,4 +1,5 @@
 open HLspec
+open HLtrans
 open Seccompenc
 open Errors
 open Printf
@@ -32,7 +33,7 @@ let encode bpf =
 ;;
 
 let compile_and_print rules =
-  print_string (encode (HLspec.transl_function rules))
+  print_string (encode (HLtrans.transl_function rules))
 in List.map compile_and_print [
   (* the OpenSSH 6.6p1 seccomp policy *)
   { fn_default = HLspec.Akill;
