@@ -685,11 +685,15 @@ static void bpf_stage_2_reduce_labels(void)
 
 static void bpf_pretty_print_c(void)
 {
+#if 0
 	int i;
 
 	for (i = 0; i < curr_instr; i++)
 		printf("{ %#04x, %2u, %2u, %#010x },\n", out[i].code,
 		       out[i].jt, out[i].jf, out[i].k);
+#else
+	fwrite(out, sizeof(out[0]), curr_instr, stdout);
+#endif
 }
 
 static void bpf_pretty_print(void)
