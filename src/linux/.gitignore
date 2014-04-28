@@ -1,2 +1,3 @@
 *.o
-/bpf_jit
+/bpf_jit_arm
+/bpf_jit_ppc

@@ -23,17 +23,25 @@
 #include <stdio.h>
 #include <string.h>
 
-extern void bpf_asm_compile(FILE *fp, bool cstyle);
+extern void bpf_asm_compile(FILE *fp, int style);
 
 int main(int argc, char **argv)
 {
 	FILE *fp = stdin;
-	bool cstyle = false;
+	int style = 0;
 	int i;
 
 	for (i = 1; i < argc; i++) {
 		if (!strncmp("-c", argv[i], 2)) {
-			cstyle = true;
+			style = 'c';
+			continue;
+		}
+		if (!strncmp("-h", argv[i], 2)) {
+			style = 'h';
+			continue;
+		}
+		if (!strncmp("-n", argv[i], 2)) {
+			style = 'n';
 			continue;
 		}
 
@@ -46,7 +54,7 @@ int main(int argc, char **argv)
 		break;
 	}
 
-	bpf_asm_compile(fp, cstyle);
+	bpf_asm_compile(fp, style);
 
 	return 0;
 }

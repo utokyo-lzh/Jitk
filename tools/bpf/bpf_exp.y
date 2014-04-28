@@ -29,6 +29,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <linux/filter.h>
+#include <arpa/inet.h>
 
 #include "bpf_exp.yacc.h"
 
@@ -38,7 +39,7 @@ extern FILE *yyin;
 extern int yylex(void);
 extern void yyerror(const char *str);
 
-extern void bpf_asm_compile(FILE *fp, bool cstyle);
+extern void bpf_asm_compile(FILE *fp, int style);
 static void bpf_set_curr_instr(uint16_t op, uint8_t jt, uint8_t jf, uint32_t k);
 static void bpf_set_curr_label(char *label);
 static void bpf_set_jmp_label(char *label, enum jmp_type type);
@@ -685,15 +686,31 @@ static void bpf_stage_2_reduce_labels(void)
 
 static void bpf_pretty_print_c(void)
 {
-#if 0
 	int i;
 
 	for (i = 0; i < curr_instr; i++)
 		printf("{ %#04x, %2u, %2u, %#010x },\n", out[i].code,
 		       out[i].jt, out[i].jf, out[i].k);
-#else
+}
+
+static void bpf_pretty_print_h(void)
+{
 	fwrite(out, sizeof(out[0]), curr_instr, stdout);
-#endif
+}
+
+static void bpf_pretty_print_n(void)
+{
+	int i;
+
+	for (i = 0; i < curr_instr; i++) {
+		struct sock_filter f = {
+			htons(out[i].code),
+			out[i].jt,
+			out[i].jf,
+			htonl(out[i].k)
+		};
+		fwrite(&f, sizeof(f), 1, stdout);
+	}
 }
 
 static void bpf_pretty_print(void)
@@ -742,7 +759,7 @@ static void bpf_destroy(void)
 	free(labels);
 }
 
-void bpf_asm_compile(FILE *fp, bool cstyle)
+void bpf_asm_compile(FILE *fp, int style)
 {
 	yyin = fp;
 
@@ -751,10 +768,20 @@ void bpf_asm_compile(FILE *fp, bool cstyle)
 	bpf_stage_2_reduce_labels();
 	bpf_destroy();
 
-	if (cstyle)
+	switch (style) {
+	case 'c':
 		bpf_pretty_print_c();
-	else
+		break;
+	case 'h':
+		bpf_pretty_print_h();
+		break;
+	case 'n':
+		bpf_pretty_print_n();
+		break;
+	default:
 		bpf_pretty_print();
+		break;
+	}
 
 	if (fp != stdin)
 		fclose(yyin);
