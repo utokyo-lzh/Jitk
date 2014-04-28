@@ -4,7 +4,14 @@ cp ./src/openssh/sandbox-seccomp-filter.c /tmp/openssh-6.6p1
 # build openssh
 ./configure && make && make install
 
-sysctl -w kernel.enable_seccomp_jit=1
+sysctl -w kernel.seccomp_jit_enable=1
 /usr/local/sbin/sshd -d
 
 ...
+
+---
+
+on brick-2:
+
+ln -s /home/nickolai/proj /n
+
