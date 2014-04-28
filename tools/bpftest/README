@@ -1,0 +1,19 @@
+This kernel module is for testing Linux BPF JIT.  It exposes a file
+`bpf/jit' under debugfs, which accepts any BPF bytecode.
+
+As root:
+
+1) Enable BPF JIT.
+
+# echo 2 > /proc/sys/net/core/bpf_jit_enable
+
+2) Load this module.
+
+# insmod bpftest.ko
+
+3) Invoke JIT.
+
+# cat path-to-bytecode-file > /sys/kernel/debug/bpf/jit
+
+4) Dump assembly from kernel log using the tool `bpf_jit_disasm', which
+   you can find from the kernel tree or in this repo under `tools/bpf'.
