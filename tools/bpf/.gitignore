@@ -1,0 +1,5 @@
+*.o
+*.yacc.*
+/bpf_asm
+/bpf_dbg
+/bpf_jit_disasm
