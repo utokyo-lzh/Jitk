@@ -25,7 +25,7 @@
 #include "kfilter.h"
 #endif
 
-#include "bpf_jit_32.h"
+#include "bpf_jit_arm.h"
 
 /*
  * ABI:
