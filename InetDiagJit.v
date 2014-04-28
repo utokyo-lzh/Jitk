@@ -22,7 +22,7 @@ Definition transl_load_field (f: field) : Cminor.expr :=
 Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
   match loc with
   | Reject => Sreturn (Some (Econst (Ointconst Int.zero)))
-  | Loc n => Sgoto (P_of_succ_nat (nextlbl - n))
+  | Loc n => Sgoto (P_of_succ_nat (nextlbl - n - 1))
   end.
 
 Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
