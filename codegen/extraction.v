@@ -24,6 +24,9 @@ Extract Constant Seccompconf.sizeof_seccomp_data =>
 Extract Constant Seccompconf.seccomp_data =>
   "[]".  (* hopefully unused *)
 
+Extract Constant InetDiagConf.entry_input =>
+  "[]".  (* hopefully unused *)
+
 Extract Constant Seccompjit.seccomp_memwords =>
   "Seccompaux.seccomp_memwords".
 
