@@ -83,8 +83,7 @@ Inductive state : Type :=
            (m: mem),             (**r memory state *)
     state
   | Returnstate:
-    forall (a: action)           (**r action *)
-           (m: mem),             (**r memory state *)
+    forall (a: action),          (**r action *)
     state
   .
 
@@ -96,7 +95,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
     forall f r b p m,
     eval_rule r m p ->
     step ge (State f (r :: b) p m)
-         E0 (Returnstate r.(rl_action) m)
+         E0 (Returnstate r.(rl_action))
   | exec_skip:
     forall f r b p m,
     ~ eval_rule r m p ->
@@ -105,7 +104,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_default:
     forall f p m,
     step ge (State f nil p m)
-         E0 (Returnstate f.(fn_default) m)
+         E0 (Returnstate f.(fn_default))
   | exec_call:
     forall f p m,
     step ge (Callstate (Internal f) p m)
@@ -123,8 +122,8 @@ Inductive initial_state (p: program): state -> Prop :=
     initial_state p (Callstate fd pkt m2).
 
 Inductive final_state: state -> int -> Prop :=
-  | final_state_intro: forall a m,
-      final_state (Returnstate a m) (action_enc a).
+  | final_state_intro: forall a,
+      final_state (Returnstate a) (action_enc a).
 
 End SEMANTICS.
 

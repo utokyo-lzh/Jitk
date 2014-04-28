@@ -59,10 +59,9 @@ Inductive match_states: HLspec.state -> Seccomp.state -> Prop :=
       match_states (HLspec.Callstate fd p m)
                    (Seccomp.Callstate tfd tp tm)
   | match_returnstate:
-    forall a m tv tm
-      (MV: HLspec.action_enc a = tv)
-      (MINJ: mem_inj m tm),
-      match_states (HLspec.Returnstate a m)
+    forall a tv tm
+      (MV: HLspec.action_enc a = tv),
+      match_states (HLspec.Returnstate a)
                    (Seccomp.Returnstate tv tm)
   .
 
@@ -142,7 +141,7 @@ Proof.
     rewrite Int.eq_true in H0.
     crush.
 
-    constructor.  auto.  auto.
+    constructor.  auto.
 
   (* exec_skip *)
   - inv TC.
