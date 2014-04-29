@@ -185,24 +185,6 @@ Proof.
     + apply IHprefix with (x:=x); auto.
 Qed.
 
-Lemma is_tail_strict_prefix:
-  forall A:Type,
-  forall b' b:list A,
-  is_tail b' b ->
-  list_length_z b' < list_length_z b ->
-  exists x:A,
-  exists prefix:list A,
-  b = prefix ++ (x :: b').
-Proof.
-  intros.
-  destruct (is_tail_exists_prefix A b' b); auto.
-  destruct x; crush.
-  assert (a::x <> nil); crush.
-  destruct (exists_last H1); destruct s.
-  exists x1; exists x0.
-  rewrite app_comm_cons; rewrite e; crush.
-Qed.
-
 Lemma length_pos:
   forall A:Type,
   forall l:list A,
