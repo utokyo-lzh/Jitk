@@ -131,6 +131,38 @@ Proof.
   constructor.
 Qed.
 
+Lemma transl_code_suffix:
+  forall b c b',
+  transl_code b = OK c ->
+  is_tail b' b ->
+  exists c',
+  transl_code b' = OK c'.
+Proof.
+Admitted.
+
+Lemma length_skipn_pos':
+  forall A:Type,
+  forall r:list A,
+  forall n:nat,
+  (Pos.of_succ_nat
+     (match n with
+      | O => S (length r)
+      | S l => length r - l
+      end - 1)) = Pos.of_succ_nat (length (skipn n r)).
+Proof.
+destruct n; crush.
+Admitted.
+
+Lemma transl_code_label:
+  forall b c b' c' k,
+  transl_code b = OK c ->
+  transl_code b' = OK c' ->
+  is_tail b' b ->
+  list_length_z b' < list_length_z b ->
+  find_label (P_of_succ_nat (length b')) c k = Some (c', k).
+Proof.
+Admitted.
+
 Lemma transl_step:
   forall S1 t S2, step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -171,6 +203,37 @@ Proof.
     unfold call_cont.
     apply star_refl.
     constructor; auto.
+
+  (* Jmp (Loc n) *)
+  - monadInv TC.
+    monadInv TF.
+    destruct (transl_code_suffix r x (skipn n r));
+        [ auto | apply is_tail_skipn | idtac ].
+
+    econstructor; split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+
+    simpl.
+    rewrite length_skipn_pos'.
+    apply transl_code_label with (b:=f); crush.
+
+    apply is_tail_trans with (l2:=r);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Jmp (Loc n) :: r); crush ].
+
+    apply Z.le_lt_trans with (m:=(list_length_z r));
+      [ apply list_length_z_skipn
+      | apply list_length_z_istail with (v:=Jmp (Loc n)); auto ].
+
+    apply star_refl.
+    econstructor; crush.
+    unfold transl_function.
+    crush.
+
+    apply is_tail_trans with (l2:=r);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Jmp (Loc n) :: r); crush ].
 
 Admitted.
 
