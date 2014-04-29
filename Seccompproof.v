@@ -203,56 +203,6 @@ Proof.
   rewrite app_comm_cons; rewrite e; crush.
 Qed.
 
-Lemma is_tail_skipn:
-  forall A:Type,
-  forall n,
-  forall l:list A,
-  is_tail (skipn n l) l.
-Proof.
-  induction n; [ crush | destruct l; crush ].
-Qed.
-
-Lemma list_length_z_skipn:
-  forall A:Type,
-  forall x,
-  forall l:list A,
-  list_length_z (skipn x l) <= list_length_z l.
-Proof.
-  induction x.
-  - crush.
-  - induction l.
-    + crush.
-    + rewrite list_length_z_cons.
-      crush.
-Qed.
-
-Lemma list_length_z_istail':
-  forall A:Type,
-  forall b l:list A,
-  is_tail b l ->
-  b <> nil ->
-  list_length_z (skipn 1 b) < list_length_z l.
-Proof.
-  intros A b l H.
-  induction H.
-  - destruct c; [ crush | rewrite list_length_z_cons; crush ].
-  - rewrite list_length_z_cons; crush.
-Qed.
-
-Lemma list_length_z_istail:
-  forall A:Type,
-  forall v:A,
-  forall b l:list A,
-  is_tail (v :: b) l ->
-  list_length_z b < list_length_z l.
-Proof.
-  intros.
-  remember (v::b) as b'.
-  cut (b = skipn 1 b').
-  - intros; rewrite H0; apply list_length_z_istail'; crush.
-  - crush.
-Qed.
-
 Lemma length_pos:
   forall A:Type,
   forall l:list A,
