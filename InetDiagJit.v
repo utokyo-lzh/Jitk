@@ -25,19 +25,20 @@ Definition transl_jmp (loc: location) (nextlbl: nat) : Cminor.stmt :=
   | Loc n => Sgoto (P_of_succ_nat (nextlbl - n - 1))
   end.
 
-Definition transl_cmp (cmp: comparison) (f: field) (p: port) (loc: location) (nextlbl: nat) : Cminor.stmt :=
-  let cond := Ebinop (Ocmpu (negate_comparison cmp)) (transl_load_field f) (Econst (Ointconst p)) in
-  Sifthenelse cond (transl_jmp loc nextlbl) Sskip.
+Definition transl_cond (cond: InetDiag.condition) :=
+  let v := transl_load_field (cond_field cond) in
+  match cond with
+  | Sge p => Ebinop (Ocmpu Cge) v (Econst (Ointconst p))
+  | Sle p => Ebinop (Ocmpu Cle) v (Econst (Ointconst p))
+  | Dge p => Ebinop (Ocmpu Cge) v (Econst (Ointconst p))
+  | Dle p => Ebinop (Ocmpu Cle) v (Econst (Ointconst p))
+  end.
 
 Definition transl_instr (instr: instruction) (nextlbl: nat) : Cminor.stmt :=
   match instr with
   | Nop => Sskip
   | Jmp loc => transl_jmp loc nextlbl
-  | Sge p loc => transl_cmp Cge e_sport p loc nextlbl
-  | Sle p loc => transl_cmp Cle e_sport p loc nextlbl
-  | Dge p loc => transl_cmp Cge e_dport p loc nextlbl
-  | Dle p loc => transl_cmp Cle e_dport p loc nextlbl
-  | _ => Sskip (* TODO *)
+  | Cjmp cond loc => Sifthenelse (transl_cond cond) Sskip (transl_jmp loc nextlbl)
   end.
 
 Fixpoint transl_code (c: code) : res Cminor.stmt :=
@@ -67,8 +68,8 @@ Definition transl_program (p: program) : res Cminor.program :=
   transform_partial_program transl_fundef p.
 
 Definition example1 :=
-  [ Sge (Int.repr 21) Reject
-  ; Sge (Int.repr 1024) (Loc 1)
+  [ Cjmp (Sge (Int.repr 21)) Reject
+  ; Cjmp (Sge (Int.repr 1024)) (Loc 1)
   ; Jmp Reject
   ; Nop
   ].

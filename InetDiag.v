@@ -24,15 +24,18 @@ Record hostcond : Type := mkhostcond {
   hcaddr : int
 }.
 
+Inductive condition : Type :=
+  | Sge : port -> condition
+  | Sle : port -> condition
+  | Dge : port -> condition
+  | Dle : port -> condition
+  .
+(* TODO Scond and Dcond *)
+
 Inductive instruction : Type :=
   | Nop : instruction
   | Jmp : location -> instruction
-  | Sge : port -> location -> instruction
-  | Sle : port -> location -> instruction
-  | Dge : port -> location -> instruction
-  | Dle : port -> location -> instruction
-  | Scond : hostcond -> location -> instruction
-  | Dcond : hostcond -> location -> instruction
+  | Cjmp : condition -> location -> instruction
   .
 
 Definition code := list instruction.
@@ -78,6 +81,18 @@ Definition load_field (f: field) (e: block) (m: mem) : option val :=
   | (mc, ofs) => Mem.load mc m e ofs
   end.
 
+Definition cond_field (cond: condition) : field :=
+  match cond with
+  | Sge _ | Sle _ => e_sport
+  | Dge _ | Dle _ => e_dport
+  end.
+
+Definition eval_cond (cond: condition) (v: int) : bool :=
+  match cond with
+  | Sge p | Dge p => Int.cmpu Cge v p
+  | Sle p | Dle p => Int.cmpu Cle v p
+  end.
+
 Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | ST_Accept : forall f e m,
     step ge (State nil f e m) E0 (Returnstate Int.one m)
@@ -87,28 +102,10 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
     step ge (State (Jmp Reject :: r) f e m) E0 (Returnstate Int.zero m)
   | ST_Jmp_Loc : forall r f e m n,
     step ge (State (Jmp (Loc n) :: r) f e m) E0 (State (skipn n r) f e m)
-  | ST_Sge : forall r f e m p sp n,
-    load_field e_sport e m = Some (Vint sp) ->
-    let r' := if Int.cmpu Cge sp p then r else Jmp n :: r in
-    step ge (State (Sge p n :: r) f e m) E0 (State r' f e m)
-  | ST_Sle : forall r f e m p sp n,
-    load_field e_sport e m = Some (Vint sp) ->
-    let r' := if Int.cmpu Cle sp p then r else Jmp n :: r in
-    step ge (State (Sle p n :: r) f e m) E0 (State r' f e m)
-  | ST_Dge : forall r f e m p dp n,
-    load_field e_dport e m = Some (Vint dp) ->
-    let r' := if Int.cmpu Cge dp p then r else Jmp n :: r in
-    step ge (State (Dge p n :: r) f e m) E0 (State r' f e m)
-  | ST_Dle : forall r f e m p dp n,
-    load_field e_dport e m = Some (Vint dp) ->
-    let r' := if Int.cmpu Cle dp p then r else Jmp n :: r in
-    step ge (State (Dle p n :: r) f e m) E0 (State r' f e m)
-  | ST_Scond : forall r f e m hc n,
-    let r' := if checkhc hc e then r else Jmp n :: r in
-    step ge (State (Scond hc n :: r) f e m) E0 (State r' f e m)
-  | ST_Dcond : forall r f e m hc n,
-    let r' := if checkhc hc e then r else Jmp n :: r in
-    step ge (State (Dcond hc n :: r) f e m) E0 (State r' f e m)
+  | ST_Cjmp : forall r f e m v cond loc,
+    load_field (cond_field cond) e m = Some (Vint v) ->
+    let r' := if eval_cond cond v then r else (Jmp loc :: r) in
+    step ge (State (Cjmp cond loc :: r) f e m) E0 (State r' f e m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=
