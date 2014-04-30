@@ -134,7 +134,6 @@ static int install_filter(void)
                 	offsetof(struct seccomp_data, nr)),
         	SC_DENY(open, EACCES),
         	SC_ALLOW(getpid),
-        	SC_ALLOW(gettimeofday),
         	SC_ALLOW(clock_gettime),
 #ifdef __NR_time /* not defined on EABI ARM */
         	SC_ALLOW(time),
@@ -166,6 +165,7 @@ static int install_filter(void)
 #else
         	SC_ALLOW(sigprocmask),
 #endif
+        	SC_ALLOW(gettimeofday),
         	BPF_STMT(BPF_RET+BPF_K, SECCOMP_FILTER_FAIL),
 	};
 	struct sock_fprog prog = {
