@@ -182,6 +182,45 @@ Proof.
   crush.
 Qed.
 
+Lemma transl_instr_no_labels:
+  forall i n c l k,
+  transl_instr i n = c ->
+  find_label l c k = None.
+Proof.
+  destruct i; crush.
+  unfold transl_jmp.
+  destruct l; auto; auto.
+  destruct l; auto; auto.
+Qed.
+
+Lemma transl_code_label_prefix:
+  forall b c prefix x c' k,
+  transl_code b = OK c ->
+  transl_code (prefix ++ (x :: b)) = OK c' ->
+  find_label (P_of_succ_nat (length b)) c' k = Some (c, k).
+Proof.
+  induction prefix.
+  - intros.
+    monadInv H0.
+    unfold find_label; fold find_label.
+    rewrite transl_instr_no_labels
+      with (i:=x) (n:=(S (length b))); auto.
+    unfold ident_eq.
+    destruct (peq (Pos.of_succ_nat (length b))
+                  (Pos.of_succ_nat (length b))); crush.
+  - intros.
+    monadInv H0.
+    unfold find_label; fold find_label.
+    rewrite transl_instr_no_labels
+      with (i:=a) (n:=(S (length (prefix ++ x :: b))));
+      auto.
+    unfold ident_eq.
+    destruct (peq (Pos.of_succ_nat (length b))
+                  (Pos.of_succ_nat (length (prefix ++ x :: b)))).
+    + rewrite app_length in e; apply psucc_ne in e; crush.
+    + apply IHprefix with (x:=x); auto.
+Qed.
+
 Lemma transl_code_label:
   forall b c b' c' k,
   transl_code b = OK c ->
@@ -190,7 +229,11 @@ Lemma transl_code_label:
   list_length_z b' < list_length_z b ->
   find_label (P_of_succ_nat (length b')) c k = Some (c', k).
 Proof.
-Admitted.
+  intros.
+  destruct (is_tail_strict_prefix instruction b' b); auto.
+  destruct H3.
+  apply transl_code_label_prefix with (prefix:=x0) (x:=x); crush.
+Qed.
 
 Lemma cond_match:
   forall cond x,
