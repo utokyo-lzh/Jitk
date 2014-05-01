@@ -138,7 +138,20 @@ Lemma transl_code_suffix:
   exists c',
   transl_code b' = OK c'.
 Proof.
-Admitted.
+  intros.
+  destruct (is_tail_exists_prefix _ b' b); auto.
+  clear H0.
+  generalize H; clear H.
+  generalize H1; clear H1.
+  generalize c; clear c.
+  generalize b; clear b.
+  induction x.
+  - intros; exists c; crush.
+  - intros.
+    rewrite H1 in H; clear H1.
+    monadInv H.
+    apply IHx with (b:=(x++b')) (c:=x0); auto.
+Qed.
 
 Lemma length_cons:
   forall A:Type,
