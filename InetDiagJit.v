@@ -15,7 +15,7 @@ Definition reg_entry: ident := 1%positive.
 Definition transl_load_field (f: field) : Cminor.expr :=
   match f with
   | (ty, offset) =>
-    let addr := Ebinop Oadd (Evar reg_entry) (Econst (Ointconst (Int.repr offset))) in
+    let addr := Ebinop Oadd (Evar reg_entry) (Econst (Ointconst offset)) in
     Eload ty addr
   end.
 

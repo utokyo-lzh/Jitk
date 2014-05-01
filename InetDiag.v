@@ -67,18 +67,18 @@ Inductive state : Type :=
     state
   .
 
-Definition field : Type := (memory_chunk * Z)%type.
+Definition field : Type := (memory_chunk * int)%type.
 
-Definition e_saddr     : field := (Mint32, 0).
-Definition e_daddr     : field := (Mint32, 4).
-Definition e_sport     : field := (Mint16unsigned, 8).
-Definition e_dport     : field := (Mint16unsigned, 10).
-Definition e_family    : field := (Mint16unsigned, 12).
-Definition e_userlocks : field := (Mint16unsigned, 14).
+Definition e_saddr     : field := (Mint32, Int.repr 0).
+Definition e_daddr     : field := (Mint32, Int.repr 4).
+Definition e_sport     : field := (Mint16unsigned, Int.repr 8).
+Definition e_dport     : field := (Mint16unsigned, Int.repr 10).
+Definition e_family    : field := (Mint16unsigned, Int.repr 12).
+Definition e_userlocks : field := (Mint16unsigned, Int.repr 14).
 
 Definition load_field (f: field) (e: block) (m: mem) : option val :=
   match f with
-  | (mc, ofs) => Mem.load mc m e ofs
+  | (mc, ofs) => Mem.load mc m e (Int.unsigned ofs)
   end.
 
 Definition cond_field (cond: condition) : field :=

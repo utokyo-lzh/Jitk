@@ -235,6 +235,34 @@ Proof.
   apply transl_code_label_prefix with (prefix:=x0) (x:=x); crush.
 Qed.
 
+Lemma load_field_match:
+  forall cond v,
+  forall c f e m,
+  forall tf ts tk tsp te tm,
+  load_field (cond_field cond) e m = Some (Vint v) ->
+  match_states (InetDiag.State c f e m) (Cminor.State tf ts tk tsp te tm) ->
+  eval_expr tge tsp te tm (transl_load_field (cond_field cond)) (Vint v).
+Proof.
+  intros.
+  inv H0.
+  destruct (cond_field cond).
+  unfold transl_load_field.
+  unfold load_field in H.
+  apply eval_Eload with (vaddr:=Vptr e i).
+  apply eval_Ebinop with (v1:=Vptr e Int.zero) (v2:=Vint i).
+  constructor; auto.
+  constructor; auto.
+  simpl. rewrite Int.add_zero_l.  auto.
+  unfold Mem.loadv.
+
+  destruct (Mem.load_inj inject_id m tm' m0 e (Int.unsigned i) e 0 (Vint v)).
+  exact MINJ. exact H. crush.
+  destruct H0; rewrite Z.add_0_r in H0.
+
+  rewrite Mem.load_free_2 with (m2:=tm') (bf:=b) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x).
+  inversion H1. auto. auto. auto.
+Qed.
+
 Lemma cond_match:
   forall cond x,
   forall c f e m,
@@ -243,7 +271,78 @@ Lemma cond_match:
   match_states (InetDiag.State c f e m) (Cminor.State tf ts tk tsp te tm) ->
   exists v, eval_expr tge tsp te tm (transl_cond cond) v /\ Val.bool_of_val v (eval_cond cond x).
 Proof.
-Admitted.
+  intros.
+  inv H.
+  case_eq (eval_cond cond x).
+
+  - intros; destruct cond.
+
+    exists Vtrue; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vtrue; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vtrue; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vtrue; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+  - intros; destruct cond.
+
+    exists Vfalse; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vfalse; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vfalse; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+
+    exists Vfalse; split.
+    unfold transl_cond.
+    apply eval_Ebinop with (v1:=Vint x) (v2:=Vint p).
+    apply load_field_match with (c:=c) (f:=f) (e:=e) (m:=m) (tf:=tf) (ts:=ts) (tk:=tk); auto.
+    constructor; constructor.
+    unfold eval_cond in H. unfold eval_binop. unfold Val.cmpu.
+    unfold Val.cmpu_bool. unfold Int.cmpu. crush. constructor.
+Qed.
 
 Lemma Is_true_eq_false : forall x:bool, ~ Is_true x -> x = false.
 Proof.
