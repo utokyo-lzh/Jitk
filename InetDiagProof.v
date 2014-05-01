@@ -140,18 +140,34 @@ Lemma transl_code_suffix:
 Proof.
 Admitted.
 
+Lemma length_cons:
+  forall A:Type,
+  forall r:list A,
+  forall x:A,
+  length (x :: r) = (length r + 1)%nat.
+Proof.
+  crush.
+Qed.
+
 Lemma length_skipn_pos':
   forall A:Type,
   forall r:list A,
   forall n:nat,
+  (n <= length r)%nat ->
   (Pos.of_succ_nat
      (match n with
       | O => S (length r)
       | S l => length r - l
       end - 1)) = Pos.of_succ_nat (length (skipn n r)).
 Proof.
-destruct n; crush.
-Admitted.
+  destruct n; crush.
+  induction r.
+  auto.
+  rewrite -> length_skipn.
+  rewrite length_cons.
+  crush.
+  crush.
+Qed.
 
 Lemma transl_code_label:
   forall b c b' c' k,
@@ -231,7 +247,7 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
 
     simpl.
-    rewrite length_skipn_pos'.
+    rewrite length_skipn_pos'; auto.
     apply transl_code_label with (b:=f); crush.
 
     apply is_tail_trans with (l2:=r);
@@ -320,14 +336,14 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
 
     destruct (cond_match cond v (Cjmp cond (Loc n) :: r) f e m tf_orig ts_orig tk (Vptr b Int.zero) te tm); crush.
-    apply step_ifthenelse with (v:=x2); [ auto | exact H4 ].
+    apply step_ifthenelse with (v:=x2); [ auto | exact H5 ].
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
-    apply Is_true_eq_false in H0.
-    rewrite -> H0.
+    apply Is_true_eq_false in H1.
+    rewrite -> H1.
     constructor; crush.
 
-    rewrite length_skipn_pos'.
+    rewrite length_skipn_pos'; auto.
     apply transl_code_label with (b:=f); crush.
 
     apply is_tail_trans with (l2:=r);
