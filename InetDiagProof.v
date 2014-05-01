@@ -175,7 +175,8 @@ Admitted.
 
 Lemma Is_true_eq_false : forall x:bool, ~ Is_true x -> x = false.
 Proof.
-Admitted.
+  destruct x; crush.
+Qed.
 
 Lemma transl_step:
   forall S1 t S2, step ge S1 t S2 ->
