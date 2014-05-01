@@ -453,3 +453,13 @@ Proof.
   - crush.
 Qed.
 
+Lemma psucc_ne:
+  forall a b,
+  a <> b -> P_of_succ_nat a <> P_of_succ_nat b.
+Proof.
+  unfold not.
+  intros.
+  apply H.
+  apply SuccNat2Pos.inj.
+  auto.
+Qed.
