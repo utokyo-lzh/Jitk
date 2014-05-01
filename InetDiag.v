@@ -102,10 +102,18 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
     step ge (State (Jmp Reject :: r) f e m) E0 (Returnstate Int.zero m)
   | ST_Jmp_Loc : forall r f e m n,
     step ge (State (Jmp (Loc n) :: r) f e m) E0 (State (skipn n r) f e m)
-  | ST_Cjmp : forall r f e m v cond loc,
+  | ST_Cjmp_true : forall r f e m v cond loc,
     load_field (cond_field cond) e m = Some (Vint v) ->
-    let r' := if eval_cond cond v then r else (Jmp loc :: r) in
-    step ge (State (Cjmp cond loc :: r) f e m) E0 (State r' f e m)
+    Is_true (eval_cond cond v) ->
+    step ge (State (Cjmp cond loc :: r) f e m) E0 (State r f e m)
+  | ST_Cjmp_Reject : forall r f e m v cond,
+    load_field (cond_field cond) e m = Some (Vint v) ->
+    ~ Is_true (eval_cond cond v) ->
+    step ge (State (Cjmp cond Reject :: r) f e m) E0 (Returnstate Int.zero m)
+  | ST_Cjmp_Loc : forall r f e m v cond n,
+    load_field (cond_field cond) e m = Some (Vint v) ->
+    ~ Is_true (eval_cond cond v) ->
+    step ge (State (Cjmp cond (Loc n) :: r) f e m) E0 (State (skipn n r) f e m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=

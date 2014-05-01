@@ -163,6 +163,20 @@ Lemma transl_code_label:
 Proof.
 Admitted.
 
+Lemma cond_match:
+  forall cond x,
+  forall c f e m,
+  forall tf ts tk tsp te tm,
+  load_field (cond_field cond) e m = Some (Vint x) ->
+  match_states (InetDiag.State c f e m) (Cminor.State tf ts tk tsp te tm) ->
+  exists v, eval_expr tge tsp te tm (transl_cond cond) v /\ Val.bool_of_val v (eval_cond cond x).
+Proof.
+Admitted.
+
+Lemma Is_true_eq_false : forall x:bool, ~ Is_true x -> x = false.
+Proof.
+Admitted.
+
 Lemma transl_step:
   forall S1 t S2, step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -180,6 +194,7 @@ Proof.
     exact MFREE.
     constructor; auto.
 
+  (* Nop *)
   - monadInv TC.
     exists (Cminor.State tf x tk (Vptr b Int.zero) te tm); split.
     eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
@@ -235,7 +250,102 @@ Proof.
       [ apply is_tail_skipn
       | apply is_tail_trans with (l2:=Jmp (Loc n) :: r); crush ].
 
-Admitted.
+  (* Cjmp true _ *)
+  - remember tf as tf_orig; generalize Heqtf_orig; generalize tf_orig.
+    remember ts as ts_orig; generalize Heqts_orig; generalize ts_orig.
+    monadInv TC.
+    monadInv TF.
+    intros; rewrite Heqtf_orig; rewrite Heqts_orig.
+
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+
+    destruct (cond_match cond v (Cjmp cond loc :: r) f e m tf_orig ts_orig tk (Vptr b Int.zero) te tm); crush.
+    apply step_ifthenelse with (v:=x1); [ auto | exact H3 ].
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    apply Is_true_eq_true in H0.
+    rewrite -> H0.
+    constructor.
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    constructor.
+    apply star_refl.
+    econstructor; crush.
+    unfold transl_function.
+    crush.
+    apply is_tail_cons_left with (i:=Cjmp cond loc); assumption.
+
+  (* Cjmp false Reject *)
+  - remember tf as tf_orig; generalize Heqtf_orig; generalize tf_orig.
+    remember ts as ts_orig; generalize Heqts_orig; generalize ts_orig.
+    monadInv TC.
+    monadInv TF.
+    intros; rewrite Heqtf_orig; rewrite Heqts_orig.
+
+    exists (Cminor.Returnstate (Vint Int.zero) (call_cont tk) tm').
+    split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+
+    destruct (cond_match cond v (Cjmp cond Reject :: r) f e m tf_orig ts_orig tk (Vptr b Int.zero) te tm); crush.
+    apply step_ifthenelse with (v:=x1); [ auto | exact H3 ].
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    apply Is_true_eq_false in H0.
+    rewrite -> H0.
+    constructor; crush.
+    constructor.
+    constructor.
+    apply star_refl.
+    constructor; auto.
+
+    (* Cjmp false (Loc n) *)
+  - remember tf as tf_orig; generalize Heqtf_orig; generalize tf_orig.
+    remember ts as ts_orig; generalize Heqts_orig; generalize ts_orig.
+    monadInv TC.
+    monadInv TF.
+    intros; rewrite Heqtf_orig; rewrite Heqts_orig.
+
+    destruct (transl_code_suffix r x (skipn n r));
+        [ auto | apply is_tail_skipn | idtac ].
+
+    econstructor; split.
+
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+
+    destruct (cond_match cond v (Cjmp cond (Loc n) :: r) f e m tf_orig ts_orig tk (Vptr b Int.zero) te tm); crush.
+    apply step_ifthenelse with (v:=x2); [ auto | exact H4 ].
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    apply Is_true_eq_false in H0.
+    rewrite -> H0.
+    constructor; crush.
+
+    rewrite length_skipn_pos'.
+    apply transl_code_label with (b:=f); crush.
+
+    apply is_tail_trans with (l2:=r);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Cjmp cond (Loc n) :: r); crush ].
+
+    apply Z.le_lt_trans with (m:=(list_length_z r));
+      [ apply list_length_z_skipn
+      | apply list_length_z_istail with (v:=Cjmp cond (Loc n)); auto ].
+
+    apply star_refl.
+    econstructor; crush.
+    unfold transl_function.
+    crush.
+
+    apply is_tail_trans with (l2:=r);
+      [ apply is_tail_skipn
+      | apply is_tail_trans with (l2:=Cjmp cond (Loc n) :: r); crush ].
+Qed.
 
 Theorem transl_program_correct:
   forward_simulation (semantics prog) (cminorp_semantics tprog).
