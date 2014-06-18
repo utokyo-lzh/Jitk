@@ -1,7 +1,7 @@
 #include <vcc.h>
 #include <stddef.h>
 
-int bcmp(const unsigned char *s1, const unsigned char *s2, size_t n)
+int hashcmp(const unsigned char *s1, const unsigned char *s2, size_t n)
   _(requires \thread_local_array(s1, n))
   _(requires \thread_local_array(s2, n))
   _(ensures \result == 0 <==>
