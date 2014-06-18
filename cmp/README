@@ -1,0 +1,6 @@
+coq
+- symlink `compcert` in this directory.
+- make.
+
+vcc
+- try vcc_*.c

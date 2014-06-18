@@ -1,0 +1,3 @@
+CpdtTactics.vo CpdtTactics.glob CpdtTactics.v.beautified: CpdtTactics.v compcert/common/Errors.vo
+cmp.vo cmp.glob cmp.v.beautified: cmp.v compcert/exportclight/Clightdefs.vo
+verif_cmp.vo verif_cmp.glob verif_cmp.v.beautified: verif_cmp.v compcert/cfrontend/Clight.vo compcert/common/Events.vo compcert/common/Memory.vo compcert/common/Smallstep.vo compcert/common/Values.vo compcert/lib/Coqlib.vo compcert/lib/Integers.vo ./Compare.vo CpdtTactics.vo
