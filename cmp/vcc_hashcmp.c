@@ -10,8 +10,8 @@ int hashcmp(const unsigned char *s1, const unsigned char *s2, size_t n)
 	size_t i;
 	int diff = 0;
 
-	_(assert :bv \forall int a; int b; (a ^ b) == 0 <==> (a == b))
-	_(assert :bv \forall int a; int b; (a | b) == 0 <==> (a == 0 && b == 0))
+	_(assert {:bv} \forall int a; int b; (a ^ b) == 0 <==> (a == b))
+	_(assert {:bv} \forall int a; int b; (a | b) == 0 <==> (a == 0 && b == 0))
 
 	for (i = 0; i < n; ++i)
 	  _(invariant 0 <= i && i <= n)
