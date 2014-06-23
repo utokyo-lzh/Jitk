@@ -1,6 +1,6 @@
 include compcert/Makefile.config
 
-COQINC = -I $(ARCH) -R compcert compcert -R c ''
+COQINC = -I . -I $(ARCH) -R compcert compcert -R c ''
 COQEXE = coqtop $(COQINC) -batch -load-vernac-source
 COQC = coqc $(COQINC)
 COQDEP = coqdep $(COQINC)
