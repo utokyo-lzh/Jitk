@@ -138,12 +138,8 @@ Lemma transl_instr_no_labels:
   transl_instr i n = OK c ->
   find_label l c k = None.
 Proof.
-  destruct i; crush;
-    try destruct (transl_alu_shift a);
-    try destruct (n - Int.unsigned i);
-    try destruct (n - Byte.unsigned i);
-    try destruct (n - Byte.unsigned i0);
-    crush.
+  intros.
+  destruct i; crush.
 Qed.
 
 Lemma transl_code_label_prefix:
