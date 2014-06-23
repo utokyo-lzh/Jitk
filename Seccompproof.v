@@ -179,12 +179,7 @@ Lemma length_pos:
 Proof.
   intros.
   rewrite list_length_nat_z in H.
-  apply Pos.ltb_lt.
-  rewrite Pos2Z.inj_ltb.
-  apply Z.ltb_lt.
-  apply (Z.lt_le_trans _ _ _ H).
-  rewrite Zpos_P_of_succ_nat.
-  crush.
+  xomega.
 Qed.
 
 Lemma length_skipn_pos:
