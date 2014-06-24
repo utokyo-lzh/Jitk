@@ -361,10 +361,9 @@ Lemma is_tail_exists_prefix:
   exists p,
   b = p ++ a.
 Proof.
-  intros.
-  induction H.
+  induction 1.
   - exists nil; auto.
-  - destruct IHis_tail; exists (i :: x); crush.
+  - inv IHis_tail. exists (i :: x). auto.
 Qed.
 
 Lemma is_tail_prefix:
