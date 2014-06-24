@@ -192,30 +192,11 @@ Lemma length_skipn_pos:
 Proof.
   intros.
   rewrite list_length_nat_z in H.
-  rewrite length_skipn.
+  rewrite length_skipn; try xomega.
   repeat rewrite Pos.of_nat_succ.
   rewrite <- (Pos2Nat.id p) at 1.
-  rewrite <- Nat2Pos.inj_sub.
-  rewrite Nat2Pos.inj_iff.
-  rewrite minus_Sn_m.
-  auto.
-  rewrite Nat2Z.inj_le.
-  rewrite <- Z2Nat.inj_pos.
-  rewrite Z2Nat.id.
-  crush.
-  crush.
-  apply NPeano.Nat.sub_gt.
-  rewrite Nat2Z.inj_lt.
-  rewrite positive_nat_Z.
-  rewrite Nat2Z.inj_succ.
-  crush.
-  crush.
-  elim (Pos2Nat.is_pos p); crush.
-  rewrite Nat2Z.inj_le.
-  rewrite <- Z2Nat.inj_pos.
-  rewrite Z2Nat.id.
-  crush.
-  crush.
+  rewrite <- Nat2Pos.inj_sub; try xomega.
+  rewrite Nat2Pos.inj_iff; xomega.
 Qed.
 
 Lemma length_skipn_pos':
