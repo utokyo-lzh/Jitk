@@ -200,7 +200,7 @@ Proof.
     apply star_refl.
 
     apply match_state with (m1:=m1); auto.
-    apply is_tail_suffix with (a:=r); auto.
+    apply is_tail_cons_left with (i:=r); auto.
 
   (* exec_default *)
   - inv TC.
