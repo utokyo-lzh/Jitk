@@ -68,7 +68,7 @@ c/%.v: c/%.c
 
 .PRECIOUS: c/%.v tests/test_%.native
 
-depend: $(FILES)
+depend: $(FILES) $(PROOFFILES)
 	$(COQDEP) $^ \
 	> .depend
 
