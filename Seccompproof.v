@@ -245,10 +245,9 @@ Proof.
   generalize H1; clear H1.
   generalize c; clear c.
   generalize b; clear b.
-  induction x.
-  - intros; exists c; crush.
-  - intros.
-    rewrite H1 in H; clear H1.
+  induction x; intros.
+  - exists c; crush.
+  - inv H1.
     monadInv H.
     apply IHx with (b:=(x++b')) (c:=x0); auto.
 Qed.
