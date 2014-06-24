@@ -393,28 +393,36 @@ Proof.
   induction n; [ crush | destruct l; crush ].
 Qed.
 
+Lemma list_length_z_istail:
+  forall A:Type,
+  forall l1 l2:list A,
+  is_tail l1 l2 -> list_length_z l1 <= list_length_z l2.
+Proof.
+  induction 0; crush; inv H; crush; rewrite list_length_z_cons; omega.
+Qed.
+
 Lemma list_length_z_skipn:
   forall A:Type,
   forall x,
   forall l:list A,
   list_length_z (skipn x l) <= list_length_z l.
 Proof.
-  induction x.
-  - crush.
-  - induction l.
-    + crush.
-    + rewrite list_length_z_cons.
-      crush.
+  intros.
+  apply list_length_z_istail.
+  apply is_tail_skipn.
 Qed.
 
-Lemma list_length_z_istail:
+Lemma list_length_z_istail_strict:
   forall A:Type,
   forall v:A,
   forall b l:list A,
   is_tail (v :: b) l ->
   list_length_z b < list_length_z l.
 Proof.
-  induction 0; crush; inv H; crush; rewrite list_length_z_cons; omega.
+  intros.
+  assert (list_length_z (v :: b) <= list_length_z l).
+  - apply list_length_z_istail. auto.
+  - rewrite list_length_z_cons in *. omega.
 Qed.
 
 Lemma psucc_ne:

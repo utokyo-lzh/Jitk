@@ -655,7 +655,7 @@ Proof.
 
     apply Z.le_lt_trans with (m:=(list_length_z b));
       [ apply list_length_z_skipn
-      | apply list_length_z_istail with (v:=(Sjmp_ja k)); auto ].
+      | apply list_length_z_istail_strict with (v:=(Sjmp_ja k)); auto ].
 
     apply star_refl.
 
@@ -701,7 +701,7 @@ Proof.
 
     apply Z.le_lt_trans with (m:=(list_length_z b));
       [ apply list_length_z_skipn
-      | apply list_length_z_istail with (v:=(Sjmp_jc cond jt jf)); auto ].
+      | apply list_length_z_istail_strict with (v:=(Sjmp_jc cond jt jf)); auto ].
 
     (* false branch *)
     rewrite length_skipn_pos' ; [ idtac | destruct (Byte.unsigned_range jf); auto ].
@@ -715,7 +715,7 @@ Proof.
 
     apply Z.le_lt_trans with (m:=(list_length_z b));
       [ apply list_length_z_skipn
-      | apply list_length_z_istail with (v:=(Sjmp_jc cond jt jf)); auto ].
+      | apply list_length_z_istail_strict with (v:=(Sjmp_jc cond jt jf)); auto ].
 
     apply star_refl.
 

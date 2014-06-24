@@ -411,7 +411,7 @@ Proof.
 
     apply Z.le_lt_trans with (m:=(list_length_z r));
       [ apply list_length_z_skipn
-      | apply list_length_z_istail with (v:=Jmp (Loc n)); auto ].
+      | apply list_length_z_istail_strict with (v:=Jmp (Loc n)); auto ].
 
     apply star_refl.
     econstructor; crush.
@@ -507,7 +507,7 @@ Proof.
 
     apply Z.le_lt_trans with (m:=(list_length_z r));
       [ apply list_length_z_skipn
-      | apply list_length_z_istail with (v:=Cjmp cond (Loc n)); auto ].
+      | apply list_length_z_istail_strict with (v:=Cjmp cond (Loc n)); auto ].
 
     apply star_refl.
     econstructor; crush.
