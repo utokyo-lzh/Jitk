@@ -26,7 +26,8 @@ FILES = CpdtTactics.v \
 	MiscLemmas.v \
 	InetDiagConf.v \
 	InetDiag.v \
-	InetDiagJit.v
+	InetDiagJit.v \
+	Stackuse.v
 
 PROOFFILES = \
 	HLproof.v \
