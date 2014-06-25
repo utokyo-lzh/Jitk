@@ -28,7 +28,7 @@ Extract Constant Seccompconf.seccomp_data =>
 Extract Constant InetDiagConf.entry_input =>
   "[]".  (* hopefully unused *)
 
-Extract Constant Seccompjit.seccomp_memwords =>
+Extract Constant Seccompconf.seccomp_memwords =>
   "Seccompaux.seccomp_memwords".
 
 Extract Constant HLspec.SECCOMP_RET_KILL  => "Seccompaux.seccomp_ret_kill".

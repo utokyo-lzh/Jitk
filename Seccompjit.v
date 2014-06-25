@@ -8,12 +8,9 @@ Require Import Seccomp.
 Require Import Seccompconf.
 Import ListNotations.
 
-Parameter seccomp_memwords: Z.
-
 Definition reg_pkt: ident := 1%positive.
 Definition reg_a:   ident := 2%positive.
 Definition reg_x:   ident := 3%positive.
-Definition reg_mem: ident := 4%positive.
 
 Open Local Scope error_monad_scope.
 
@@ -114,6 +111,10 @@ Definition transl_instr (instr: Seccomp.instruction)
     OK (Sassign reg_a (Econst (Ointconst (Int.repr sizeof_seccomp_data))))
   | Sldx_w_len =>
     OK (Sassign reg_x (Econst (Ointconst (Int.repr sizeof_seccomp_data))))
+  | Sld_mem k =>
+    let ofs := Int.mul (Int.repr 4) k in
+    let addr := Econst (Oaddrstack ofs) in
+    OK (Sassign reg_a (Eload Mint32 addr))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>
@@ -131,19 +132,28 @@ Fixpoint transl_code (c: Seccomp.code) : res Cminor.stmt :=
     OK (Sseq h (Slabel (P_of_succ_nat n) t))
   end.
 
+(*
+Fixpoint memzero (n: nat) :=
+  let addr := Econst (Oaddrstack (Int.repr (4 * (Z.of_nat n)))) in
+  let v := Econst (Ointconst Int.zero) in
+  let s := Sstore Mint32 addr v in
+  match n with
+  | O => s
+  | S n' => Sseq (memzero n') s
+  end.
+*)
+
 Definition transl_funbody (f: Seccomp.function) : res Cminor.stmt :=
   do b <- transl_code f;
-  (* FIXME: memset(mem, 0, sizeof(mem)) *)
   let init_a := (Sassign reg_a (Econst (Ointconst Int.zero))) in
   let init_x := (Sassign reg_x (Econst (Ointconst Int.zero))) in
-  let init_mem := (Sassign reg_mem (Econst (Oaddrstack Int.zero))) in
-  OK (Sseq init_a (Sseq init_x (Sseq init_mem b))).
+  OK (Sseq init_a (Sseq init_x b)).
 
 Definition transl_function (f: Seccomp.function) : res Cminor.function :=
   do body <- transl_funbody f;
   let params := [ reg_pkt ] in
-  let vars := [ reg_a; reg_x; reg_mem ] in
-  let stackspace := (Zmult seccomp_memwords 4) in
+  let vars := [ reg_a; reg_x ] in
+  let stackspace := 4 * seccomp_memwords in
   OK (Cminor.mkfunction signature_main params vars stackspace body).
 
 Definition transl_fundef (fd: Seccomp.fundef) :=
@@ -164,8 +174,8 @@ Definition wrap_funbody (b: Cminor.stmt) : Cminor.stmt :=
 
 Definition wrap_function (f: Cminor.function) : Cminor.function :=
   let sig := mksignature nil (Some Tint) cc_default in
-  let vars := [ reg_a; reg_x; reg_mem; reg_pkt ] in
-  let stackspace := (Zmult seccomp_memwords 4) in
+  let vars := [ reg_a; reg_x; reg_pkt ] in
+  let stackspace := 4 * seccomp_memwords in
   let body := wrap_funbody f.(fn_body) in
   Cminor.mkfunction sig nil vars stackspace body.
 

@@ -65,16 +65,17 @@ Qed.
 
 Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
   | match_state:
-      forall a x sm f c p m tf ts tk tsp te tm b tm'
+      forall a x sm f c p m tf ts tk tsp te tm tb tm'
         (MP: Some (Vptr p Int.zero) = te!reg_pkt)
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
+        (MSM: forall i, list_nth_z sm i = Mem.load Mint32 tm tb (4 * i))
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
         (MK: call_cont tk = Kstop)
         (TAIL: is_tail c f)
-        (MSP: tsp = Vptr b Int.zero)
-        (MFREE: Mem.free tm b 0 tf.(fn_stackspace) = Some tm')
+        (MSP: tsp = Vptr tb Int.zero)
+        (MFREE: Mem.free tm tb 0 tf.(fn_stackspace) = Some tm')
         (MINJ: mem_inj m tm'),
       match_states (Seccomp.State a x sm f c p m)
                    (Cminor.State tf ts tk tsp te tm)
@@ -254,7 +255,7 @@ Qed.
 
 Ltac cond_match_binop H a i :=
   split;
-  [ simpl; simpl in H; 
+  [ simpl; simpl in H;
     try apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i);
     try constructor; auto;
     simpl;
@@ -294,6 +295,20 @@ Proof.
     | exists Vfalse; cond_match_binop H a x
     | exists Vzero; cond_match_binop H a x ].
 Qed.
+
+Lemma memword_offset:
+  forall k, (Int.unsigned k) < seccomp_memwords ->
+  Int.unsigned (Int.mul (Int.repr 4) k) = 4 * (Int.unsigned k).
+Proof.
+Admitted.
+
+Lemma mem_undef:
+  forall i n m1 m2 b,
+  Mem.alloc m1 0 (4 * n) = (m2, b) ->
+  list_nth_z (list_repeat (Z.to_nat n) Vundef) i =
+  Mem.load Mint32 m2 b (4 * i).
+Proof.
+Admitted.
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
@@ -663,7 +678,7 @@ Proof.
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
     destruct (cond_match cond a x sm f (Sjmp_jc cond jt jf :: b) p m
-                              tf_orig ts_orig tk (Vptr b0 Int.zero) te tm); crush.
+                              tf_orig ts_orig tk (Vptr tb Int.zero) te tm); crush.
     apply step_ifthenelse with (v:=x3); [ auto | exact H3 ].
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
@@ -720,10 +735,10 @@ Proof.
     unfold Mem.loadv.
 
     destruct (Mem.load_inj inject_id m tm' Mint32 p (Int.unsigned k) p 0 (Vint a'')).
-    exact MINJ.  exact H1.  crush. 
+    exact MINJ.  exact H1.  crush.
     destruct H2; rewrite Z.add_0_r in H2.
 
-    rewrite Mem.load_free_2 with (m2:=tm') (bf:=b0) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x0).
+    rewrite Mem.load_free_2 with (m2:=tm') (bf:=tb) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x0).
     inversion H3.  auto.  auto.  auto.
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
@@ -766,6 +781,33 @@ Proof.
     exact MFREE.
     exact MINJ.
 
+  (* Sld_mem k *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply eval_Eload with (vaddr:=Vptr tb (Int.mul (Int.repr 4) k)).
+    constructor.
+    unfold eval_constant.
+    unfold Val.add.
+    rewrite Int.add_zero_l. auto.
+
+    unfold Mem.loadv.
+    rewrite memword_offset.
+    assert (Mem.load Mint32 tm tb (4 * (Int.unsigned k)) = list_nth_z sm (Int.unsigned k)).
+    rewrite MSM; auto.
+    rewrite H1.
+    exact H0.
+    exact H.
+
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Sld_mem k); assumption.
+    exact MFREE.
+    exact MINJ.
+
   (* Sret_a *)
   - monadInv TC.
     econstructor; split.
@@ -796,11 +838,8 @@ Proof.
 
     eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
     apply step_internal_function with
-      (m' := (fst (Mem.alloc tm 0 (seccomp_memwords * 4))))
-      (sp := (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))); auto.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor; constructor; constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      (m' := (fst (Mem.alloc tm 0 (4 * seccomp_memwords))))
+      (sp := (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))); auto.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor; constructor; constructor | idtac | auto ].
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
@@ -810,25 +849,31 @@ Proof.
     apply star_refl.
 
     destruct (Mem.range_perm_free
-      (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
-      (snd (Mem.alloc tm 0 (seccomp_memwords * 4))) 0 
-      (seccomp_memwords * 4)).
+      (fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
+      (snd (Mem.alloc tm 0 (4 * seccomp_memwords))) 0
+      (4 * seccomp_memwords)).
     unfold Mem.range_perm.
     intros.
     apply Mem.perm_alloc_2 with
       (m1 := tm)
       (lo := 0)
-      (hi := seccomp_memwords * 4); auto.
+      (hi := 4 * seccomp_memwords); auto.
 
     econstructor; auto.
+
+    intro. apply mem_undef with
+      (m1:=tm)
+      (m2:=fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
+      (b:=snd (Mem.alloc tm 0 (4 * seccomp_memwords))); auto.
+
     unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
     constructor.
     exact e.
 
     apply (free_alloc_inj tm
-      (fst (Mem.alloc tm 0 (seccomp_memwords * 4)))
-      (snd (Mem.alloc tm 0 (seccomp_memwords * 4)))
-      0 (seccomp_memwords * 4) _) in e.
+      (fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
+      (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))
+      0 (4 * seccomp_memwords) _) in e.
     apply (inj_trans m tm _); auto.
     auto.
 Qed.

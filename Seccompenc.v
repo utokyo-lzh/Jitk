@@ -65,6 +65,10 @@ Notation BPF_S_ALU_NEG    := 132.
 Notation BPF_S_LD_W_ABS   := 32.
 Notation BPF_S_LD_W_LEN   := 128.
 Notation BPF_S_LDX_W_LEN  := 129.
+Notation BPF_S_LD_MEM     := 96.
+Notation BPF_S_LDX_MEM    := 97.
+Notation BPF_S_ST         := 2.
+Notation BPF_S_STX        := 3.
 (* TODO: rest of BPF_LD series *)
 (* TODO: rest of BPF_LDX series *)
 (* TODO: BPF_MISC series *)
@@ -87,6 +91,15 @@ Definition encode_inst (i: Seccomp.instruction) : res encoding :=
     OK (mkencx BPF_S_LD_W_LEN Byte.zero Byte.zero Int.zero)
   | Sldx_w_len =>
     OK (mkencx BPF_S_LDX_W_LEN Byte.zero Byte.zero Int.zero)
+
+  | Sld_mem k =>
+    OK (mkencx BPF_S_LD_MEM Byte.zero Byte.zero k)
+  | Sldx_mem k =>
+    OK (mkencx BPF_S_LDX_MEM Byte.zero Byte.zero k)
+  | Sst k =>
+    OK (mkencx BPF_S_ST Byte.zero Byte.zero k)
+  | Sstx k =>
+    OK (mkencx BPF_S_STX Byte.zero Byte.zero k)
 
   | Salu_safe (Aaddimm k) =>
     OK (mkencx BPF_S_ALU_ADD_K Byte.zero Byte.zero k)
@@ -166,6 +179,11 @@ Definition decode_inst (e: encoding) : res Seccomp.instruction :=
   | BPF_S_LD_W_ABS   => OK (Sld_w_abs k)
   | BPF_S_LD_W_LEN   => OK (Sld_w_len)
   | BPF_S_LDX_W_LEN  => OK (Sldx_w_len)
+
+  | BPF_S_LD_MEM     => OK (Sld_mem k)
+  | BPF_S_LDX_MEM    => OK (Sldx_mem k)
+  | BPF_S_ST         => OK (Sst k)
+  | BPF_S_STX        => OK (Sstx k)
 
   | BPF_S_ALU_ADD_K  => OK (Salu_safe (Aaddimm k))
   | BPF_S_ALU_ADD_X  => OK (Salu_safe Aadd)

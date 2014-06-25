@@ -34,6 +34,12 @@ Fixpoint seccomp_func_filter (f: Seccomp.code) : bool :=
   | Sld_w_len :: rest => seccomp_func_filter rest
   | Sldx_w_len :: rest => seccomp_func_filter rest
 
+(*
+  | Sld_mem k :: rest =>
+    (Int.unsigned k <? seccomp_memwords) &&
+    (seccomp_func_filter rest)
+*)
+
   | Sret_k k :: rest => seccomp_func_filter rest
   | Sret_a :: rest => seccomp_func_filter rest
   | _ => false

@@ -108,7 +108,7 @@ Inductive state : Type :=
   | State:
     forall (a: int)              (**r accumulator *)
            (x: int)              (**r index register *)
-           (sm: ZMap.t int)      (**r scratch memory *)
+           (sm: list val)        (**r scratch memory *)
            (f: function)         (**r current function *)
            (c: code)             (**r current program point *)
            (p: block)            (**r input packet *)
@@ -225,6 +225,13 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let x' := Int.repr sizeof_seccomp_data in
       step ge (State a x sm f (Sldx_w_len :: b) p m)
         E0 (State a x' sm f b p m)
+  | exec_Sld_mem:
+      forall a a' k x sm f b p m,
+      let idx := Int.unsigned k in
+      idx < seccomp_memwords ->
+      list_nth_z sm idx = Some (Vint a') ->
+      step ge (State a x sm f (Sld_mem k :: b) p m)
+        E0 (State a' x sm f b p m)
   | exec_Sret_a:
       forall a x sm f b p m,
       step ge (State a x sm f (Sret_a :: b) p m)
@@ -236,7 +243,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_call:
       forall f p m,
       step ge (Callstate (Internal f) p m)
-        E0 (State Int.zero Int.zero (ZMap.init Int.zero) f f p m)
+        E0 (State Int.zero Int.zero (list_repeat (Z.to_nat seccomp_memwords) Vundef) f f p m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=

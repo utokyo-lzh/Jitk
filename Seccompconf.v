@@ -16,6 +16,9 @@ Axiom sizeof_mul4: sizeof_seccomp_data mod 4 = 0.
 Parameter seccomp_data : list byte.
 Axiom length_seccomp_data : list_length_z seccomp_data = sizeof_seccomp_data.
 
+Parameter seccomp_memwords : Z.
+Axiom seccomp_memwords_range: 0 < seccomp_memwords <= 1024.
+
 Definition Tpointer := Tint. (* assume 32-bit pointers *)
 
 Definition signature_main := mksignature [ Tpointer ] (Some Tint) cc_default.
