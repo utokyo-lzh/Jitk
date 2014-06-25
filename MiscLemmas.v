@@ -191,35 +191,6 @@ Proof.
   rewrite Zdiv_small; auto; apply Byte.unsigned_range.
 Qed.
 
-Lemma le_pow_pos:
-  forall a b x y,
-  (x < y)%positive ->
-  0 <= a -> 0 <= b ->
-  a < Z.pow_pos 2 x ->
-  b < Z.pow_pos 2 (y-x) ->
-  a + b * (Z.pow_pos 2 x) < Z.pow_pos 2 y.
-Proof.
-  intros.
-  assert (Z.pow_pos 2 y = (Z.pow_pos 2 x) + (Z.pow_pos 2 y - Z.pow_pos 2 x)); [ crush | idtac ].
-  rewrite H4.
-  apply Z.add_lt_le_mono; [ auto | idtac ].
-  assert (Z.pow_pos 2 y = (Z.pow_pos 2 (y - x)) * (Z.pow_pos 2 x)).
-  rewrite <- Zpower_pos_is_exp.
-  rewrite Pos.sub_add; crush.
-  rewrite H5.
-  rewrite <- (Z.mul_1_l (Z.pow_pos 2 x)) at 3.
-  rewrite <- Z.mul_sub_distr_r.
-  apply Zmult_lt_0_le_compat_r.
-  crush.
-  crush.
-Qed.
-
-Lemma wtf_32_8:
-  (32 - 8 - 8 - 8 = 8)%positive.
-Proof.
-  crush.
-Qed.
-
 Lemma quad_byte_range:
   forall b0 b1 b2 b3,
   0 <= Byte.unsigned b0 +
@@ -232,17 +203,7 @@ Proof.
   destruct (Byte.unsigned_range b1).
   destruct (Byte.unsigned_range b2).
   destruct (Byte.unsigned_range b3).
-
-  split; [ crush | idtac ].
-  assert (256 = Byte.modulus); [ crush | idtac ].
-  unfold Byte.modulus in *; unfold Byte.wordsize in *; unfold Wordsize_8.wordsize in *.
-  rewrite two_power_nat_equiv in *; simpl in *.
-  rewrite H7.
-
-  unfold Int.modulus; unfold Int.wordsize; unfold Wordsize_32.wordsize.
-  rewrite two_power_nat_equiv; simpl.
-  repeat apply le_pow_pos; zify; try rewrite wtf_32_8; try omega;
-    try apply Z.add_nonneg_nonneg; try rewrite H7; crush.
+  assert (Byte.modulus = 256); assert (Int.modulus = 4294967296); crush.
 Qed.
 
 Lemma decode_encode_int_4:
