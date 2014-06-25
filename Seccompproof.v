@@ -8,6 +8,7 @@ Require Import compcert.lib.Coqlib.
 Require Import compcert.lib.Integers.
 Require Import compcert.lib.Maps.
 Require Import Seccomp.
+Require Import Seccompconf.
 Require Import Seccompjit.
 Require Import Seccompspec.
 Require Import CpdtTactics.
@@ -300,7 +301,15 @@ Lemma memword_offset:
   forall k, (Int.unsigned k) < seccomp_memwords ->
   Int.unsigned (Int.mul (Int.repr 4) k) = 4 * (Int.unsigned k).
 Proof.
-Admitted.
+  intros.
+  apply umul_noovfl.
+  assert (Int.unsigned (Int.repr 4) = 4).
+  crush.
+  rewrite H0; clear H0.
+  assert (4 * seccomp_memwords < Int.modulus).
+  apply seccomp_memwords_noovfl.
+  omega.
+Qed.
 
 Lemma mem_undef:
   forall i n m1 m2 b,

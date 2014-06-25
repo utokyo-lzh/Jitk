@@ -432,3 +432,17 @@ Proof.
   intros.
   xomega.
 Qed.
+
+Lemma umul_noovfl:
+  forall x y, (Int.unsigned x) * (Int.unsigned y) < Int.modulus ->
+  Int.unsigned (Int.mul x y) = (Int.unsigned x) * (Int.unsigned y).
+Proof.
+  intros.
+  unfold Int.mul.
+  rewrite Int.unsigned_repr; auto.
+  unfold Int.max_unsigned.
+  split.
+  - assert (0 <= Int.unsigned x); assert (0 <= Int.unsigned y); try apply Int.unsigned_range.
+    crush.
+  - omega.
+Qed.

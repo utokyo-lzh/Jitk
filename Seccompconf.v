@@ -17,7 +17,8 @@ Parameter seccomp_data : list byte.
 Axiom length_seccomp_data : list_length_z seccomp_data = sizeof_seccomp_data.
 
 Parameter seccomp_memwords : Z.
-Axiom seccomp_memwords_range: 0 < seccomp_memwords <= 1024.
+Axiom seccomp_memwords_pos: 0 < seccomp_memwords.
+Axiom seccomp_memwords_noovfl: 4 * seccomp_memwords < Int.modulus.
 
 Definition Tpointer := Tint. (* assume 32-bit pointers *)
 
