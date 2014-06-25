@@ -137,13 +137,8 @@ Lemma skipn_more:
   (n < length c)%nat ->
   exists x:A, skipn n c = x :: skipn (S n) c.
 Proof.
-  induction n.
-  - destruct c.
-    + crush.
-    + intros.  exists a.  crush.
-  - destruct c.
-    + simpl.  crush.
-    + intros.  apply IHn.  crush.
+  induction n; destruct c; crush.
+  exists a. crush.
 Qed.
 
 Lemma skipn_nil:
