@@ -141,14 +141,6 @@ Proof.
   exists a. crush.
 Qed.
 
-Lemma skipn_nil:
-  forall A:Type,
-  forall n,
-  skipn n nil = @nil A.
-Proof.
-  induction n; crush.
-Qed.
-
 Lemma skipn_last:
   forall A:Type,
   forall n c,
@@ -160,9 +152,7 @@ Proof.
   - destruct c.
     + crush.
     + simpl.  intros.  remember (IHn c x H).  clear Heqe.  rewrite e.
-      destruct c.
-      * rewrite skipn_nil in H.  discriminate.
-      * crush.
+      destruct c; crush.
 Qed.
 
 Lemma mod0_lt_le:
