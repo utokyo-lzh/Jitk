@@ -70,7 +70,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (MP: Some (Vptr p Int.zero) = te!reg_pkt)
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
-        (MSM: forall i, list_nth_z sm i = Mem.load Mint32 tm tb (4 * i))
+        (MSM: forall i, 0 <= i < seccomp_memwords -> list_nth_z sm i = Mem.load Mint32 tm tb (4 * i))
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
         (MK: call_cont tk = Kstop)
@@ -313,10 +313,16 @@ Qed.
 
 Lemma mem_undef:
   forall i n m1 m2 b,
+  0 <= i < n ->
   Mem.alloc m1 0 (4 * n) = (m2, b) ->
   list_nth_z (list_repeat (Z.to_nat n) Vundef) i =
   Mem.load Mint32 m2 b (4 * i).
 Proof.
+  intros.
+  assert (list_nth_z (list_repeat (Z.to_nat n) Vundef) i = Some Vundef).
+  eapply Z_lt_induction with (x:=i); try omega.
+  intros.
+  
 Admitted.
 
 Lemma transl_step:
@@ -870,7 +876,7 @@ Proof.
 
     econstructor; auto.
 
-    intro. apply mem_undef with
+    intros. apply mem_undef with
       (m1:=tm)
       (m2:=fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
       (b:=snd (Mem.alloc tm 0 (4 * seccomp_memwords))); auto.
