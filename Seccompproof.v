@@ -311,19 +311,45 @@ Proof.
   omega.
 Qed.
 
-Lemma mem_undef:
-  forall i n m1 m2 b,
+Lemma list_nth_z_repeat:
+  forall (A:Type) (a:A) n i,
   0 <= i < n ->
+  list_nth_z (list_repeat (Z.to_nat n) a) i = Some a.
+Proof.
+  intros.
+  generalize H. generalize n.
+  eapply Z_lt_induction with (x:=i); try omega.
+  intros.
+  case_eq (Z.to_nat n0).
+  - intros. apply Nat2Z.inj_iff in H2. rewrite Z2Nat.id in H2; try omega. crush.
+  - intros. simpl.
+    destruct (zeq x 0); auto.
+    assert (n1 = Z.to_nat (Z.pred n0)).
+    rewrite Z2Nat.inj_pred. rewrite H2. auto.
+    rewrite H3.
+    apply H0; omega.
+Qed.
+
+Lemma mem_undef:
+  forall n m1 m2 b,
   Mem.alloc m1 0 (4 * n) = (m2, b) ->
+  forall i,
+  0 <= i < n ->
   list_nth_z (list_repeat (Z.to_nat n) Vundef) i =
   Mem.load Mint32 m2 b (4 * i).
 Proof.
   intros.
-  assert (list_nth_z (list_repeat (Z.to_nat n) Vundef) i = Some Vundef).
-  eapply Z_lt_induction with (x:=i); try omega.
-  intros.
-  
-Admitted.
+  rewrite list_nth_z_repeat; auto.
+  destruct Mem.valid_access_load with (m:=m2) (chunk:=Mint32) (b:=b) (ofs:=4*i).
+  - apply Mem.valid_access_freeable_any.
+    eapply Mem.valid_access_alloc_same; eauto.
+    omega.
+    unfold size_chunk. omega.
+    unfold align_chunk. apply Z.divide_factor_l.
+  - rewrite H1.
+    assert (x = Vundef); [|crush].
+    eapply Mem.load_alloc_same; eauto.
+Qed.
 
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
@@ -811,6 +837,7 @@ Proof.
     rewrite memword_offset.
     assert (Mem.load Mint32 tm tb (4 * (Int.unsigned k)) = list_nth_z sm (Int.unsigned k)).
     rewrite MSM; auto.
+    split. apply Int.unsigned_range. auto.
     rewrite H1.
     exact H0.
     exact H.
