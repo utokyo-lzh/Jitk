@@ -27,7 +27,8 @@ FILES = CpdtTactics.v \
 	InetDiagConf.v \
 	InetDiag.v \
 	InetDiagJit.v \
-	Stackuse.v
+	Stackuse.v \
+	Seccompall.v
 
 PROOFFILES = \
 	HLproof.v \

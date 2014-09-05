@@ -1,6 +1,6 @@
 open Seccomp
 open Seccompenc
-open Seccompfilter
+open Seccompall
 open AST
 open PrintCminor
 open Errors
@@ -56,14 +56,9 @@ let gen_file f =
   let bpf = decode s in
   let main = Seccompconf.main_id in
   let p = { prog_defs = [(main, Gfun (Internal bpf))]; prog_main = main } in
-  match Seccompfilter.transl_program_filter p with
-  | Errors.OK x ->
-    ( match Compiler.transf_cminor_program x with
-      | Errors.OK asm -> ( PrintAsm.print_program stdout asm; exit 0 )
-      | Errors.Error msg -> ( print_error stdout msg; exit 1 )
-    )
-  | Errors.Error msg ->
-    ( print_error stdout msg; exit 1 )
+  match Seccompall.bpf_to_asm p with
+  | Errors.OK asm -> ( PrintAsm.print_program stdout asm; exit 0 )
+  | Errors.Error msg -> ( print_error stdout msg; exit 1 )
 ;;
 
 let main () =

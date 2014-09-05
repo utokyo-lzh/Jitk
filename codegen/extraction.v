@@ -5,6 +5,8 @@ Require Import Seccompconf.
 Require Import Seccompjit.
 Require Import Seccompenc.
 Require Import Seccompfilter.
+Require Import Seccompall.
+Require Import Stackuse.
 Require Import HLspec.
 Require Import InetDiagConf.
 Require Import HLtrans.
@@ -37,12 +39,16 @@ Extract Constant HLspec.SECCOMP_RET_ERRNO => "Seccompaux.seccomp_ret_errno".
 Extract Constant HLspec.SECCOMP_RET_TRACE => "Seccompaux.seccomp_ret_trace".
 Extract Constant HLspec.SECCOMP_RET_ALLOW => "Seccompaux.seccomp_ret_allow".
 
+Extract Constant Stackuse.MaxStackSize => "Camlcoq.coqint_of_camlint 1024l".
+
 Cd "codegen".
 Extraction Library Seccomp.
 Extraction Library Seccompconf.
 Extraction Library Seccompjit.
 Extraction Library Seccompenc.
 Extraction Library Seccompfilter.
+Extraction Library Seccompall.
+Extraction Library Stackuse.
 Extraction Library HLspec.
 Extraction Library HLtrans.
 Extraction Library InetDiag.
