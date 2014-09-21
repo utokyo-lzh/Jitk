@@ -21,7 +21,7 @@ Inductive initial_state (p: program): state -> Prop :=
       let ge := Genv.globalenv p in
       let rs0 :=
         (Pregmap.init Vundef)
-        # PC <- (symbol_offset ge p.(prog_main) Int.zero)
+        # PC <- (Genv.symbol_address ge p.(prog_main) Int.zero)
         # IR14 <- Vzero
         # IR13 <- Vzero
         # IR0 <- (Vptr pkt Int.zero) in
