@@ -1,9 +1,14 @@
 Install Coq and OCaml.
 
-Download CompCert 2.3 from http://compcert.inria.fr/ and unpack it here.
+Download CompCert 2.4 from http://compcert.inria.fr/ and unpack it here.
 Rename its directory to compcert (or create a symlink).
 
-In compcert, configure && make && make clightgen && make documentation
+In the compcert directory:
+
+  ./configure ia32-linux
+  make
+  make clightgen
+  make documentation
 
 Get back to the parent directory and make.  Ignore the warnings.
 
