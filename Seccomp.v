@@ -108,7 +108,7 @@ Inductive state : Type :=
   | State:
     forall (a: int)              (**r accumulator *)
            (x: int)              (**r index register *)
-           (sm: list val)        (**r scratch memory *)
+           (sm: ZMap.t val)      (**r scratch memory *)
            (f: function)         (**r current function *)
            (c: code)             (**r current program point *)
            (p: block)            (**r input packet *)
@@ -184,7 +184,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let a' := eval_alu_safe op a x in
       step ge (State a x sm f (Salu_safe op :: b) p m)
         E0 (State a' x sm f b p m)
-  (* FIXME: should return 0 for div by zero *)
+  (* NB: could return 0 for div by zero *)
   | exec_Salu_div:
       forall op a x sm f b p m,
       let a' := eval_alu_div op a x in
@@ -229,7 +229,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       forall a a' k x sm f b p m,
       let idx := Int.unsigned k in
       idx < seccomp_memwords ->
-      list_nth_z sm idx = Some (Vint a') ->
+      ZMap.get idx sm = Vint a' ->
       step ge (State a x sm f (Sld_mem k :: b) p m)
         E0 (State a' x sm f b p m)
   | exec_Sret_a:
@@ -243,7 +243,7 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
   | exec_call:
       forall f p m,
       step ge (Callstate (Internal f) p m)
-        E0 (State Int.zero Int.zero (list_repeat (Z.to_nat seccomp_memwords) Vundef) f f p m)
+        E0 (State Int.zero Int.zero (ZMap.init Vundef) f f p m)
   .
 
 Inductive initial_state (p: program): state -> Prop :=

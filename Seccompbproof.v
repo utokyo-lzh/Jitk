@@ -296,7 +296,7 @@ Proof.
     (Genv.globalenv {|
        prog_defs := (prog_main, Gfun (Internal f)) :: nil;
        prog_main := prog_main |})
-    f (list_repeat (Z.to_nat seccomp_memwords) Vundef) b0
+    f (ZMap.init Vundef) b0
     m0 seccomp_data x0 length_seccomp_data e0
     f Int.zero Int.zero); auto.
 

@@ -70,7 +70,7 @@ Inductive match_states: Seccomp.state -> Cminor.state -> Prop :=
         (MP: Some (Vptr p Int.zero) = te!reg_pkt)
         (MA: Some (Vint a) = te!reg_a)
         (MX: Some (Vint x) = te!reg_x)
-        (MSM: forall i, 0 <= i < seccomp_memwords -> list_nth_z sm i = Mem.load Mint32 tm tb (4 * i))
+        (MSM: forall i, 0 <= i < seccomp_memwords -> Mem.load Mint32 tm tb (4 * i) = Some (ZMap.get i sm))
         (TF: transl_function f = OK tf)
         (TC: transl_code c = OK ts)
         (MK: call_cont tk = Kstop)
@@ -311,35 +311,16 @@ Proof.
   omega.
 Qed.
 
-Lemma list_nth_z_repeat:
-  forall (A:Type) (a:A) n i,
-  0 <= i < n ->
-  list_nth_z (list_repeat (Z.to_nat n) a) i = Some a.
-Proof.
-  intros.
-  generalize H. generalize n.
-  eapply Z_lt_induction with (x:=i); try omega.
-  intros.
-  case_eq (Z.to_nat n0).
-  - intros. apply Nat2Z.inj_iff in H2. rewrite Z2Nat.id in H2; try omega. crush.
-  - intros. simpl.
-    destruct (zeq x 0); auto.
-    assert (n1 = Z.to_nat (Z.pred n0)).
-    rewrite Z2Nat.inj_pred. rewrite H2. auto.
-    rewrite H3.
-    apply H0; omega.
-Qed.
-
 Lemma mem_undef:
   forall n m1 m2 b,
   Mem.alloc m1 0 (4 * n) = (m2, b) ->
   forall i,
   0 <= i < n ->
-  list_nth_z (list_repeat (Z.to_nat n) Vundef) i =
+  Some (ZMap.get i (ZMap.init Vundef)) =
   Mem.load Mint32 m2 b (4 * i).
 Proof.
   intros.
-  rewrite list_nth_z_repeat; auto.
+  rewrite ZMap.gi.
   destruct Mem.valid_access_load with (m:=m2) (chunk:=Mint32) (b:=b) (ofs:=4*i).
   - apply Mem.valid_access_freeable_any.
     eapply Mem.valid_access_alloc_same; eauto.
@@ -835,17 +816,14 @@ Proof.
 
     unfold Mem.loadv.
     rewrite memword_offset.
-    assert (Mem.load Mint32 tm tb (4 * (Int.unsigned k)) = list_nth_z sm (Int.unsigned k)).
     rewrite MSM; auto.
-    split. apply Int.unsigned_range. auto.
-    rewrite H1.
-    exact H0.
-    exact H.
+    split; auto. apply Int.unsigned_range. auto.
 
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply star_refl.
     econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    rewrite <- H0; auto.
     apply is_tail_cons_left with (i := Sld_mem k); assumption.
     exact MFREE.
     exact MINJ.
@@ -903,7 +881,8 @@ Proof.
 
     econstructor; auto.
 
-    intros. apply mem_undef with
+    intros. rewrite mem_undef with
+      (n:=seccomp_memwords)
       (m1:=tm)
       (m2:=fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
       (b:=snd (Mem.alloc tm 0 (4 * seccomp_memwords))); auto.
