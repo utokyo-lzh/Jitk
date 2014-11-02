@@ -1,5 +1,6 @@
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
+Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
 Require Import compcert.common.Memory.
 Require Import compcert.common.Smallstep.
@@ -346,8 +347,8 @@ Proof.
     subst a'.
     econstructor; split.
 
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
     destruct op;
       try apply eval_Ebinop with (v1 := Vint a) (v2 := Vint i);
@@ -358,8 +359,8 @@ Proof.
       try apply eval_Eunop with (v1 := Vint a);
       try constructor; auto; crush.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
 
     econstructor; auto.
@@ -376,7 +377,7 @@ Proof.
     subst a'.
     econstructor; split.
 
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
     destruct op; [ case_eq (Int.eq i Int.zero)
                  | case_eq (Int.eq i Int.zero)
@@ -390,13 +391,13 @@ Proof.
     Ltac alu_div_1f :=
       rewrite Int.eq_false; [ idtac | discriminate ].
     Ltac alu_div_2 :=
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ repeat constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ repeat constructor | idtac | auto ].
     Ltac alu_div_3 :=
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     Ltac alu_div_4 :=
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 i tm H.
     alu_div_1f.
     alu_div_2.
@@ -417,7 +418,7 @@ Proof.
       apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i); try constructor; auto;
       simpl; rewrite H; simpl in Heqa''; rewrite <- Heqa''; auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 i tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a i H Heqa''.
@@ -425,7 +426,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 i tm H.
     alu_div_1f.
     alu_div_2.
@@ -440,7 +441,7 @@ Proof.
     | replace (i = Int.zero) with (if Int.eq i Int.zero then i=Int.zero else i<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 i tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a i H Heqa''.
@@ -448,7 +449,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 x tm H.
     alu_div_1f.
     alu_div_2.
@@ -463,7 +464,7 @@ Proof.
     | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 x tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a x H Heqa''.
@@ -471,7 +472,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 x tm H.
     alu_div_1f.
     alu_div_2.
@@ -486,7 +487,7 @@ Proof.
     | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_div_0 x tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a x H Heqa''.
@@ -508,7 +509,7 @@ Proof.
     subst a'.
     econstructor; split.
 
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
     destruct op; [ case_eq (Int.ltu i Int.iwordsize)
                  | case_eq (Int.ltu i Int.iwordsize)
@@ -524,16 +525,16 @@ Proof.
     Ltac alu_shift_1f :=
       rewrite Int.eq_false; [ idtac | discriminate ].
     Ltac alu_shift_2 a i :=
-      eapply star_step  with (t1:=Events.E0) (t2:=Events.E0);
+      eapply star_step  with (t1:=E0) (t2:=E0);
       [ repeat constructor; apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i);
         constructor; auto
       | idtac | auto ].
     Ltac alu_shift_3 :=
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     Ltac alu_shift_4 :=
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 i tm H.
     alu_shift_1f.
     alu_shift_2 a i.
@@ -549,7 +550,7 @@ Proof.
     Ltac alu_shift_1t :=
       rewrite Int.eq_true.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 i tm H.
     alu_shift_1t.
     alu_shift_2 a i.
@@ -562,7 +563,7 @@ Proof.
 
     rewrite Heqa''; rewrite oversize_shl_zero; auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 i tm H.
     alu_shift_1f.
     alu_shift_2 a i.
@@ -575,7 +576,7 @@ Proof.
 
     rewrite Heqa''.  simpl.  rewrite H.  auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 i tm H.
     alu_shift_1t.
     alu_shift_2 a i.
@@ -588,7 +589,7 @@ Proof.
 
     rewrite Heqa''; rewrite oversize_shru_zero; auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 x tm H.
     alu_shift_1f.
     alu_shift_2 a x.
@@ -601,7 +602,7 @@ Proof.
 
     rewrite Heqa''.  simpl.  rewrite H.  auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 x tm H.
     alu_shift_1t.
     alu_shift_2 a x.
@@ -614,7 +615,7 @@ Proof.
 
     rewrite Heqa''; rewrite oversize_shl_zero; auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 x tm H.
     alu_shift_1f.
     alu_shift_2 a x.
@@ -627,7 +628,7 @@ Proof.
 
     rewrite Heqa''.  simpl.  rewrite H.  auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     alu_shift_0 x tm H.
     alu_shift_1t.
     alu_shift_2 a x.
@@ -658,8 +659,8 @@ Proof.
     subst off.
 
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
     rewrite length_skipn_pos' ; [ idtac | destruct (Int.unsigned_range k); auto ].
 
@@ -696,14 +697,14 @@ Proof.
     subst off.
 
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     destruct (cond_match cond a x sm f (Sjmp_jc cond jt jf :: b) p m
                               tf_orig ts_orig tk (Vptr tb Int.zero) te tm); crush.
     apply step_ifthenelse with (v:=x3); [ auto | exact H3 ].
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     destruct (eval_cond cond a x); constructor.
 
     (* true branch *)
@@ -747,8 +748,8 @@ Proof.
     remember a' as a''.
     subst a'.  subst off.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply eval_Eload with (vaddr:=Vptr p k).
     apply eval_Ebinop with (v1:=Vptr p Int.zero) (v2:=Vint k).
     constructor.  auto.
@@ -763,8 +764,8 @@ Proof.
     rewrite Mem.load_free_2 with (m2:=tm') (bf:=tb) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x0).
     inversion H3.  auto.  auto.  auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
     econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
     apply is_tail_cons_left with (i:=Sld_w_abs k); assumption.
@@ -774,13 +775,13 @@ Proof.
   (* Sld_w_len *)
   - monadInv TC.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     constructor.
     constructor.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
     econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
     apply is_tail_cons_left with (i := Sld_w_len); assumption.
@@ -790,13 +791,13 @@ Proof.
   (* Sldx_w_len *)
   - monadInv TC.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     constructor.
     constructor.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
     econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
     apply is_tail_cons_left with (i := Sldx_w_len); assumption.
@@ -806,21 +807,20 @@ Proof.
   (* Sld_mem k *)
   - monadInv TC.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply eval_Eload with (vaddr:=Vptr tb (Int.mul (Int.repr 4) k)).
     constructor.
-    unfold eval_constant.
-    unfold Val.add.
-    rewrite Int.add_zero_l. auto.
+    simpl.
+    rewrite Int.add_zero_l; auto.
 
     unfold Mem.loadv.
     rewrite memword_offset.
     rewrite MSM; auto.
     split; auto. apply Int.unsigned_range. auto.
 
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
     econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
     rewrite <- H0; auto.
@@ -831,8 +831,8 @@ Proof.
   (* Sret_a *)
   - monadInv TC.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     constructor; rewrite <- MA; auto.
     exact MFREE.
 
@@ -842,8 +842,8 @@ Proof.
   (* Sret_k *)
   - monadInv TC.
     econstructor; split.
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     constructor; constructor.
     exact MFREE.
 
@@ -856,16 +856,16 @@ Proof.
     monadInv EQ0.
     econstructor; split.
 
-    eapply plus_left with (t1:=Events.E0) (t2:=Events.E0); [ idtac | idtac | auto ].
+    eapply plus_left with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     apply step_internal_function with
       (m' := (fst (Mem.alloc tm 0 (4 * seccomp_memwords))))
       (sp := (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))); auto.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor; constructor; constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor; constructor; constructor | idtac | auto ].
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor; constructor; constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor; constructor; constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
 
     destruct (Mem.range_perm_free
