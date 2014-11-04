@@ -1,9 +1,12 @@
 /_build
 /compcert*
+*.v.d
 *.vo
 *.mli
 *.glob
 *.native
+/Arch.v
+/Makefile.coq
 /c/*.v
 /examples/*/dump_bytes
 /examples/*/bpf-direct

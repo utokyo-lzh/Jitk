@@ -1,8 +1,7 @@
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
 Require Import compcert.lib.Coqlib.
-Require Import Asm.
-Require Asmgen.
+Require Import Arch.
 Require Import CpdtTactics.
 Require Import MiscLemmas.
 

@@ -1,9 +1,9 @@
 include compcert/Makefile.config
 
-COQINC = -I . -I $(ARCH) -R compcert compcert -R c ''
-COQEXE = coqtop $(COQINC) -batch -load-vernac-source
-COQC = coqc $(COQINC)
-COQDEP = coqdep $(COQINC)
+COQINC = -R $(ARCH) "" -R compcert compcert
+#COQEXE = coqtop $(COQINC) -batch -load-vernac-source
+#COQC = coqc $(COQINC)
+#COQDEP = coqdep $(COQINC)
 
 OCAMLBUILD = ocamlbuild -lib str
 OCAMLINC   = \
@@ -28,7 +28,8 @@ FILES = CpdtTactics.v \
 	InetDiag.v \
 	InetDiagJit.v \
 	Stackuse.v \
-	Seccompall.v
+	Seccompall.v \
+	Arch.v
 
 PROOFFILES = \
 	HLproof.v \
@@ -58,24 +59,20 @@ examples/%/dump_bytes: examples/%/dump_bytes.c
 examples/%/bpf-direct: examples/%/bpf-direct.c
 	gcc $< -o $@
 
-codegen/extraction.vo: $(FILES:.v=.vo)
+codegen/extraction.vo: Makefile.coq
+	$(MAKE) -f Makefile.coq
 
-proof: $(PROOFFILES:.v=.vo)
+Makefile.coq: Makefile $(FILES) $(PROOFFILES)
+	coq_makefile -install none $(COQINC) $(FILES) $(PROOFFILES) -o $@
 
-%.vo: %.v
-	$(COQC) $*.v
+Arch.v: Makefile
+	@echo "Require Export compcert.$(ARCH).Asm." > $@
+	@echo "Require Export compcert.$(ARCH).Asmgen." >> $@
 
-c/%.v: c/%.c
-	./compcert/clightgen $<
-
-.PRECIOUS: c/%.v tests/test_%.native
-
-depend: $(FILES) $(PROOFFILES)
-	$(COQDEP) $^ \
-	> .depend
+.PRECIOUS: tests/test_%.native
 
 clean:
 	rm -rf _build *.vo *.glob tests/*.native
 	cd codegen && rm -f *.ml *.mli *.mlo *.glob *.vo
-
-include .depend
+	$(MAKE) -f Makefile.coq clean
+	rm -f Makefile.coq Arch.v
