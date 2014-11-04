@@ -123,28 +123,8 @@ Proof.
     apply Znumtheory.Zmod_divide; [ crush | idtac ].
     rewrite Hbyteslen.  apply sizeof_mul4.
 
-    destruct H with (y:=x) (x:=x0)
-      (a:=(Int.repr
-        (decode_int
-           match skipn (nat_of_Z (Int.unsigned i)) pkt with
-           | nil => nil
-           | a0 :: l =>
-               a0
-               :: match l with
-                  | nil => nil
-                  | a1 :: l0 =>
-                      a1
-                      :: match l0 with
-                         | nil => nil
-                         | a2 :: l1 =>
-                             a2
-                             :: match l1 with
-                                | nil => nil
-                                | a3 :: _ => a3 :: nil
-                                end
-                         end
-                  end
-           end))); unfold length_order; crush.
+    edestruct H; eauto; unfold length_order; crush.
+
     destruct (Mem.storebytes_split m0 p 0
               (firstn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt))
               (skipn (nat_of_Z (Int.unsigned i)) (Memdata.inj_bytes pkt)) m);
@@ -169,10 +149,8 @@ Proof.
              (0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))
                 + Z.of_nat (length (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))))
              (skipn 4 (skipn (nat_of_Z (Int.unsigned i)) (inj_bytes pkt)))).
-    rewrite Mem.load_store_same with
-      (m1:=x2)
-      (v:=(Vint (Int.repr (decode_int (firstn 4 (skipn (nat_of_Z (Int.unsigned i)) pkt)))))).
-    simpl; auto.
+    erewrite Mem.load_store_same with (v:=(Vint _)).
+    simpl; eauto.
 
     cut ((0 + Z.of_nat (length (firstn (nat_of_Z (Int.unsigned i)) pkt))) = Int.unsigned i).
     intro Heq_a; rewrite <- Heq_a at 1.

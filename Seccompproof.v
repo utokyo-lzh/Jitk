@@ -333,6 +333,15 @@ Proof.
     eapply Mem.load_alloc_same; eauto.
 Qed.
 
+Hint Resolve is_tail_cons_left.
+Hint Resolve is_tail_trans.
+Hint Resolve is_tail_skipn.
+Hint Constructors is_tail.
+
+Hint Resolve list_length_z_skipn.
+Hint Resolve list_length_z_istail_strict.
+Hint Resolve Z.le_lt_trans.
+
 Lemma transl_step:
   forall S1 t S2, Seccomp.step ge S1 t S2 ->
   forall R1, match_states S1 R1 ->
@@ -347,8 +356,8 @@ Proof.
     subst a'.
     econstructor; split.
 
-    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply plus_left; [ constructor | idtac | apply E0_left; auto ].
+    eapply star_step; [ constructor | idtac | apply E0_left; auto ].
 
     destruct op;
       try apply eval_Ebinop with (v1 := Vint a) (v2 := Vint i);
@@ -359,17 +368,14 @@ Proof.
       try apply eval_Eunop with (v1 := Vint a);
       try constructor; auto; crush.
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step; [ constructor | idtac | apply E0_left; auto ].
+    eapply star_step; [ constructor | idtac | apply E0_left; auto ].
     apply star_refl.
 
-    econstructor; auto.
+    econstructor; eauto.
     rewrite PTree.gso; [ auto | discriminate ].
     rewrite PTree.gss; auto.
     rewrite PTree.gso; [ auto | discriminate ].
-    apply is_tail_cons_left with (i := Salu_safe op); assumption.
-    exact MFREE.
-    exact MINJ.
 
   (* Salu_div op *)
   - monadInv TC.
@@ -377,7 +383,7 @@ Proof.
     subst a'.
     econstructor; split.
 
-    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply plus_left; [ constructor | idtac | apply E0_left; auto ].
 
     destruct op; [ case_eq (Int.eq i Int.zero)
                  | case_eq (Int.eq i Int.zero)
@@ -391,13 +397,13 @@ Proof.
     Ltac alu_div_1f :=
       rewrite Int.eq_false; [ idtac | discriminate ].
     Ltac alu_div_2 :=
-      eapply star_step with (t1:=E0) (t2:=E0); [ repeat constructor | idtac | auto ].
+      eapply star_step; [ repeat constructor | idtac | apply E0_left; auto ].
     Ltac alu_div_3 :=
-      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+      eapply star_step; [ constructor | idtac | apply E0_left; auto ].
     Ltac alu_div_4 :=
-      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+      eapply star_step; [ constructor | idtac | apply E0_left; auto ].
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 i tm H.
     alu_div_1f.
     alu_div_2.
@@ -418,7 +424,7 @@ Proof.
       apply eval_Ebinop with (v1:=Vint a) (v2:=Vint i); try constructor; auto;
       simpl; rewrite H; simpl in Heqa''; rewrite <- Heqa''; auto.
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 i tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a i H Heqa''.
@@ -426,7 +432,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 i tm H.
     alu_div_1f.
     alu_div_2.
@@ -441,7 +447,7 @@ Proof.
     | replace (i = Int.zero) with (if Int.eq i Int.zero then i=Int.zero else i<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 i tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a i H Heqa''.
@@ -449,7 +455,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 x tm H.
     alu_div_1f.
     alu_div_2.
@@ -464,7 +470,7 @@ Proof.
     | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 x tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a x H Heqa''.
@@ -472,7 +478,7 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 x tm H.
     alu_div_1f.
     alu_div_2.
@@ -487,7 +493,7 @@ Proof.
     | replace (x = Int.zero) with (if Int.eq x Int.zero then x=Int.zero else x<>Int.zero);
       [ apply Int.eq_spec | rewrite H; reflexivity ] ].
 
-    eapply star_step with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
+    eapply star_step; [ idtac | idtac | erewrite E0_left; auto ].
     alu_div_0 x tm H.
     alu_div_1t.
     alu_div_2.  alu_div_2t a x H Heqa''.
@@ -495,13 +501,10 @@ Proof.
     alu_div_4.
     apply star_refl.
 
-    econstructor; auto.
+    econstructor; eauto.
     rewrite PTree.gso; [ auto | discriminate ].
     rewrite PTree.gss; auto.
     rewrite PTree.gso; [ auto | discriminate ].
-    apply is_tail_cons_left with (i := Salu_div op); assumption.
-    exact MFREE.
-    exact MINJ.
 
   (* Salu_shift op *)
   - monadInv TC.
@@ -641,13 +644,10 @@ Proof.
 
     rewrite Heqa''; rewrite oversize_shru_zero; auto.
 
-    econstructor; auto.
+    econstructor; eauto.
     rewrite PTree.gso; [ auto | discriminate ].
     rewrite PTree.gss; auto.
     rewrite PTree.gso; [ auto | discriminate ].
-    apply is_tail_cons_left with (i := Salu_shift op); assumption.
-    exact MFREE.
-    exact MINJ.
 
   (* Sjmp_ja k *)
   - monadInv TC.
@@ -665,23 +665,13 @@ Proof.
     rewrite length_skipn_pos' ; [ idtac | destruct (Int.unsigned_range k); auto ].
 
     simpl.    (* remove transl_funbody's preamble from find_label's arg *)
-    apply transl_code_label with (b:=f); crush.
-
-    apply is_tail_trans with (l2:=b);
-      [ apply is_tail_skipn
-      | apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush ].
-
-    apply Z.le_lt_trans with (m:=(list_length_z b));
-      [ apply list_length_z_skipn
-      | apply list_length_z_istail_strict with (v:=(Sjmp_ja k)); auto ].
+    apply transl_code_label with (b:=f); crush; eauto.
 
     apply star_refl.
 
     econstructor; crush.
     unfold transl_function; unfold transl_funbody; crush.
-    apply is_tail_trans with (l2:=b).
-    apply is_tail_skipn.
-    apply is_tail_trans with (l2:=Sjmp_ja k :: b); crush.
+    eauto.
 
   (* Sjmp_jc cond jt jf *)
   - remember tf as tf_orig; generalize Heqtf_orig; generalize tf_orig.
@@ -711,66 +701,44 @@ Proof.
     rewrite length_skipn_pos' ; [ idtac | destruct (Byte.unsigned_range jt); auto ].
 
     rewrite Heqtf_orig; simpl.    (* remove transl_funbody's preamble from find_label's arg *)
-    apply transl_code_label with (b:=f); crush.
-
-    apply is_tail_trans with (l2:=b);
-      [ apply is_tail_skipn
-      | apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush ].
-
-    apply Z.le_lt_trans with (m:=(list_length_z b));
-      [ apply list_length_z_skipn
-      | apply list_length_z_istail_strict with (v:=(Sjmp_jc cond jt jf)); auto ].
+    apply transl_code_label with (b:=f); crush; eauto.
 
     (* false branch *)
     rewrite length_skipn_pos' ; [ idtac | destruct (Byte.unsigned_range jf); auto ].
 
     rewrite Heqtf_orig; simpl.    (* remove transl_funbody's preamble from find_label's arg *)
-    apply transl_code_label with (b:=f); crush.
-
-    apply is_tail_trans with (l2:=b);
-      [ apply is_tail_skipn
-      | apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush ].
-
-    apply Z.le_lt_trans with (m:=(list_length_z b));
-      [ apply list_length_z_skipn
-      | apply list_length_z_istail_strict with (v:=(Sjmp_jc cond jt jf)); auto ].
+    apply transl_code_label with (b:=f); crush; eauto.
 
     apply star_refl.
 
-    econstructor; crush.
+    econstructor; crush; eauto.
     unfold transl_function; unfold transl_funbody; crush.
-    apply is_tail_trans with (l2:=b).
-    apply is_tail_skipn.
-    apply is_tail_trans with (l2:=Sjmp_jc cond jt jf :: b); crush.
 
   (* Sld_w_abs k *)
   - monadInv TC.
     remember a' as a''.
-    subst a'.  subst off.
+    subst.
     econstructor; split.
-    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
-    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
-    apply eval_Eload with (vaddr:=Vptr p k).
-    apply eval_Ebinop with (v1:=Vptr p Int.zero) (v2:=Vint k).
-    constructor.  auto.
-    constructor.  auto.
-    simpl.  rewrite Int.add_zero_l.  auto.
+    eapply plus_left; [ constructor | idtac | rewrite E0_left; auto ].
+    eapply star_step; [ constructor | idtac | rewrite E0_left; auto ].
+    eapply eval_Eload.
+    eapply eval_Ebinop.
+    constructor; eauto.
+    constructor; simpl; eauto.
+    simpl; rewrite Int.add_zero_l; eauto.
     unfold Mem.loadv.
 
-    destruct (Mem.load_inj inject_id m tm' Mint32 p (Int.unsigned k) p 0 (Vint a'')).
-    exact MINJ.  exact H1.  crush.
-    destruct H2; rewrite Z.add_0_r in H2.
+    edestruct Mem.load_inj; eauto; crush.
+    rewrite Z.add_0_r in *.
+    inversion H4.
 
-    rewrite Mem.load_free_2 with (m2:=tm') (bf:=tb) (lo:=0) (hi:=(fn_stackspace tf)) (v:=x0).
-    inversion H3.  auto.  auto.  auto.
+    erewrite Mem.load_free_2; eauto.
+    subst; eauto.
 
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i:=Sld_w_abs k); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
   (* Sld_w_len *)
   - monadInv TC.
@@ -783,10 +751,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i := Sld_w_len); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
   (* Sldx_w_len *)
   - monadInv TC.
@@ -799,10 +764,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i := Sldx_w_len); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
   (* Sld_imm k *)
   - monadInv TC.
@@ -815,10 +777,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i := Sld_imm k); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
   (* Sld_mem k *)
   - monadInv TC.
@@ -838,11 +797,8 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
     rewrite <- H0; auto.
-    apply is_tail_cons_left with (i := Sld_mem k); assumption.
-    exact MFREE.
-    exact MINJ.
 
    (* Smisc_tax *)
   - monadInv TC.
@@ -854,10 +810,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i := Smisc_tax); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
    (* Smisc_txa *)
   - monadInv TC.
@@ -869,10 +822,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
-    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
-    apply is_tail_cons_left with (i := Smisc_txa); assumption.
-    exact MFREE.
-    exact MINJ.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; eauto; try discriminate.
 
   (* Sret_a *)
   - monadInv TC.
@@ -905,7 +855,7 @@ Proof.
     eapply plus_left with (t1:=E0) (t2:=E0); [ idtac | idtac | auto ].
     apply step_internal_function with
       (m' := (fst (Mem.alloc tm 0 (4 * seccomp_memwords))))
-      (sp := (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))); auto.
+      (sp := (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))); eauto.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor; constructor; constructor | idtac | auto ].
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
@@ -914,7 +864,7 @@ Proof.
     eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
 
-    destruct (Mem.range_perm_free
+    destruct (Mem.range_perm_free 
       (fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
       (snd (Mem.alloc tm 0 (4 * seccomp_memwords))) 0
       (4 * seccomp_memwords)).
@@ -925,24 +875,15 @@ Proof.
       (lo := 0)
       (hi := 4 * seccomp_memwords); auto.
 
-    econstructor; auto.
+    econstructor; eauto.
 
-    intros. rewrite mem_undef with
-      (n:=seccomp_memwords)
-      (m1:=tm)
-      (m2:=fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
-      (b:=snd (Mem.alloc tm 0 (4 * seccomp_memwords))); auto.
+    intros.
+    erewrite mem_undef with (n:=seccomp_memwords) (m1:=tm); eauto.
 
     unfold transl_function; unfold transl_funbody; rewrite EQ; auto.
-    constructor.
-    exact e.
 
-    apply (free_alloc_inj tm
-      (fst (Mem.alloc tm 0 (4 * seccomp_memwords)))
-      (snd (Mem.alloc tm 0 (4 * seccomp_memwords)))
-      0 (4 * seccomp_memwords) _) in e.
+    eapply (free_alloc_inj tm _ _ _ _ _) in e; eauto.
     apply (inj_trans m tm _); auto.
-    auto.
 Qed.
 
 Theorem transl_program_correct:
