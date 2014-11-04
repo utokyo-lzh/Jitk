@@ -1,5 +1,6 @@
 Require Import compcert.common.AST.
 Require Import compcert.common.Errors.
+Require Import compcert.common.Events.
 Require Import compcert.common.Globalenvs.
 Require Import compcert.common.Memory.
 Require Import compcert.common.Smallstep.
@@ -79,7 +80,7 @@ Theorem step_terminates:
   forall c x a,
   true = seccomp_func_filter c ->
   exists r,
-  star step ge (State a x sm f c p m) Events.E0 (Returnstate r m).
+  star step ge (State a x sm f c p m) E0 (Returnstate r m).
 Proof.
   intros ge f sm p m0 pkt m Hbyteslen Hstorebytes.
   induction c using (well_founded_ind (length_order_wf instruction)).
@@ -90,20 +91,16 @@ Proof.
     repeat (case (Bool.andb_true_eq _ _ H0); clear H0; intros);
     crush.
 
-  - destruct H with (y:=x) (a:=(eval_alu_safe a0 a x0)) (x:=x0); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    apply H1.
+  Ltac simpl_step_terminates H :=
+    edestruct H; unfold length_order; crush;
+    econstructor;
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ]; eauto.
 
-  - destruct H with (y:=x) (a:=(eval_alu_div a0 a x0)) (x:=x0); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    apply H1.
+  - simpl_step_terminates H.
 
-  - destruct H with (y:=x) (a:=(eval_alu_shift a0 a x0)) (x:=x0); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    apply H1.
+  - simpl_step_terminates H.
+
+  - simpl_step_terminates H.
 
   - rewrite list_length_nat_z in Hbyteslen.
     assert (Int.unsigned i >= 0) as Hipos; [ destruct (Int.unsigned_range i); crush | idtac ].
@@ -142,7 +139,7 @@ Proof.
     as Hstore.
 
     econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply Zlt_is_lt_bool; auto.
     apply Z.eqb_eq; auto.
     rewrite (Mem.load_storebytes_other x3 p
@@ -185,22 +182,13 @@ Proof.
 
     apply H3.
 
-  - destruct H with (y:=x) (a:=(Int.repr Seccompconf.sizeof_seccomp_data)) (x:=x0); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    apply H1.
+  - simpl_step_terminates H.
 
   (* Sldx_w_len *)
-  - destruct H with (y:=x) (a:=a) (x:=(Int.repr Seccompconf.sizeof_seccomp_data)); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eauto.
+  - simpl_step_terminates H.
 
   (* Sld_imm *)
-  - destruct H with (y:=x) (a:=i)(x:=x0); unfold length_order; crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eauto.
+  - simpl_step_terminates H.
 
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
@@ -208,7 +196,7 @@ Proof.
     rewrite list_length_nat_z in H0.  apply Nat2Z.inj_lt.  rewrite nat_of_Z_eq.
     apply Zlt_is_lt_bool.  crush.  destruct (Int.unsigned_range i).  crush.
     econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply Zlt_is_lt_bool; auto.
     apply H2.
 
@@ -224,36 +212,26 @@ Proof.
     apply Zlt_is_lt_bool.  crush.  destruct (Byte.unsigned_range i0).  crush.
     case_eq (eval_cond c a x0); intros.
     + econstructor.
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
       apply Zlt_is_lt_bool; crush.
       rewrite H5.  apply H3.
     + econstructor.
-      eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+      eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
       apply Zlt_is_lt_bool; crush.
       rewrite H5.  apply H4.
 
   (* Smisc_tax *)
-  - destruct H with (y:=x) (a:=a) (x:=a).
-    unfold length_order. crush.
-    crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eauto.
+  - simpl_step_terminates H.
 
   (* Smisc_txa *)
-  - destruct H with (y:=x) (a:=x0) (x:=x0).
-    unfold length_order. crush.
-    crush.
-    econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    eauto.
+  - simpl_step_terminates H.
 
   - econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
 
   - econstructor.
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
     apply star_refl.
 Qed.
 
@@ -261,7 +239,7 @@ Theorem seccomp_terminates:
   forall prog,
   true = seccomp_filter prog ->
   exists r,
-  program_behaves (Seccompspec.semantics prog) (Terminates Events.E0 r).
+  program_behaves (Seccompspec.semantics prog) (Terminates E0 r).
 Proof.
   intros.
   destruct prog.
@@ -317,7 +295,7 @@ Proof.
   (* state_behaves *)
   - econstructor; simpl; [ idtac | constructor ].
     instantiate (1:=x0).
-    eapply star_step with (t1:=Events.E0) (t2:=Events.E0);
+    eapply star_step with (t1:=E0) (t2:=E0);
       [ constructor | idtac | auto ].
     apply H2.
 Qed.
