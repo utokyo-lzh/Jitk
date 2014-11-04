@@ -115,6 +115,10 @@ Definition transl_instr (instr: Seccomp.instruction)
     let ofs := Int.mul (Int.repr 4) k in
     let addr := Econst (Oaddrstack ofs) in
     OK (Sassign reg_a (Eload Mint32 addr))
+  | Smisc_tax =>
+    OK (Sassign reg_x (Evar reg_a))
+  | Smisc_txa =>
+    OK (Sassign reg_a (Evar reg_x))
   | Sret_a =>
     OK (Sreturn (Some (Evar reg_a)))
   | Sret_k k =>

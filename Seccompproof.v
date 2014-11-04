@@ -828,6 +828,36 @@ Proof.
     exact MFREE.
     exact MINJ.
 
+   (* Smisc_tax *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    constructor; rewrite <- MA; auto.
+
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Smisc_tax); assumption.
+    exact MFREE.
+    exact MINJ.
+
+   (* Smisc_txa *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    constructor; rewrite <- MX; auto.
+
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Smisc_txa); assumption.
+    exact MFREE.
+    exact MINJ.
+
   (* Sret_a *)
   - monadInv TC.
     econstructor; split.

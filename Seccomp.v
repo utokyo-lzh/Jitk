@@ -232,6 +232,14 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       ZMap.get idx sm = Vint a' ->
       step ge (State a x sm f (Sld_mem k :: b) p m)
         E0 (State a' x sm f b p m)
+  | exec_Smisc_tax:
+      forall a x sm f b p m,
+      step ge (State a x sm f (Smisc_tax :: b) p m)
+        E0 (State a a sm f b p m)
+  | exec_Smisc_txa:
+      forall a x sm f b p m,
+      step ge (State a x sm f (Smisc_txa :: b) p m)
+        E0 (State x x sm f b p m)
   | exec_Sret_a:
       forall a x sm f b p m,
       step ge (State a x sm f (Sret_a :: b) p m)

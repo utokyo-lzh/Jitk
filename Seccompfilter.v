@@ -39,7 +39,8 @@ Fixpoint seccomp_func_filter (f: Seccomp.code) : bool :=
     (Int.unsigned k <? seccomp_memwords) &&
     (seccomp_func_filter rest)
 *)
-
+  | Smisc_tax :: rest => seccomp_func_filter rest
+  | Smisc_txa :: rest => seccomp_func_filter rest
   | Sret_k k :: rest => seccomp_func_filter rest
   | Sret_a :: rest => seccomp_func_filter rest
   | _ => false

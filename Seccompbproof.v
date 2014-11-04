@@ -247,6 +247,22 @@ Proof.
       apply Zlt_is_lt_bool; crush.
       rewrite H5.  apply H4.
 
+  (* Smisc_tax *)
+  - destruct H with (y:=x) (a:=a) (x:=a).
+    unfold length_order. crush.
+    crush.
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eauto.
+
+  (* Smisc_txa *)
+  - destruct H with (y:=x) (a:=x0) (x:=x0).
+    unfold length_order. crush.
+    crush.
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eauto.
+
   - econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply star_refl.
