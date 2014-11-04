@@ -804,6 +804,22 @@ Proof.
     exact MFREE.
     exact MINJ.
 
+  (* Sld_imm k *)
+  - monadInv TC.
+    econstructor; split.
+    eapply plus_left with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    constructor.
+    simpl; auto.
+
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    eapply star_step with (t1:=E0) (t2:=E0); [ constructor | idtac | auto ].
+    apply star_refl.
+    econstructor; try rewrite PTree.gss; try rewrite PTree.gso; auto; try discriminate.
+    apply is_tail_cons_left with (i := Sld_imm k); assumption.
+    exact MFREE.
+    exact MINJ.
+
   (* Sld_mem k *)
   - monadInv TC.
     econstructor; split.

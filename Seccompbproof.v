@@ -212,10 +212,17 @@ Proof.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
     apply H1.
 
+  (* Sldx_w_len *)
   - destruct H with (y:=x) (a:=a) (x:=(Int.repr Seccompconf.sizeof_seccomp_data)); unfold length_order; crush.
     econstructor.
     eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
-    apply H1.
+    eauto.
+
+  (* Sld_imm *)
+  - destruct H with (y:=x) (a:=i)(x:=x0); unfold length_order; crush.
+    econstructor.
+    eapply star_step with (t1:=Events.E0) (t2:=Events.E0); [ constructor | idtac | auto ].
+    eauto.
 
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.

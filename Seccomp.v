@@ -225,6 +225,10 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       let x' := Int.repr sizeof_seccomp_data in
       step ge (State a x sm f (Sldx_w_len :: b) p m)
         E0 (State a x' sm f b p m)
+  | exec_Sld_imm:
+      forall a x sm f k b p m,
+      step ge (State a x sm f (Sld_imm k :: b) p m)
+        E0 (State k x sm f b p m)
   | exec_Sld_mem:
       forall a a' k x sm f b p m,
       let idx := Int.unsigned k in
