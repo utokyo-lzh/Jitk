@@ -102,6 +102,7 @@ Proof.
 
   - simpl_step_terminates H.
 
+  (* Sld_w_abs *)
   - rewrite list_length_nat_z in Hbyteslen.
     assert (Int.unsigned i >= 0) as Hipos; [ destruct (Int.unsigned_range i); crush | idtac ].
     assert (nat_of_Z (Int.unsigned i) < length pkt)%nat as Hilen.
@@ -182,6 +183,7 @@ Proof.
 
     apply H3.
 
+  (* Sld_w_len *)
   - simpl_step_terminates H.
 
   (* Sldx_w_len *)
@@ -193,6 +195,7 @@ Proof.
   (* Sldx_imm *)
   - simpl_step_terminates H.
 
+  (* Sjmp_ja *)
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.
@@ -203,6 +206,7 @@ Proof.
     apply Zlt_is_lt_bool; auto.
     apply H2.
 
+  (* Sjmp_jc *)
   - destruct H with (y:=(skipn (nat_of_Z (Byte.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.
