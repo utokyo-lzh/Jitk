@@ -113,6 +113,8 @@ Definition transl_instr (instr: Seccomp.instruction)
     OK (Sassign reg_x (Econst (Ointconst (Int.repr sizeof_seccomp_data))))
   | Sld_imm k =>
     OK (Sassign reg_a (Econst (Ointconst k)))
+  | Sldx_imm k =>
+    OK (Sassign reg_x (Econst (Ointconst k)))
   | Sld_mem k =>
     let ofs := Int.mul (Int.repr 4) k in
     let addr := Econst (Oaddrstack ofs) in

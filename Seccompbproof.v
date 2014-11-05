@@ -190,6 +190,9 @@ Proof.
   (* Sld_imm *)
   - simpl_step_terminates H.
 
+  (* Sldx_imm *)
+  - simpl_step_terminates H.
+
   - destruct H with (y:=(skipn (nat_of_Z (Int.unsigned i)) x)) (a:=a) (x:=x0).
     unfold length_order.  simpl.  apply Lt.le_lt_n_Sm.  apply length_skipn_lt.
     apply seccomp_func_filter_skipn; auto.

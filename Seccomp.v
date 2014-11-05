@@ -66,10 +66,10 @@ Inductive instruction : Type :=
       (** X <- sizeof(struct seccomp_data) *)
   | Sld_imm: int -> instruction
       (** A <- k *)
-  | Sld_mem: int -> instruction
-      (** A <- [k] *)
   | Sldx_imm: int -> instruction
       (** X <- k *)
+  | Sld_mem: int -> instruction
+      (** A <- [k] *)
   | Sldx_mem: int -> instruction
       (** X <- [k] *)
   | Sst: int -> instruction
@@ -229,6 +229,10 @@ Inductive step (ge: genv) : state -> trace -> state -> Prop :=
       forall a x sm f k b p m,
       step ge (State a x sm f (Sld_imm k :: b) p m)
         E0 (State k x sm f b p m)
+  | exec_Sldx_imm:
+      forall a x sm f k b p m,
+      step ge (State a x sm f (Sldx_imm k :: b) p m)
+        E0 (State a k sm f b p m)
   | exec_Sld_mem:
       forall a a' k x sm f b p m,
       let idx := Int.unsigned k in
